@@ -1,0 +1,23 @@
+# Local tool/cache metadata
+.qoder/
+.codex/
+
+# OS/editor noise
+Thumbs.db
+Desktop.ini
+*.tmp
+*.temp
+*.bak
+*.swp
+~$*
+
+# Runtime caches and generated dependency folders
+__pycache__/
+.pytest_cache/
+.cache/
+node_modules/
+
+# Large packaged exports can be added intentionally with -f when needed
+*.zip
+*.7z
+*.rar
