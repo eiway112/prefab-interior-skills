@@ -4,9 +4,9 @@
 >
 > **维护规则**：本文件的修改须经 prefab-standards-reviewer 复核，并记录在变更日志（第九节）中。
 >
-> **最后更新**：2026-06-12（初稿）
+> **最后更新**：2026-06-21（新增 SRE 变更管理规则）
 >
-> **适用范围**：standards-index.md、glossary.md、interface-contracts.md、redlines-registry.md，以及各子技能 SKILL.md / reference.md 中与共享资源存在引用关系的内容。
+> **适用范围**：standards-index.md、glossary.md、interface-contracts.md、redlines-registry.md、standards-reasoning-rules.md，以及各子技能 SKILL.md / reference.md 中与共享资源存在引用关系的内容。
 
 ---
 
@@ -127,6 +127,18 @@
 | 删除红线 | S 级变更（可能移除安全保护）；须经全面影响评估，确认删除不会引入安全风险 |
 | 红线编号重排 | B 级变更；须全文扫描确认所有引用该编号的文件均已更新 |
 
+### 4.5 standards-reasoning-rules.md（标准推理引擎规则）
+
+| 变更类型 | 专项规则 |
+|---------|---------|
+| 锚定标准废止/替代 | **S 级（安全紧急）**。锚定是推理链的承重结构，缺失导致全链路失稳。须在 24 小时内完成替代锚定评估并发布修复；修复前 SRE 对该领域的推理结果须降级标注 |
+| 新增标准评估为锚定（满足 C1-C4 准则） | **A 级**。须经 prefab-standards-reviewer 复核入选准则满足性；须同步更新 standards-index.md 的 `is_anchor` 标记 |
+| 推理算法步骤修改（M1/M3 模块） | **A 级**。影响全部技能的标准发现行为；须经至少 3 个典型场景回归测试（覆盖住宅/非住宅/地方标准激活） |
+| 适用性裁判规则修改（M4 模块） | **B 级**。影响特定场景的标准优先级排序；须验证受影响场景的输出排序无回归 |
+| 领域激活表扩展（M3 §3.2 Step 2 新增领域或建筑类型） | **B 级**。须验证新领域与现有领域无交叉冲突；新增行须同步检查 standards-index.md 是否有对应标准收录 |
+| 降级与兜底协议修改（M6 模块） | **B 级**。须验证降级行为不引入静默失败；新增降级场景须附测试用例 |
+| 锚定标准入选准则不再满足（降级为普通条目） | **B 级**。须选出替代锚定并同步更新 standards-index.md 标记 |
+
 ---
 
 ## 五、跨文件变更协调规则
@@ -150,6 +162,7 @@
 | 接口契约兼容性检查 | 每次新增技能后 | prefab-standards-reviewer + skill-qa-tester | 验证新增技能的接口契约与已有契约的版本兼容性和参数一致性 |
 | 红线注册表完整性审计 | 每年 | prefab-standards-reviewer | 确认所有技能的红线均已注册、编号无遗漏、仲裁规则覆盖主要冲突场景 |
 | 变更治理规则自身审查 | 每年 | 变更发起人 + prefab-standards-reviewer | 评估治理规则的执行效果，根据实际变更案例优化流程 |
+| SRE 推理链覆盖性检查 | 每次新增子技能后 | prefab-standards-reviewer | 验证新技能的典型场景（至少 3 个）在 M3 领域激活表和标准族映射中有路径覆盖，无死链或误路由 |
 
 ---
 
@@ -212,6 +225,8 @@ S 级（安全紧急）变更可走快速通道，简化审批流程但保留关
 | CG-20260612-001 | 2026-06-12 | B | 初稿创建 change-governance.md | 新增共享资源文件 | 已发布 |
 | CG-20260617-001 | 2026-06-17 | B | standards-index.md 第165行 DB11/T 1553-2025 标准名称修正："装配式内装修工程技术规程"→"建筑室内装配式装修技术规程"（依据全国标准信息公共服务平台核验结果） | standards-index.md（项目目录副本+shared目录副本，共2份） | 已发布 |
 | CG-20260617-002 | 2026-06-17 | B | 隔墙技能专业审核修复轮次：SKILL.md DB11/T 1553-2025补充实施日期（2026-04-01）及标准名称更正；examples.md E4 ALC耐火值≥3.00h→≥4.00h与reference.md一致；reference.md §6.4选型表补充办公建筑标签+新增Rw+Ctr 50-55 dB行+增强≥60 dB极端隔声框架 | prefab-partition-wall-solution（SKILL.md、reference.md、examples.md） | 已发布 |
+| CG-20260621-001 | 2026-06-21 | B | SRE 架构集成：适用范围新增 standards-reasoning-rules.md；新增 §4.5 推理引擎变更专项规则（7 类变更分级，锚定废止=S 级、算法修改=A 级、规则调整=B 级）；定期审查新增"SRE 推理链覆盖性检查"；关系表新增 SRE 条目 | change-governance.md | 已发布 |
+| CG-20260621-002 | 2026-06-21 | B | Phase 2.4 交叉验证修复：redlines-registry.md §二 技能标识映射表 SR/QA/ACE 状态从"待注册"修正为"已注册"；standards-reasoning-rules.md §6.4 Steps 1-4 SRE 增强描述准确化 + §3.2 L3 图集激活路径补全 + acceptance 上海地标待补充占位 | redlines-registry.md、standards-reasoning-rules.md | 已发布 |
 
 ---
 
@@ -225,5 +240,6 @@ S 级（安全紧急）变更可走快速通道，简化审批流程但保留关
 | glossary.md | 本文件定义其术语变更的专项规则和审查频率 |
 | interface-contracts.md | 本文件定义接口变更的兼容性评估和版本管理规则；interface-contracts.md 的版本号管理须遵守本文件 |
 | redlines-registry.md | 本文件定义红线变更的安全审查规则；redlines-registry.md 的新增流程须遵守本文件 |
+| standards-reasoning-rules.md | 本文件定义其变更分级规则（§4.5）；standards-reasoning-rules.md §2.5 定义的锚定集变更级别与本文件一致；修改须经 prefab-standards-reviewer 复核，变更级别不低于 A 级 |
 
 > **执行优先级**：当本文件的流程规则与各共享资源文件自身的维护规则存在冲突时，以本文件为准。各共享资源文件的维护规则可细化本文件的要求，但不得降低审查标准。
