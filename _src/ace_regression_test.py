@@ -78,6 +78,16 @@ def floating_floor_f0(s_MNm3, m_face):
     return (1 / (2 * math.pi)) * math.sqrt(s / m_face)
 
 
+def impact_sound_deltaLw(m_prime, s_MNm3, C=10):
+    """M5: Single-value impact sound improvement (weighted).
+    dLw = 18*log10(m') - 10*log10(s) + C
+    m' in kg/m2, s in MN/m3, C empirical constant (default 10).
+    """
+    if m_prime <= 0 or s_MNm3 <= 0:
+        raise ValueError("m_prime and s must be positive")
+    return 18 * math.log10(m_prime) - 10 * math.log10(s_MNm3) + C
+
+
 def gap_effective_R(R_wall, gap_fraction, R_gap=0.0):
     """M6: Composite transmission loss with gap.
     R_eff = -10*log10((1-S)*10^(-R/10) + S*10^(-Rg/10))
@@ -374,6 +384,44 @@ class TestM5_ImpactSound(unittest.TestCase):
         # dL_500 should be significant
         self.assertGreater(dL_500, 15)
 
+    # -- Single-value ΔLw tests --
+
+    def test_deltaLw_typical_rubber_pad(self):
+        """5mm rubber (s=20), 102 kg/m2 screed: dLw should be 30-40 dB."""
+        dLw = impact_sound_deltaLw(102, 20)
+        self.assertGreater(dLw, 30)
+        self.assertLess(dLw, 40)
+
+    def test_deltaLw_softer_pad_higher_improvement(self):
+        """Softer pad (lower s) must give higher dLw."""
+        dLw_soft = impact_sound_deltaLw(100, 10)
+        dLw_hard = impact_sound_deltaLw(100, 30)
+        self.assertGreater(dLw_soft, dLw_hard)
+
+    def test_deltaLw_heavier_face_higher_improvement(self):
+        """Heavier floating layer must give higher dLw."""
+        dLw_heavy = impact_sound_deltaLw(150, 20)
+        dLw_light = impact_sound_deltaLw(60, 20)
+        self.assertGreater(dLw_heavy, dLw_light)
+
+    def test_deltaLw_C_sensitivity(self):
+        """Changing C by 4 should change dLw by exactly 4 dB."""
+        dLw_12 = impact_sound_deltaLw(100, 20, C=12)
+        dLw_8 = impact_sound_deltaLw(100, 20, C=8)
+        self.assertAlmostEqual(dLw_12 - dLw_8, 4.0, places=5)
+
+    def test_deltaLw_V3_scenario(self):
+        """V3 verification: 102 kg/m2, s=20, C=10 -> ~33 dB."""
+        dLw = impact_sound_deltaLw(102, 20)
+        self.assertAlmostEqual(dLw, 33.1, delta=1.0)
+
+    def test_deltaLw_rejects_nonpositive(self):
+        """Non-positive m' or s must raise ValueError."""
+        with self.assertRaises(ValueError):
+            impact_sound_deltaLw(0, 20)
+        with self.assertRaises(ValueError):
+            impact_sound_deltaLw(100, 0)
+
 
 # ============================================================
 # TEST SUITE 6: M6 Gap/Sound Bridge
@@ -554,6 +602,7 @@ class TestAdversarial(unittest.TestCase):
         self.assertGreater(coincidence_freq(0.01, 800, 2.5e9, 0.25), 0)
         self.assertGreater(msm_resonance(5, 10, 10), 0)
         self.assertGreater(impact_sound_delta_L(1000, 50), 0)
+        self.assertGreater(impact_sound_deltaLw(100, 20), 0)
 
     def test_ALC_fc_below_audible_range(self):
         """150mm ALC: fc should be very low, well below 500 Hz."""
