@@ -197,6 +197,12 @@
 | 学校 | 教室/实验室 | acoustic, fire, acceptance |
 | 办公 | 办公室/会议室 | acoustic, fire, acceptance |
 | 商业 | 商铺/展厅 | fire, acceptance |
+| 住宅 | 分户楼板 | acoustic(impact), fire, acceptance, prefab |
+| 住宅 | 楼地面（一般） | acoustic(impact), acceptance, prefab |
+| 酒店 | 客房地面 | acoustic(impact), acceptance, prefab |
+| 办公 | 办公地面 | acceptance, prefab |
+| 医院 | 病房地面 | acoustic(impact), acceptance, environmental |
+| 学校 | 教室地面 | acoustic(impact), acceptance |
 | 任意 | 任意 | fire, acceptance（始终激活的最小集） |
 
 **Step 2 — 领域→标准族映射**
@@ -211,6 +217,15 @@
 | 非住宅 | GB 50118-2010（mandatory）→ GB/T 50121-2005（评价量定义） |
 | +构造=轻钢龙骨 | → [+ GB/T 19889.x 系列（测量方法）, JG/T 544-2018（产品标准）, 07CJ03-1（L3 图集）, 08J931（L3 图集）] |
 | +构造=条板 | → [+ GB/T 23451-2023（产品标准）] |
+
+**acoustic(impact) 领域**（楼地面撞击声）：
+
+| 建筑类型 | 标准族（按权限优先级排列） |
+|---------|----------------------|
+| 住宅分户楼板 | GB 55038-2025（mandatory, L'nT,w≤65dB）→ GB 50118-2010（非住宅参考）→ GB/T 50121-2005（评价量定义） |
+| 非住宅 | GB 50118-2010（mandatory）→ GB/T 50121-2005（评价量定义） |
+| +构造=浮筑地面 | → [+ GB/T 19889.7-2005（现场测量）, GB/T 19889.8-2006（ΔL实验室测量）, 08J931（L3 图集）] |
+| +构造=架空地面 | → [+ 08J931（L3 图集）] |
 
 **fire 领域**：
 
