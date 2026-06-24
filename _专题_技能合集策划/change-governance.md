@@ -4,7 +4,7 @@
 >
 > **维护规则**：本文件的修改须经 prefab-standards-reviewer 复核，并记录在变更日志（第九节）中。
 >
-> **最后更新**：2026-06-21（新增 SRE 变更管理规则）
+> **最后更新**：2026-06-24（新增 FL v2 楼地面技能开发变更日志条目）
 >
 > **适用范围**：standards-index.md、glossary.md、interface-contracts.md、redlines-registry.md、standards-reasoning-rules.md，以及各子技能 SKILL.md / reference.md 中与共享资源存在引用关系的内容。
 
@@ -231,6 +231,7 @@ S 级（安全紧急）变更可走快速通道，简化审批流程但保留关
 | CG-20260624-001 | 2026-06-24 | B | ACE 隔声计算引擎 v1.0 开发（Step 1-6）：① 架构文档 3 处缺陷修正（ALC 标准 GB/T 23451→GB/T 15762、E 上限 2.0→3.0 GPa、吻合公式补 √(12(1-σ²))）；② 新建 ACE SKILL.md + reference.md（_专题_ACE开发/）；③ 3 场景接口联调验证通过（V1 住宅分户墙/V2 酒店异质复合/V3 浮筑地面）+ 2 降级场景通过；④ 跨文件一致性 6 项检查，修复 reference.md 吊顶边界表+不可处理范围、registry ACE-R-P2-2 评价量补全 | ACE架构边界与接口契约_v1.0.md、_专题_ACE开发/（新建）、redlines-registry.md、隔墙技能重构策划方案_v2.md | 已发布 |
 | CG-20260624-002 | 2026-06-24 | B | ACE 技能 QA 验证修复轮次：架构文档 §8.1 U 项编号对齐 reference.md 规范（8 项内容+编号统一）、§2.2 材料参数范围补全（石膏板 E→2.0-2.8 GPa、硅酸钙板 ρ→800-1400 E→4-10 GPa）、§5.2 降级表补充"输出标注"列、§1.1 吊顶精度声明修正（区分基础精度与侧向传声修正）；SKILL.md §六 Step 1 补充撞击声评价量（Ln,w/ΔL） | ACE架构边界与接口契约_v1.0.md（4 处）、SKILL.md（1 处） | 已发布 |
 | CG-20260624-003 | 2026-06-24 | C | 第三方架构审核评估解读——O-1 一致性修复：interface-contracts.md 文件头版本标记从 v1.2 同步至 v1.4；change-governance.md §4.3 新增"契约版本升级"规则（要求同步文件头+变更日志+索引引用）；项目策划方案索引.md 变更日志计数 6→7 | interface-contracts.md、change-governance.md、项目策划方案索引.md | 已发布 |
+| CG-20260624-004 | 2026-06-24 | B | FL v2 楼地面技能开发：① redlines-registry.md 新增 §九 注册 FL 红线 16 条（P0×5 + P1×7 + P2×4），注册表统计更新（47→63 条，5→6 技能），§5.3 跨技能仲裁扩展 3 条 FL 专项 P0 示例；② interface-contracts.md 新增 IC-08 字段约束表 + JSON Schema（v1.0）、IC-10 字段约束表 + JSON Schema（v1.0），Schema 扩展路径更新；③ standards-reasoning-rules.md M3 领域激活表扩展 6 行楼地面行、Step 2 acoustic(impact) 标准族映射新增；④ standards-index.md 楼地面相关标准注册（Phase 1）；⑤ FL 技能文件 SKILL.md v2（467 行，13 节，16 红线）、reference.md v2（1605 行，10 章）、examples.md v2（1220 行，5 个双轨示例） | redlines-registry.md、interface-contracts.md、standards-reasoning-rules.md、standards-index.md、FL 技能文件（SKILL.md、reference.md、examples.md） | 已发布 |
 
 ---
 
