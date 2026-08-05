@@ -4,7 +4,7 @@
 >
 > **维护规则**：本文件的修改须经 prefab-standards-reviewer 复核，变更级别不低于 A 级（详见 change-governance.md §十）。
 >
-> **最后更新**：2026-06-21（初稿创建）
+> **最后更新**：2026-08-06（M3 墙面域激活行扩展 + WS S1 扩展备案）
 >
 > **依赖关系**：本文件定义推理逻辑，`standards-index.md` 提供版本数据，`interface-contracts.md` 定义 IC-07/IC-10 接口。三者共同构成标准管理基础设施。
 
@@ -197,6 +197,12 @@
 | 学校 | 教室/实验室 | acoustic, fire, acceptance |
 | 办公 | 办公室/会议室 | acoustic, fire, acceptance |
 | 商业 | 商铺/展厅 | fire, acceptance |
+| 医院 | 病房/手术部墙面 | fire, environmental, acceptance, prefab |
+| 酒店 | 客房墙面 | acceptance, prefab, acoustic(边界提示) |
+| 住宅 | 户内墙面 | prefab(认定), acceptance, environmental |
+| 学校 | 教室墙面 | fire, environmental, acceptance |
+| 办公 | 办公墙面 | acceptance, environmental, prefab |
+| 厨卫湿区 | 墙板 | prefab, waterproof(外部协同), acceptance |
 | 住宅 | 分户楼板 | acoustic(impact), fire, acceptance, prefab |
 | 住宅 | 楼地面（一般） | acoustic(impact), acceptance, prefab |
 | 酒店 | 客房地面 | acoustic(impact), acceptance, prefab |
@@ -252,12 +258,14 @@
 | +地点=浙江 | → [+ DB33/T 1259-2021] |
 | +地点=北京 | → [+ DB11/T 1553-2025] |
 | +地点=福建 | → [+ DBJ/T 13-428-2023] |
+| +墙面饰面系统（WS 域） | → [+ T/CECS 1018-2022（待官方核验；墙面系统首要技术依据）, JG/T 579-2021（集成墙面产品）, JG/T 578-2021（墙板通用，与隔墙协同）] |
 
 **environmental 领域**：
 
 | 场景 | 标准族 |
 |------|-------|
 | 医院/学校 | GB 18580-2025（甲醛）→ GB 18582-2020（涂料有害物质）→ T/CSUS 03-2019（医院专项） |
+| 住宅/酒店/办公（一般） | GB 18580-2025（甲醛；2026-06-01 实施，替代 GB 18580-2017） |
 
 **Step 3 — 权限冲突裁决**
 
@@ -435,3 +443,5 @@ Step 5-7: 原有流程不变
 |------|---------|------|
 | 2026-06-21 | 初稿创建 | 建立六大模块：M1 分类协议、M2 锚定集（13条）、M3 场景推理链、M4 适用性裁判、M5/M6 输出与降级、与现有架构集成方案 |
 | 2026-06-21 | Phase 2.4 修复 | 交叉验证修复：§6.4 Steps 1-4 SRE 增强描述准确化（原"不变"表述与 IC 文件不一致）；§3.2 Step 2 映射表补全 L3 图集激活路径（07CJ03-1/08J931）；acceptance 领域新增上海地标待补充占位 |
+| 2026-08-06 | M3 扩展 | 墙面技能 v2（阶段 8）：Step 1 激活表新增墙面域 6 行（医院/酒店/住宅/学校/办公/厨卫湿区，与 WS SKILL M3 表一致）；Step 2 prefab 域新增 WS 墙面标准族（T/CECS 1018-2022、JG/T 579-2021、JG/T 578-2021）；environmental 域新增住宅/酒店/办公一般行（GB 18580-2025）。关联 CG-20260806-001 |
+| 2026-08-06 | 备案记录 | WS v2 combined_reference_v2.md 将 S1 由 IC-08 的"国标/行标"扩展为"官方发布的标准文本"（含地方标准/团体标准/导则/汇编；未经官方平台核验的团体标准按 standards-index 规则标注"待官方核验"）。本条为备案记录，不改变 SRE 推理行为；S1 口径跨技能统一化提请 prefab-standards-reviewer 后续评审 |

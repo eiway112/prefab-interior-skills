@@ -4,7 +4,7 @@
 >
 > **维护规则**：本文件的修改须经 prefab-standards-reviewer 复核，并记录在变更日志（第九节）中。
 >
-> **最后更新**：2026-06-24（新增 FL v2 楼地面技能开发变更日志条目）
+> **最后更新**：2026-08-06（新增 WS v2 墙面技能开发变更日志条目）
 >
 > **适用范围**：standards-index.md、glossary.md、interface-contracts.md、redlines-registry.md、standards-reasoning-rules.md，以及各子技能 SKILL.md / reference.md 中与共享资源存在引用关系的内容。
 
@@ -243,6 +243,7 @@ S 级（安全紧急）变更可走快速通道，简化审批流程但保留关
 | CG-20260624-003 | 2026-06-24 | C | 第三方架构审核评估解读——O-1 一致性修复：interface-contracts.md 文件头版本标记从 v1.2 同步至 v1.4；change-governance.md §4.3 新增"契约版本升级"规则（要求同步文件头+变更日志+索引引用）；项目策划方案索引.md 变更日志计数 6→7 | interface-contracts.md、change-governance.md、项目策划方案索引.md | 已发布 |
 | CG-20260624-004 | 2026-06-24 | B | FL v2 楼地面技能开发：① redlines-registry.md 新增 §九 注册 FL 红线 16 条（P0×5 + P1×7 + P2×4），注册表统计更新（47→63 条，5→6 技能），§5.3 跨技能仲裁扩展 3 条 FL 专项 P0 示例；② interface-contracts.md 新增 IC-08 字段约束表 + JSON Schema（v1.0）、IC-10 字段约束表 + JSON Schema（v1.0），Schema 扩展路径更新；③ standards-reasoning-rules.md M3 领域激活表扩展 6 行楼地面行、Step 2 acoustic(impact) 标准族映射新增；④ standards-index.md 楼地面相关标准注册（Phase 1）；⑤ FL 技能文件 SKILL.md v2（467 行，13 节，16 红线）、reference.md v2（1605 行，10 章）、examples.md v2（1220 行，5 个双轨示例） | redlines-registry.md、interface-contracts.md、standards-reasoning-rules.md、standards-index.md、FL 技能文件（SKILL.md、reference.md、examples.md） | 已发布 |
 | CG-20260624-005 | 2026-06-24 | B | FL v2.1 快装地面系统章节补全：① reference.md 新增 §九 快装地面系统（~120 行，含 9.1-9.6 六小节：系统定义/类型对比/基层要求/隔声说明/构造方案/施工控制）；② 章节重编号 §九→§十（成本）、§十→§十一（施工），含子节号级联更新；③ §五 5.3 交叉引用更新（第九章→第十章、第十章→第十一章）；④ B5 功能适应性表补全快装行（地暖/防水/荷载 3 张表）；⑤ §十一 新增 11.4 快装施工流程与控制节点 + 验收检查表/施工缺陷表快装条目；⑥ SKILL.md 追加 §六~§九 引用指针；⑦ examples.md 新增示例 6（保障房标准化快装，~180 行双轨示例）；⑧ combined_reference_v2.md 同步 | FL 技能文件（reference.md、SKILL.md、examples.md）、combined_reference_v2.md | 已发布 |
+| CG-20260806-001 | 2026-08-06 | B | WS v2.0.0 墙面技能全周期重构（阶段 1-8）：① standards-index.md 墙面相关标准补录 + standards-reasoning-rules.md M3 墙面域激活行（医院/酒店/住宅/学校/湿区/办公）；② 知识体系重组为 combined_reference_v2.md（A 层原理红线 + B 层方法论 + 知识域，S1-S4 数据源分级）；③ redlines-registry.md §十 注册 WS 红线 14 条（P0×4 + P1×7 + P2×3）；④ 三文件 v2 定稿：SKILL_draft_v2.md（13 节，14 红线表 + 输出模板含验证记录段）、combined_reference_v2.md（约 950 行）、examples_draft_v2.md（5 个双轨示例）；⑤ 阶段 7 条文核验：T/CECS 1018-2022 第2.0.1/3.0.2/3.0.3 条经公开全文复制件核验属实（2026-08-05），v1.2.0 臆造"2.0.8 卡压法"条文已删除；⑥ 阶段 8 QA 47 例 PASS（含回归基线 12 例、对抗性 6 例，修正 29 处），审计三项 WARN 闭环（条文号兜底声明、GB 18580 版本链统一、DB11/T 1553-2025 全链一致）；⑦ 运行时 v1.2.0→v2.0.0 切换与 agents/openai.yaml 红线/免责/路由约束注入 | WS 技能文件（SKILL.md、reference.md、examples.md、agents/openai.yaml）、redlines-registry.md、standards-index.md、standards-reasoning-rules.md、change-governance.md | 已发布 |
 
 ---
 
