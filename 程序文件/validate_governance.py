@@ -2,12 +2,22 @@
 # -*- coding: utf-8 -*-
 """
 装配式装修技能合集 — 治理文件契约校验脚本
-validate_governance.py v1.0
+validate_governance.py v1.1
 
-校验三类治理文件的一致性和完整性：
-  1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表）
+校验四类治理文件的一致性和完整性：
+  1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表，统计表按表头动态解析）
   2. interface-contracts.md — IC-08/IC-10 JSON Schema 必填字段完整性
-  3. standards-index.md     — 标准状态枚举合法性 + 核验过期预警
+  3. standards-index.md     — 标准状态枚举合法性（实际落检）+ 时间状态双向检查
+                              （实施日期已过仍标"即将实施"→FAIL）+ 核验过期预警
+  4. 跨文件漂移反查          — 项目索引/SRE/standards-index §10.1 中的手写计数
+                              与注册表本体动态统计值比对，不一致即 FAIL
+
+v1.1 变更（2026-08-06，CG-20260806-008）：
+  - 修复 §十一/十二 统计表硬编码 6 技能导致 WS 加入后误判合计（改为按表头动态解析）
+  - 修复标准编号解析器遗漏 T/团标、JG/T、HG/T、SJG、RISN-TG、DBJ、图集编号（46→全量识别）
+  - 修复非法状态检查空实现（现按行实际抽取状态单元格并比对枚举）
+  - 新增时间状态反向检查：实施日期 ≤ 今天但状态仍为"即将实施" → FAIL
+  - 新增检查 4：跨文件计数漂移反查（计数以脚本统计本体为准）
 
 用法：
   python validate_governance.py
@@ -200,32 +210,51 @@ def check_redlines(text: str, report: Report):
                 if actual_p != declared_count:
                     report.fail(f"{sid} {plevel}：表格 {actual_p} 行 ≠ 声明 {declared_count} 条")
 
-    # 1h. §十一 统计表合计行
-    # 实际格式: | **合计** | **8** | **18** | **8** | **6** | **7** | **16** | **63** | 100% |
-    stats_match = re.search(
-        r"\*\*合计\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|"
-        r"\s*\*\*(\d+)\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|"
-        r"\s*\*\*(\d+)\*\*\s*\|\s*\*\*(\d+)\*\*",
-        text
+    # 1h. 统计表（合计行）— 按表头动态解析，不硬编码技能数
+    # 表头形如：| 优先级 | OR（总入口） | PW（隔墙） | ... | 合计 | 占比 |
+    # 合计行形如：| **合计** | **8** | **18** | ... | **77** | 100% |
+    stats_skill_order: List[str] = []
+    header_line_match = re.search(
+        r"^\|\s*优先级\s*\|(.+)\|\s*合计\s*\|", text, re.MULTILINE
     )
-    if stats_match:
-        stats_values = [int(stats_match.group(i)) for i in range(1, 8)]
-        stats_skills = stats_values[:6]
-        stats_total = stats_values[6]
+    if header_line_match:
+        for cell_m in re.finditer(
+            r"\b([A-Z]+)\s*(?:（[^）]*）)?", header_line_match.group(1)
+        ):
+            stats_skill_order.append(cell_m.group(1))
 
-        if stats_total != declared_total:
-            report.fail(f"§十一 统计表合计 {stats_total} ≠ 头部声明 {declared_total}")
-        else:
-            report.ok(f"§十一 统计表合计 {stats_total} = 头部声明 {declared_total}")
+    total_line_match = re.search(r"^\|\s*\*\*合计\*\*\s*\|(.+)$", text, re.MULTILINE)
+    if header_line_match and total_line_match:
+        stats_values = [
+            int(v) for v in re.findall(r"\*\*(\d+)\*\*", total_line_match.group(1))
+        ]
+        # 数值单元格 = 各技能列 + 合计列（末尾"占比"列无加粗数字）
+        if len(stats_values) == len(stats_skill_order) + 1:
+            stats_per_skill = dict(zip(stats_skill_order, stats_values[:-1]))
+            stats_total = stats_values[-1]
 
-        stats_skill_order = ["OR", "PW", "SR", "QA", "ACE", "FL"]
-        for idx, sid in enumerate(stats_skill_order):
-            if idx < len(stats_skills):
+            if stats_total != declared_total:
+                report.fail(f"统计表合计 {stats_total} ≠ 头部声明 {declared_total}")
+            else:
+                report.ok(f"统计表合计 {stats_total} = 头部声明 {declared_total}")
+
+            for sid in stats_skill_order:
                 actual = actual_counts.get(sid, 0)
-                if stats_skills[idx] != actual:
-                    report.fail(f"§十一 {sid} 统计 {stats_skills[idx]} ≠ 表格实际 {actual}")
+                if stats_per_skill[sid] != actual:
+                    report.fail(
+                        f"统计表 {sid} {stats_per_skill[sid]} ≠ 表格实际 {actual}"
+                    )
+                else:
+                    report.ok(f"统计表 {sid} {stats_per_skill[sid]} = 表格实际 {actual}")
+        else:
+            report.fail(
+                f"统计表数值单元格数 {len(stats_values)} 与表头技能列数 "
+                f"{len(stats_skill_order)}+1 不匹配（表格结构可能已变化）"
+            )
+    elif total_line_match:
+        report.warn("找到合计行但未找到统计表表头（格式可能变化）")
     else:
-        report.warn("未找到 §十一 统计表的合计行（可能格式变化）")
+        report.warn("未找到统计表的合计行（可能格式变化）")
 
     # 1i. 头部声明分技能 vs 实际
     for sid, count in header_per_skill.items():
@@ -324,29 +353,115 @@ def check_standards(text: str, report: Report):
     }
 
     # 3c. 解析标准表格行
-    # 表格有两种格式：
-    #   格式A（带序号列）: | 1 | GB 55031-2022 | 民用建筑通用规范 | ...
-    #   格式B（无序号列）: | GB 55031-2022 | 民用建筑通用规范 | ...
-    std_pattern = re.compile(
-        r"^\|\s*(?:\d+\s*\|\s*)?"  # 可选序号列
-        r"((?:GB|JGJ|JC|DB|EN|ISO)[/\s]?\s*T?\s*[\d]+(?:[.-]\d+)*"
-        r"(?:（\d{4}\s*版）)?)"
-        r"\s*\|",
-        re.MULTILINE
-    )
-    std_rows = list(std_pattern.finditer(text))
-    report.info(f"检测到标准表格行数：{len(std_rows)} 行")
+    # 计数策略：按表头分流——表头含"核验日期/核验状态/核验结论"的为核验记录表，
+    # 整表跳过；表头含"状态"列的为主表，主表内序号列为数字的行均计为 1 条标准
+    # （覆盖 GB/行标/团标 T/XXX、图集、尺寸指南等全部条目形态）。
+    # 范围：## 二、～## 七、（不含）。
 
-    # 3d. 扫描非法状态值和过期核验
-    # 注意：主表中日期是"实施日期"，核验日期在"官方核验记录"独立表中
     lines = text.split("\n")
-    invalid_status_found = []
+    # 主体表区间：## 二、 ～ ## 七、（不含）
+    body_start = body_end = None
+    for i, line in enumerate(lines):
+        if body_start is None and re.match(r"^##\s+二、", line):
+            body_start = i
+        elif body_start is not None and re.match(r"^##\s+七、", line):
+            body_end = i
+            break
+    if body_start is None or body_end is None:
+        report.fail("未定位到标准主体表区间（## 二、～## 七、），无法精确计数")
+        body_start, body_end = 0, len(lines)
+
+    invalid_status_found = []   # (std_id, suspect_value, line_no)
+    no_status_rows = []          # (std_id, line_no)
     expired_review = []
-    upcoming_impl = []
+    upcoming_impl = []           # 正常：未来实施
+    overdue_status = []          # 异常：实施日期已过仍标"即将实施"
+    premature_effective = []     # 异常：实施日期未到却标"现行有效"
+    std_rows = []                # (std_id, line_no)
     today = datetime.now()
     six_months_ago = today - timedelta(days=183)
 
-    # 定位"官方核验记录"区域
+    sep_line = re.compile(r"^\|[\s:\-|]+\|$")
+    status_bases = ("现行有效", "即将实施", "过渡期", "已废止", "被替代",
+                    "被部分替代", "被部分废止")
+    in_main_table = False     # 当前是否处于主表（含"状态"列）数据区
+    for idx in range(body_start, body_end):
+        line = lines[idx].strip()
+        if not line.startswith("|"):
+            in_main_table = False
+            continue
+        if sep_line.match(line):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if not cells:
+            continue
+
+        # 表头行识别：含"序号/标准编号/图集编号"表头字段
+        if ("序号" in cells[0] or "标准编号" in cells[0] or "图集编号" in cells[0]
+                or (len(cells) > 1 and ("标准编号" in cells[1]
+                                        or "图集编号" in cells[1]))):
+            header_joined = "|".join(cells)
+            if any(k in header_joined for k in ("核验日期", "核验状态", "核验结论")):
+                in_main_table = False      # 核验记录表：不计入标准总数
+            elif "状态" in header_joined:
+                in_main_table = True       # 主表：计入标准总数
+            else:
+                in_main_table = False
+            continue
+
+        if not in_main_table or not cells[0].isdigit():
+            continue
+
+        std_id = cells[1].replace("**", "") if len(cells) > 1 else "?"
+        line_no = idx + 1
+        std_rows.append((std_id, line_no))
+
+        rest = cells[2:]
+        # 状态抽取：按枚举前缀匹配（允许"现行有效（代替…）"等括号注记）
+        status = None
+        for c in rest:
+            if any(c.startswith(b) for b in status_bases):
+                status = c
+                break
+        if status is None:
+            anchor_pos = None
+            for j, c in enumerate(rest):
+                if re.search(r"\d{4}-\d{2}-\d{2}", c) or re.fullmatch(r"\d{4}", c):
+                    anchor_pos = j
+            suspect = rest[anchor_pos + 1] if (
+                anchor_pos is not None and anchor_pos + 1 < len(rest)
+            ) else None
+            if suspect:
+                invalid_status_found.append((std_id, suspect, line_no))
+            else:
+                no_status_rows.append((std_id, line_no))
+            continue
+
+        # 时间状态双向检查（以行内实施日期为准）
+        dates = re.findall(r"(\d{4}-\d{2}-\d{2})", line)
+        impl_dates = []
+        for d in dates:
+            try:
+                impl_dates.append(datetime.strptime(d, "%Y-%m-%d"))
+            except ValueError:
+                pass
+        if status.startswith("即将实施"):
+            if impl_dates and max(impl_dates) <= today:
+                overdue_status.append(
+                    (std_id, max(impl_dates).strftime("%Y-%m-%d"), line_no)
+                )
+            elif impl_dates:
+                upcoming_impl.append(
+                    (std_id, max(impl_dates).strftime("%Y-%m-%d"))
+                )
+        elif status.startswith("现行有效") and impl_dates and min(impl_dates) > today:
+            premature_effective.append(
+                (std_id, min(impl_dates).strftime("%Y-%m-%d"), line_no)
+            )
+
+    report.info(f"检测到标准表格行数（§二～§六主表）：{len(std_rows)} 行")
+
+    # 核验日期只在"官方核验记录"区域检查
     verify_section_start = None
     verify_section_end = None
     for i, line in enumerate(lines):
@@ -358,29 +473,11 @@ def check_standards(text: str, report: Report):
     if verify_section_start and not verify_section_end:
         verify_section_end = len(lines)
 
-    for m in std_rows:
-        std_id = m.group(1).strip()
-        line_no = text[:m.start()].count("\n") + 1
-        if line_no > len(lines):
-            continue
-        current_line = lines[line_no - 1]
-
-        # 主表中的日期是实施日期，用于"即将实施"检测
-        date_match = re.search(r"(\d{4}-\d{2}-\d{2})", current_line)
-        if date_match:
-            try:
-                impl_date = datetime.strptime(date_match.group(1), "%Y-%m-%d")
-                if impl_date > today and "即将实施" in current_line:
-                    upcoming_impl.append((std_id, date_match.group(1)))
-            except ValueError:
-                pass
-
-    # 核验日期只在"官方核验记录"区域检查
     if verify_section_start and verify_section_end:
         verify_text = "\n".join(lines[verify_section_start:verify_section_end])
         verify_std_pattern = re.compile(
             r"^\|\s*(?:\d+\s*\|\s*)?"
-            r"((?:GB|JGJ|JC|DB|EN|ISO)[/\s]?\s*T?\s*[\d]+(?:[.-]\d+)*[^|]*)"
+            r"((?:GB|JGJ|JC|JG|DB|T|RISN|HG|SJG|EN|ISO)[^|]*)"
             r"\|\s*(\d{4}-\d{2}-\d{2})",
             re.MULTILINE
         )
@@ -394,20 +491,33 @@ def check_standards(text: str, report: Report):
             except ValueError:
                 pass
 
-    # 3e. 实际标准数 vs 声明数
+    # 3e. 实际标准数 vs 声明数（精确解析后不应有差异，差异即 FAIL）
     actual_count = len(std_rows)
     if declared_total and actual_count != declared_total:
-        report.warn(f"表格标准行数 {actual_count} ≠ 头部声明 {declared_total}"
-                    f"（差异可能由附录/补充行导致）")
+        report.fail(f"主体表标准行数 {actual_count} ≠ 头部声明 {declared_total}")
     elif declared_total:
-        report.ok(f"表格标准行数 {actual_count} = 头部声明 {declared_total}")
+        report.ok(f"主体表标准行数 {actual_count} = 头部声明 {declared_total}")
 
     # 3f. 报告结果
     if invalid_status_found:
-        for std_id, status, line_no in invalid_status_found:
-            report.fail(f"L{line_no} {std_id}：非法状态值 '{status}'")
+        for std_id, suspect, line_no in invalid_status_found:
+            report.fail(f"L{line_no} {std_id}：状态值 '{suspect}' 不在合法枚举内")
     else:
         report.ok("所有标准状态值均在合法枚举范围内")
+
+    for std_id, line_no in no_status_rows:
+        report.warn(f"L{line_no} {std_id}：未识别到状态列，请人工检查表格结构")
+
+    for std_id, impl_date, line_no in overdue_status:
+        report.fail(
+            f"L{line_no} {std_id}：实施日期 {impl_date} 已过，"
+            f"状态仍为'即将实施'（状态漂移，须更新）"
+        )
+
+    for std_id, impl_date, line_no in premature_effective:
+        report.warn(
+            f"L{line_no} {std_id}：实施日期 {impl_date} 未到，状态却为'现行有效'"
+        )
 
     if expired_review:
         for std_id, date, line_no in expired_review:
@@ -441,6 +551,103 @@ def check_standards(text: str, report: Report):
     active_verify = {k: v for k, v in verify_counts.items() if v > 0}
     if active_verify:
         report.info(f"核验状态分布：{active_verify}")
+
+    return actual_count
+
+
+# ── 检查 4：跨文件计数漂移反查 ────────────────────────────
+def check_cross_file_drift(base_dir: Path, report: Report,
+                           si_text: Optional[str], rl_text: Optional[str],
+                           ic_text: Optional[str], std_actual: Optional[int]):
+    """以治理本体动态统计值为基准，反查各文档中的手写计数/版本号。
+
+    基准值全部来自本次运行对各注册表本体的解析结果，不信任任何手写计数。
+    """
+    report.section("跨文件漂移反查 — 手写计数 vs 本体统计")
+
+    # 基准值提取
+    rl_total = None
+    registered_skills = None
+    if rl_text:
+        m = re.search(r"注册红线总数\*\*：(\d+)\s*条", rl_text)
+        if m:
+            rl_total = int(m.group(1))
+        m = re.search(r"已注册技能数\*\*：(\d+)\s*/", rl_text)
+        if m:
+            registered_skills = int(m.group(1))
+    ic_version = None
+    if ic_text:
+        m = re.search(r"契约版本\*\*：(v[\d.]+)", ic_text)
+        if m:
+            ic_version = m.group(1)
+
+    report.info(
+        f"本体基准：标准 {std_actual} 条 / 红线 {rl_total} 条 / "
+        f"已注册技能 {registered_skills} / 契约 {ic_version}"
+    )
+
+    # 4a. standards-index §10.1 "维护 N 条标准"
+    if si_text and std_actual is not None:
+        m = re.search(r"维护\s*(\d+)\s*条标准", si_text)
+        if m:
+            v = int(m.group(1))
+            if v != std_actual:
+                report.fail(f"standards-index §10.1 写'维护 {v} 条标准' ≠ 本体 {std_actual} 条")
+            else:
+                report.ok(f"standards-index §10.1 '维护 {v} 条标准' = 本体统计")
+        else:
+            report.warn("standards-index 未找到 §10.1 '维护 N 条标准'表述（格式可能变化）")
+
+    # 4b. SRE "完整 N 条目录"
+    sre_path = base_dir / "standards-reasoning-rules.md"
+    if sre_path.exists() and std_actual is not None:
+        sre_text = sre_path.read_text(encoding="utf-8")
+        m = re.search(r"完整\s*(\d+)\s*条目录", sre_text)
+        if m:
+            v = int(m.group(1))
+            if v != std_actual:
+                report.fail(f"SRE §2.4 写'完整 {v} 条目录' ≠ 本体 {std_actual} 条")
+            else:
+                report.ok(f"SRE §2.4 '完整 {v} 条目录' = 本体统计")
+        else:
+            report.warn("SRE 未找到'完整 N 条目录'表述（格式可能变化）")
+    elif std_actual is not None:
+        report.warn("standards-reasoning-rules.md 不存在，跳过 SRE 计数反查")
+
+    # 4c. 项目策划方案索引（文档/）
+    idx_path = base_dir.parent / "文档" / "项目策划方案索引.md"
+    if idx_path.exists():
+        idx_text = idx_path.read_text(encoding="utf-8")
+
+        checks = []  # (描述, 手写值, 基准值)
+        m = re.search(r"四层标准体系[^|\n]*共\s*(\d+)\s*条", idx_text)
+        if m and std_actual is not None:
+            checks.append(("项目索引·标准总数", int(m.group(1)), std_actual))
+
+        for pat in (r"已注册红线\s*(\d+)\s*条",
+                    r"redlines-registry\.md[^\n]*?（(\d+)\s*条、"):
+            m = re.search(pat, idx_text)
+            if m and rl_total is not None:
+                checks.append(("项目索引·红线总数", int(m.group(1)), rl_total))
+                break
+
+        m = re.search(r"redlines-registry\.md[^\n]*?\d+\s*条[、，]\s*(\d+)\s*技能", idx_text)
+        if m and registered_skills is not None:
+            checks.append(("项目索引·已注册技能数", int(m.group(1)), registered_skills))
+
+        m = re.search(r"interface-contracts\.md[^\n]*?\|\s*(v[\d.]+)\s*\|\s*$", idx_text, re.MULTILINE)
+        if m and ic_version is not None:
+            checks.append(("项目索引·契约版本", m.group(1), ic_version))
+
+        if not checks:
+            report.warn("项目策划方案索引中未定位到可反查的计数表述（格式可能变化）")
+        for label, hand, base in checks:
+            if hand != base:
+                report.fail(f"{label} 手写值 '{hand}' ≠ 本体基准 '{base}'")
+            else:
+                report.ok(f"{label} '{hand}' = 本体基准")
+    else:
+        report.warn(f"项目策划方案索引不存在：{idx_path}")
 
 
 # ── 主流程 ────────────────────────────────────────────────
@@ -492,11 +699,15 @@ def main():
     # 检查 3：标准索引
     si_path = base_dir / "standards-index.md"
     si_text = read_file(si_path, "标准索引")
+    std_actual = None
     if si_text:
-        check_standards(si_text, report)
+        std_actual = check_standards(si_text, report)
     else:
         report.section("标准索引 — 状态合法性与核验时效")
         report.fail("文件不存在，跳过")
+
+    # 检查 4：跨文件计数漂移反查
+    check_cross_file_drift(base_dir, report, si_text, rl_text, ic_text, std_actual)
 
     # 输出报告
     fail_count = report.print_report()
