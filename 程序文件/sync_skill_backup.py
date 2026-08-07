@@ -9,17 +9,17 @@ sync_skill_backup.py v1.0（2026-08-07）
 弥补运行时技能文件（SKILL/reference/examples 定稿本体）仅存于本地的缺口。
 
 备份范围：
-  1. 合集技能目录 15 个（注册表 12 技能 + QA + WF + 治理/核验辅助 2 个）：
+  1. 合集技能目录 16 个（注册表 12 技能 + QA + WF + 治理/核验辅助 2 个 + ACE）：
      OR/PW/WS/CL/FL/BK/ST/MI/AC/ME/SR/QA/WF 对应目录 +
-     prefab-governance-sync、scanned-standard-clause-verify
+     prefab-governance-sync、scanned-standard-clause-verify +
+     acoustic-calculation-engine
   2. skills 根治理文件：standards-index.md、platform-adapter-reference.md
   3. shared/ 治理镜像 6 文件（不含 *_pre_* 历史备份）
      change-governance / glossary / interface-contracts /
      platform-adapter-reference / redlines-registry / standards-index
 
 不备份：系统安装的通用技能（lark/docx/pdf 等）、_pre_* 备份文件、
-ACE 与 SRE（其文件本体在项目仓 _专题_ACE开发/ 与 _专题_技能合集策划/，
-已由项目仓自身承载）。
+SRE（其文件本体在项目仓 _专题_技能合集策划/，已由项目仓自身承载）。
 
 更新机制（何时运行）：
   - 每次涉及运行时技能文件或治理文件的 CG 变更发布后运行一次；
@@ -65,6 +65,7 @@ SKILL_DIRS = [
     "waterproofing-expert",                      # WF 防水协作
     "prefab-governance-sync",                    # 治理同步流程
     "scanned-standard-clause-verify",            # S1 条文核验流水线
+    "acoustic-calculation-engine",               # ACE 隔声计算引擎（2026-08-07 发布运行时）
 ]
 
 ROOT_FILES = [
@@ -201,9 +202,10 @@ def sync(check_only: bool) -> int:
             "> 更新机制：① 每次涉及运行时技能文件或治理文件的 CG 变更发布后运行一次同步；",
             "> ② 每月至少一次 `--check` 核对漂移；③ 同步后随项目仓提交推送。",
             ">",
-            "> 范围说明：仅含合集相关 15 个技能目录 + 根治理文件 + shared 治理 6 文件；",
+            "> 范围说明：仅含合集相关 16 个技能目录 + 根治理文件 + shared 治理 6 文件；",
             "> 不含系统通用技能（lark/docx/pdf 等）与 `*_pre_*` 历史备份；",
-            "> ACE 与 SRE 文件本体在项目仓 _专题_ACE开发/ 与 _专题_技能合集策划/，不重复备份。",
+            "> ACE 已于 2026-08-07 发布运行时并纳入备份（项目仓 _专题_ACE开发/ 转为开发归档）；",
+            "> SRE 文件本体在项目仓 _专题_技能合集策划/，不重复备份。",
             "",
             f"文件总数：{len(dst_files)}",
             "",

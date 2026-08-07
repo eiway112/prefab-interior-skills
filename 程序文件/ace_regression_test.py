@@ -7,13 +7,19 @@ Run after any document change to catch inconsistencies.
 Usage:  python ace_regression_test.py
         python ace_regression_test.py -v          (verbose)
 
-Version: 1.1.0
+Version: 1.2.0
 Date: 2026-08-07
 
-v1.1.0 (2026-08-07, CG-20260806-010):
+v1.2.0 (2026-08-07, CG-20260807-013):
+  ACE 发布至运行时技能仓后，TestDocAnchor 的 Markdown SOT 由项目仓
+  _专题_ACE开发/reference.md 重锚定至运行时
+  ~/.qoderwork/skills/acoustic-calculation-engine/reference.md
+  （技能文件以运行时为唯一事实源，项目仓副本转为开发归档）。
+
+v1.1.0 (2026-08-07, CG-20260807-010):
   Added TestDocAnchor suite — key constants and material parameters in this
   script are now cross-checked against the Markdown SOT
-  (_专题_ACE开发/reference.md) at runtime, so the test suite no longer
+  (ACE reference.md) at runtime, so the test suite no longer
   validates only hardcoded self-copies (addresses review finding A3/F2:
   tests previously shared the same source as the implementation).
 """
@@ -667,12 +673,15 @@ class TestCrossModel(unittest.TestCase):
 # ============================================================
 # TEST SUITE 11: Document Anchor (cross-check vs Markdown SOT)
 # ============================================================
-# 本组测试在运行时读取 _专题_ACE开发/reference.md（Markdown SOT），
-# 将脚本内的关键常数与材料参数与文档本体交叉比对，使测试不再仅校验
-# 脚本内硬编码的自我副本（评审发现 A3/F2：测试与实现同源自引用）。
+# 本组测试在运行时读取技能仓 acoustic-calculation-engine/reference.md
+# （Markdown SOT，2026-08-07 起技能文件以运行时为唯一事实源，
+# 项目仓 _专题_ACE开发/ 副本为开发归档），将脚本内的关键常数与材料参数
+# 与文档本体交叉比对，使测试不再仅校验脚本内硬编码的自我副本
+# （评审发现 A3/F2：测试与实现同源自引用）。
 # 本组失败时，须按 change-governance.md 流程判定是文档还是脚本漂移，
 # 不得通过同时修改两侧"抹平"差异。
-_DOC_PATH = Path(__file__).resolve().parent.parent / "_专题_ACE开发" / "reference.md"
+_DOC_PATH = (Path.home() / ".qoderwork" / "skills"
+             / "acoustic-calculation-engine" / "reference.md")
 
 
 def _load_doc():
