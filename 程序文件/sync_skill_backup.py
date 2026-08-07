@@ -195,7 +195,7 @@ def sync(check_only: bool) -> int:
             "# 技能仓备份 — 同步说明",
             "",
             f"> 最后同步：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}（sync_skill_backup.py v1.0）",
-            f"> 源目录：`{SRC.as_posix()}`",
+            "> 源目录：`~/.qoderwork/skills`（QoderWork 运行时技能目录）",
             "> 备份目的：运行时技能文件本体（SKILL/reference/examples）仅存于 skills 仓本地，",
             "> 本目录随项目仓推送提供异地副本。恢复时将各目录复制回 skills 仓对应位置即可。",
             ">",
