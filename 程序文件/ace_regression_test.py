@@ -7,12 +7,22 @@ Run after any document change to catch inconsistencies.
 Usage:  python ace_regression_test.py
         python ace_regression_test.py -v          (verbose)
 
-Version: 1.0.0
-Date: 2026-06-19
+Version: 1.1.0
+Date: 2026-08-07
+
+v1.1.0 (2026-08-07, CG-20260806-010):
+  Added TestDocAnchor suite — key constants and material parameters in this
+  script are now cross-checked against the Markdown SOT
+  (_专题_ACE开发/reference.md) at runtime, so the test suite no longer
+  validates only hardcoded self-copies (addresses review finding A3/F2:
+  tests previously shared the same source as the implementation).
 """
 
 import unittest
 import math
+import re
+import inspect
+from pathlib import Path
 
 # ============================================================
 # Constants (physical)
@@ -652,6 +662,107 @@ class TestCrossModel(unittest.TestCase):
         R_gap_1pct = gap_effective_R(45, 0.01)
         self.assertLess(R_gap_1pct, 25,
             "1% gap should severely reduce a 45 dB wall")
+
+
+# ============================================================
+# TEST SUITE 11: Document Anchor (cross-check vs Markdown SOT)
+# ============================================================
+# 本组测试在运行时读取 _专题_ACE开发/reference.md（Markdown SOT），
+# 将脚本内的关键常数与材料参数与文档本体交叉比对，使测试不再仅校验
+# 脚本内硬编码的自我副本（评审发现 A3/F2：测试与实现同源自引用）。
+# 本组失败时，须按 change-governance.md 流程判定是文档还是脚本漂移，
+# 不得通过同时修改两侧"抹平"差异。
+_DOC_PATH = Path(__file__).resolve().parent.parent / "_专题_ACE开发" / "reference.md"
+
+
+def _load_doc():
+    if not _DOC_PATH.exists():
+        raise AssertionError(f"Markdown SOT 未找到: {_DOC_PATH}")
+    return _DOC_PATH.read_text(encoding="utf-8")
+
+
+def _doc_material_range(text, row_prefix):
+    """从材料参数库表行提取 (rho_lo, rho_hi, e_lo, e_hi)。"""
+    m = re.search(
+        re.escape(row_prefix) + r"\s*\|\s*([\d.]+)-([\d.]+)\s*\|\s*([\d.]+)-([\d.]+)\s*\|",
+        text,
+    )
+    if not m:
+        raise AssertionError(f"材料参数库表行未找到: {row_prefix}")
+    return tuple(float(x) for x in m.groups())
+
+
+class TestDocAnchor(unittest.TestCase):
+    """脚本常数/参数 ↔ reference.md 本体锚定检查。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.doc = _load_doc()
+
+    def test_M1_frequency_domain_constant(self):
+        """M1 频率域常数：文档 -47.2 = 脚本 mass_law 默认 const。"""
+        m = re.search(r"R\(f\) ≈ 20·log₁₀\(m·f\) - ([\d.]+)", self.doc)
+        self.assertIsNotNone(m, "reference.md 未找到 M1 频率域公式")
+        doc_const = float(m.group(1))
+        script_const = inspect.signature(mass_law).parameters["const"].default
+        self.assertAlmostEqual(abs(script_const), doc_const, places=1,
+            msg=f"M1 常数漂移: 脚本 {-script_const} vs 文档 {doc_const}")
+
+    def test_M3_msm_constant(self):
+        """M3 MSM 常数：文档 600 = 脚本 msm_resonance 隐含常数。"""
+        m = re.search(r"f₀ [≈=] (\d+) / √\(d(?:_cm)? × m_red\)", self.doc)
+        self.assertIsNotNone(m, "reference.md 未找到 M3 公式")
+        doc_k = float(m.group(1))
+        # msm_resonance(d_cm=1, m1=1, m2=1): m_red=0.5, f0 = K/sqrt(0.5)
+        script_k = msm_resonance(1.0, 1.0, 1.0) * math.sqrt(0.5)
+        self.assertAlmostEqual(script_k, doc_k, delta=0.5,
+            msg=f"M3 常数漂移: 脚本 {script_k:.1f} vs 文档 {doc_k:.0f}")
+
+    def test_M5_default_C(self):
+        """M5 默认 C 值：文档 C=10 = 脚本 impact_sound_deltaLw 默认值。"""
+        self.assertIn("ΔLw ≈ 18·log₁₀(m') - 10·log₁₀(s) + C", self.doc,
+            "reference.md 未找到 M5 ΔLw 公式")
+        m = re.search(r"ACE 默认 C=(\d+)", self.doc)
+        self.assertIsNotNone(m, "reference.md 未找到 M5 默认 C 值声明")
+        doc_c = float(m.group(1))
+        script_c = inspect.signature(impact_sound_deltaLw).parameters["C"].default
+        self.assertEqual(script_c, doc_c,
+            msg=f"M5 默认 C 漂移: 脚本 {script_c} vs 文档 {doc_c}")
+
+    def test_M2_delta_fc_criterion(self):
+        """M2 异质复合 Δfc 错开判据：文档 ≥300 Hz。"""
+        m = re.search(r"Δfc = \|fc₁ - fc₂\| ≥ (\d+) Hz", self.doc)
+        self.assertIsNotNone(m, "reference.md 未找到 Δfc 错开判据")
+        self.assertEqual(int(m.group(1)), 300)
+
+    def test_sound_speed(self):
+        """声速声明：文档取 343 m/s = 脚本 C_SOUND。"""
+        self.assertIn("取 343 m/s", self.doc, "reference.md 未找到声速声明")
+        self.assertEqual(C_SOUND, 343.0)
+
+    def test_material_db_within_doc_ranges(self):
+        """脚本材料 DB 须落在文档材料参数库 S1 区间内。"""
+        cases = [
+            ("石膏板 | 标准（12mm）", "gypsum_12mm"),
+            ("硅酸钙板 | 高密度", "casi_10mm"),
+            ("ALC 条板 | 标准", "alc_150mm"),
+        ]
+        for row_prefix, key in cases:
+            rho_lo, rho_hi, e_lo, e_hi = _doc_material_range(self.doc, row_prefix)
+            mat = MATERIALS[key]
+            self.assertTrue(rho_lo <= mat["rho"] <= rho_hi,
+                f"{key}: rho={mat['rho']} 超出文档区间 {rho_lo}-{rho_hi}")
+            self.assertTrue(e_lo * 1e9 <= mat["E"] <= e_hi * 1e9,
+                f"{key}: E={mat['E']} 超出文档区间 {e_lo}-{e_hi} GPa")
+
+    def test_IC08_example_concrete_face_density(self):
+        """IC-08 示例混凝土面密度 300 kg/㎡ 须在文档基层库 S1 推导区间内。"""
+        m = re.search(r"\|\s*普通混凝土（C25-C40）\s*\|\s*([\d.]+)-([\d.]+)\s*\|", self.doc)
+        self.assertIsNotNone(m, "reference.md 未找到基层普通混凝土行")
+        lo, hi = float(m.group(1)), float(m.group(2))
+        face_lo, face_hi = lo * 0.12, hi * 0.12  # 120mm 楼板
+        self.assertTrue(face_lo <= 300 <= face_hi + 1e-9,
+            f"IC-08 示例面密度 300 超出 S1 推导区间 {face_lo:.0f}-{face_hi:.0f}")
 
 
 # ============================================================
