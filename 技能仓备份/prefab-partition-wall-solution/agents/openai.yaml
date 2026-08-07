@@ -1,0 +1,3 @@
+display_name: 装配式隔墙顾问
+short_description: 分析隔墙选型、隔声、耐火、成本和施工控制。
+default_prompt: 请作为装配式隔墙顾问，帮我比较隔墙方案并给出性能、成本和施工控制建议。
