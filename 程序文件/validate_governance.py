@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 装配式装修技能合集 — 治理文件契约校验脚本
-validate_governance.py v1.2
+validate_governance.py v1.3
 
 校验四类治理文件的一致性和完整性：
   1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表，统计表按表头动态解析）
-  2. interface-contracts.md — IC-03/IC-08/IC-09/IC-10 JSON Schema 必填字段完整性
+  2. interface-contracts.md — IC-02/IC-03/IC-05/IC-06/IC-07/IC-08/IC-09/IC-10 JSON Schema 必填字段完整性
   3. standards-index.md     — 标准状态枚举合法性（实际落检）+ 时间状态双向检查
                               （实施日期已过仍标"即将实施"→FAIL）+ 核验过期预警
   4. 跨文件漂移反查          — 项目索引/SRE/standards-index §10.1 中的手写计数
@@ -18,6 +18,10 @@ v1.1 变更（2026-08-06，CG-20260806-008）：
   - 修复非法状态检查空实现（现按行实际抽取状态单元格并比对枚举）
   - 新增时间状态反向检查：实施日期 ≤ 今天但状态仍为"即将实施" → FAIL
   - 新增检查 4：跨文件计数漂移反查（计数以脚本统计本体为准）
+
+v1.3 变更（2026-08-07，CG-20260807-012）：
+  - 检查 2 校验范围由 4 条扩展至 8 条：新增 IC-02/IC-05/IC-06/IC-07 请求 Schema 必填字段校验
+    （IC-01/IC-04 尚无 JSON Schema，仍为最小字段约束过渡版，暂不纳入）
 
 用法：
   python validate_governance.py
@@ -267,9 +271,9 @@ def check_redlines(text: str, report: Report):
 
 # ── 检查 2：接口契约必填字段 ─────────────────────────────
 def check_interfaces(text: str, report: Report):
-    report.section("接口契约 — IC-03/IC-08/IC-09/IC-10 Schema 必填字段")
+    report.section("接口契约 — IC-02/IC-03/IC-05/IC-06/IC-07/IC-08/IC-09/IC-10 Schema 必填字段")
 
-    for ic_id in ["IC-03", "IC-08", "IC-09", "IC-10"]:
+    for ic_id in ["IC-02", "IC-03", "IC-05", "IC-06", "IC-07", "IC-08", "IC-09", "IC-10"]:
         # 提取 JSON Schema 块
         schema_pattern = re.compile(
             rf'\*请求 Schema（{re.escape(ic_id)}-Request）\*：\s*\n\s*```json\s*\n(.*?)```',
@@ -693,7 +697,7 @@ def main():
     if ic_text:
         check_interfaces(ic_text, report)
     else:
-        report.section("接口契约 — IC-03/IC-08/IC-09/IC-10 Schema 必填字段")
+        report.section("接口契约 — IC-02/IC-03/IC-05/IC-06/IC-07/IC-08/IC-09/IC-10 Schema 必填字段")
         report.fail("文件不存在，跳过")
 
     # 检查 3：标准索引
