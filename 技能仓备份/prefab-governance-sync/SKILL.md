@@ -16,7 +16,7 @@ version: 1.0.0
 |---|---|---|
 | L1 开发源 | `D:\QoderWork-Files\_项目工作\装配式装修技能开发\_专题_技能合集策划\` | 治理文件开发源；各 `_专题_*` 目录存子技能策划稿 |
 | L2 运行时 SOT | `~/.qoderwork/skills/` | standards-index.md（根 SOT，头部含 SOT 声明+镜像说明）+ 各 prefab-*/skill-qa-tester 技能目录 |
-| L3 只读镜像 | `~/.qoderwork/skills/shared/` | change-governance、glossary、interface-contracts、platform-adapter-reference、redlines-registry、standards-index（头部为 shared 路径定位措辞） |
+| L3 只读镜像 | `~/.qoderwork/skills/shared/` | change-governance、glossary、interface-contracts、platform-adapter-reference、redlines-registry、standards-index、standards-reasoning-rules（头部为 shared 路径定位措辞） |
 
 特例：**redlines-registry.md 运行时只有 shared/ 镜像一处**（无根副本），LF 换行，同步 = 备份后字节覆盖。
 
