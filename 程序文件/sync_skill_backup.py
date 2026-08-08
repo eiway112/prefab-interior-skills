@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 技能仓备份同步脚本
-sync_skill_backup.py v1.0（2026-08-07）
+sync_skill_backup.py v1.1（2026-08-08）
 
 用途：将 skills 仓（~/.qoderwork/skills）中装配式装修合集相关的运行时技能
 与治理文件镜像备份到项目仓 技能仓备份/ 目录，随项目仓推送获得异地副本，
@@ -14,12 +14,14 @@ sync_skill_backup.py v1.0（2026-08-07）
      prefab-governance-sync、scanned-standard-clause-verify +
      acoustic-calculation-engine
   2. skills 根治理文件：standards-index.md、platform-adapter-reference.md
-  3. shared/ 治理镜像 6 文件（不含 *_pre_* 历史备份）
+  3. shared/ 治理镜像 7 文件（不含 *_pre_* 历史备份）
      change-governance / glossary / interface-contracts /
-     platform-adapter-reference / redlines-registry / standards-index
+     platform-adapter-reference / redlines-registry / standards-index /
+     standards-reasoning-rules（2026-08-08 首发运行时，CG-20260808-025）
 
-不备份：系统安装的通用技能（lark/docx/pdf 等）、_pre_* 备份文件、
-SRE（其文件本体在项目仓 _专题_技能合集策划/，已由项目仓自身承载）。
+不备份：系统安装的通用技能（lark/docx/pdf 等）、_pre_* 备份文件。
+SRE 的 L1 开发源在项目仓 _专题_技能合集策划/（由项目仓自身承载），
+其 shared/ 运行时镜像为运行时发布产物，纳入本脚本备份范围。
 
 更新机制（何时运行）：
   - 每次涉及运行时技能文件或治理文件的 CG 变更发布后运行一次；
@@ -80,6 +82,7 @@ SHARED_FILES = [
     "platform-adapter-reference.md",
     "redlines-registry.md",
     "standards-index.md",
+    "standards-reasoning-rules.md",
 ]
 
 MANIFEST_NAME = "同步说明.md"
@@ -182,7 +185,7 @@ def sync(check_only: bool) -> int:
 
     mode = "检查模式（未写盘）" if check_only else "同步完成"
     print(f"== 技能仓备份{mode} ==")
-    print(f"范围：{len(scope)} 个文件（技能目录 {len(SKILL_DIRS)} 个 + 根治理文件 + shared 6 文件）")
+    print(f"范围：{len(scope)} 个文件（技能目录 {len(SKILL_DIRS)} 个 + 根治理文件 + shared {len(SHARED_FILES)} 文件）")
     print(f"一致 {len(same)} | 新增 {len(added)} | 更新 {len(updated)} | 移除 {len(removed)}")
     for label, lst in (("新增", added), ("更新", updated), ("移除", removed)):
         for rel in lst:
@@ -194,7 +197,7 @@ def sync(check_only: bool) -> int:
         lines = [
             "# 技能仓备份 — 同步说明",
             "",
-            f"> 最后同步：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}（sync_skill_backup.py v1.0）",
+            f"> 最后同步：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}（sync_skill_backup.py v1.1）",
             "> 源目录：`~/.qoderwork/skills`（QoderWork 运行时技能目录）",
             "> 备份目的：运行时技能文件本体（SKILL/reference/examples）仅存于 skills 仓本地，",
             "> 本目录随项目仓推送提供异地副本。恢复时将各目录复制回 skills 仓对应位置即可。",
@@ -202,10 +205,11 @@ def sync(check_only: bool) -> int:
             "> 更新机制：① 每次涉及运行时技能文件或治理文件的 CG 变更发布后运行一次同步；",
             "> ② 每月至少一次 `--check` 核对漂移；③ 同步后随项目仓提交推送。",
             ">",
-            "> 范围说明：仅含合集相关 16 个技能目录 + 根治理文件 + shared 治理 6 文件；",
+            "> 范围说明：仅含合集相关 16 个技能目录 + 根治理文件 + shared 治理 7 文件；",
             "> 不含系统通用技能（lark/docx/pdf 等）与 `*_pre_*` 历史备份；",
             "> ACE 已于 2026-08-07 发布运行时并纳入备份（项目仓 _专题_ACE开发/ 转为开发归档）；",
-            "> SRE 文件本体在项目仓 _专题_技能合集策划/，不重复备份。",
+            "> SRE 于 2026-08-08 首发运行时（shared 镜像，CG-20260808-025），运行时镜像纳入备份；",
+            "> 其 L1 开发源在项目仓 _专题_技能合集策划/，由项目仓自身承载。",
             "",
             f"文件总数：{len(dst_files)}",
             "",
