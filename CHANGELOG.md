@@ -31,3 +31,12 @@ S2 第二梯队基线：补齐 ST/MI v2 架构与全局红线注册，修复 L1 
 - 修复 L1 开发源漂移：`_专题_技能合集策划_/redlines-registry.md` 同步至 130 条版本，L1/shared/运行时/WorkBuddy 四层一致
 - 新增治理记录 CG-20260813-032
 
+## v1.2.1 — 2026-08-13
+
+S2 运行时契约锚定补丁：在 OR/ST/WS 三个消费端 SKILL.md 路由表中显式标注 IC-02/IC-06/IC-05，消除 interface-contracts v1.5.7 与运行时之间的引用漂移。
+
+- `prefab-interior-systems-orchestrator` v2.1.0 → v2.1.1：兜底 ME 路由标注 IC-02
+- `prefab-storage-system` v2.1.0 → v2.1.1：§7 跨技能路由新增 IC-06 入墙式/壁挂柜体对隔墙承载力、厚度要求路由
+- `prefab-wall-surface-system` v2.1.3 → v2.1.4：§11 PW 路由标注 IC-05
+- 新增治理记录 CG-20260813-033
+
