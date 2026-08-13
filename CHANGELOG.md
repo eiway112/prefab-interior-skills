@@ -31,6 +31,15 @@ S2 第二梯队基线：补齐 ST/MI v2 架构与全局红线注册，修复 L1 
 - 修复 L1 开发源漂移：`_专题_技能合集策划_/redlines-registry.md` 同步至 130 条版本，L1/shared/运行时/WorkBuddy 四层一致
 - 新增治理记录 CG-20260813-032
 
+## v1.2.1 — 2026-08-13
+
+S2 运行时契约锚定补丁：在 OR/ST/WS 三个消费端 SKILL.md 路由表中显式标注 IC-02/IC-06/IC-05，消除 interface-contracts v1.5.7 与运行时之间的引用漂移。
+
+- `prefab-interior-systems-orchestrator` v2.1.0 → v2.1.1：兜底 ME 路由标注 IC-02
+- `prefab-storage-system` v2.1.0 → v2.1.1：§7 跨技能路由新增 IC-06 入墙式/壁挂柜体对隔墙承载力、厚度要求路由
+- `prefab-wall-surface-system` v2.1.3 → v2.1.4：§11 PW 路由标注 IC-05
+- 新增治理记录 CG-20260813-033
+
 ## v1.2.2 — 2026-08-13
 
 SRE 引擎化第一阶段：将声明式标准推理规则升级为可执行规则包 + 推理器 + 证据对象 + 决策轨迹 + 回归测试集，并完成 IC-10 契约升级与 SRE 红线注册。
@@ -42,12 +51,16 @@ SRE 引擎化第一阶段：将声明式标准推理规则升级为可执行规�
 - 四层镜像同步：L1 开发源 ↔ 技能仓备份 ↔ QoderWork 运行时 ↔ WorkBuddy 运行时保持一致
 - 新增治理记录 CG-20260813-035
 
-## v1.2.1 — 2026-08-13
+## v1.3.0 — 2026-08-13
 
-S2 运行时契约锚定补丁：在 OR/ST/WS 三个消费端 SKILL.md 路由表中显式标注 IC-02/IC-06/IC-05，消除 interface-contracts v1.5.7 与运行时之间的引用漂移。
+SSCV 标准条文核验治理补齐（事项 8 P0）：为扫描版/文本版标准核验流水线补齐红线、接口契约、环境依赖与输出物路由四项治理要素，并修复多处遗留漂移。
 
-- `prefab-interior-systems-orchestrator` v2.1.0 → v2.1.1：兜底 ME 路由标注 IC-02
-- `prefab-storage-system` v2.1.0 → v2.1.1：§7 跨技能路由新增 IC-06 入墙式/壁挂柜体对隔墙承载力、厚度要求路由
-- `prefab-wall-surface-system` v2.1.3 → v2.1.4：§11 PW 路由标注 IC-05
-- 新增治理记录 CG-20260813-033
+- `shared/redlines-registry.md` 注册 SSCV 标识与 10 条红线（P0×3 核验诚信 + P1×4 核验方法 + P2×3 记录流程），新增§十五 SSCV 章节；全合集红线总数 133→143，已注册技能 11→12（15 标识）；同步修复 SRE 轮次遗留的头部统计漂移（SR 误记 8 条，实际 11 条）
+- `shared/interface-contracts.md` 升级至 v1.6.0：新增 IC-11（标准复核工具/任何技能 → 标准条文核验流水线）契约，含最小参数集、字段约束表（请求 4 项 + 响应 5 项）与 IC-11-Request JSON Schema；§五总览/标识映射、§6.1 降级策略同步登记；附带修复 IC-10-Request Schema description 未转义双引号导致的非法 JSON
+- `scanned-standard-clause-verify` 升级至 v1.1.0：新增 IC-11 接收方接口契约、红线约束（10 条摘要表）、环境依赖声明、输出物路由四节
+- 新建输出物路由目录 `成果/标准核验/`（含 README 命名规则与报告内容要求）
+- `程序文件/validate_governance.py` 修复：章节号正则补"一/二"（修正 CL/BK 章节配对错位）、契约校验范围扩至 IC-11；修复后全量校验 143 通过 / 0 失败
+- `文档/项目策划方案索引.md` 漂移修复：红线 90→143、已注册技能 8→12、契约 v1.5.6→v1.6.0、SRE v1.1→v1.2
+- 四层镜像同步：L1 开发源 ↔ 技能仓备份 ↔ QoderWork 运行时 ↔ WorkBuddy 运行时保持一致
+- 新增治理记录 CG-20260813-036
 
