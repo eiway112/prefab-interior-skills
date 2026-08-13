@@ -4,7 +4,7 @@
 >
 > **维护规则**：本文件的修改须经 prefab-standards-reviewer 复核，并记录在变更日志（第九节）中。
 >
-> **最后更新**：2026-08-13（新增 CG-20260813-032 第二梯队 v2 重构批次（B 级）——ST/MI 升级 v2.1.0 多文件架构、注册 ST 14 条与 MI 12 条红线、同步 L1/L2/L3/WorkBuddy 四层镜像；CG-20260813-028~031 及更早记录见 §九变更日志）
+> **最后更新**：2026-08-13（新增 CG-20260813-034 第三梯队 v2 升级评估备忘录与优先级清单更新；CG-20260813-028~033 及更早记录见 §九变更日志）
 >
 > **适用范围**：standards-index.md、glossary.md、interface-contracts.md、redlines-registry.md、standards-reasoning-rules.md，以及各子技能 SKILL.md / reference.md 中与共享资源存在引用关系的内容。
 
@@ -276,6 +276,7 @@ S 级（安全紧急）变更可走快速通道，简化审批流程但保留关
 | CG-20260813-031 | 2026-08-13 | B | 总入口协调器（OR）SKILL.md 红线就地定义与版本升级：① 版本号 2.0.0→2.1.0；② 在 SKILL.md 内完整列出 OR-R-P0-1~P0-5、OR-R-P1-1~P1-3 共 8 条红线及冲突仲裁规则，消除对外部注册表的悬空依赖；③ 补充总入口红线与 BK/PW/FL/CL/WS/MI/ACE 等技能的协同说明；④ 仅治理表述层固化，无接口/路由语义变更 | 技能仓备份/prefab-interior-systems-orchestrator/SKILL.md | 已发布 |
 | CG-20260813-032 | 2026-08-13 | B | 第二梯队技能（ST/MI）v2 多文件架构推广与全局红线注册：① `prefab-storage-system` 升级至 v2.1.0——补齐 `examples.md` 与 `product-solutions.md`，SKILL.md 插入多文件协同架构章节（§8），注册 ST-R-P0-1~P0-4、P1-1~P1-5、P2-1~P2-5 共 14 条红线；② `prefab-mep-integration-system` 升级至 v2.1.0——补齐 `examples.md` 与 `product-solutions.md`，SKILL.md 插入多文件协同架构章节（§8），注册 MI-R-P0-1~P0-5、P1-1~P1-4、P2-1~P2-3 共 12 条红线；③ `shared/redlines-registry.md` 新增 §十三 ST、§十四 MI 章节，头部统计更新为 130 条 / 11/14 技能，待注册章节顺延为 §十五；④ 修复 L1 开发源漂移：将注册表字节级同步回 `_专题_技能合集策划_/redlines-registry.md`（备份 _pre20260813），L1/shared/运行时/WorkBuddy 四层哈希一致，CRLF=0；⑤ 同步 ST/MI 全部文件至 QoderWork 运行时与 WorkBuddy 运行时 | 技能仓备份/prefab-storage-system/*、技能仓备份/prefab-mep-integration-system/*、技能仓备份/shared/redlines-registry.md、_专题_技能合集策划_/redlines-registry.md、运行时/WorkBuddy 对应文件 | 已发布 |
 | CG-20260813-033 | 2026-08-13 | B | IC 契约引用缺口修复（运行时锚定）：在 OR/ST/WS 三个消费端 SKILL.md 路由表中显式标注 IC-02/IC-06/IC-05，消除 interface-contracts v1.5.7 有定义但运行时无锚点的漂移；同步版本号与 CG 编号。① `prefab-interior-systems-orchestrator` v2.1.0→v2.1.1：兜底 ME 路由标注 IC-02；② `prefab-storage-system` v2.1.0→v2.1.1：§7 跨技能路由新增 IC-06 入墙式/壁挂柜体对隔墙承载力、厚度要求路由；③ `prefab-wall-surface-system` v2.1.3→v2.1.4：§11 PW 路由标注 IC-05 | 技能仓备份/prefab-interior-systems-orchestrator/SKILL.md、技能仓备份/prefab-storage-system/SKILL.md、技能仓备份/prefab-wall-surface-system/SKILL.md、CHANGELOG.md、change-governance.md | 已发布 |
+| CG-20260813-034 | 2026-08-13 | B | 第三梯队技能 v2 升级评估：完成 10 个第三梯队技能八维度评估，输出《第三梯队技能 v2 升级评估备忘录_20260813.md》，优先级清单事项 6 闭环并新增事项 7/8/9（SRE 引擎化 P0、SSCV 治理补齐 P0、QA/GS/ACG 契约形式化 P1） | 成果/第三梯队技能v2升级评估备忘录_20260813.md、成果/装配式装修技能开发_优先级事项清单_20260813.md、change-governance.md | 已发布 |
 
 ---
 
