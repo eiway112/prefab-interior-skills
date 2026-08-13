@@ -2,13 +2,13 @@
 
 > **文件定位**：合集级共享资源，定义标准推理引擎（SRE）的分类协议、锚定集、场景推理链和适用性裁判规则。路径：`shared/standards-reasoning-rules.md`。部署状态（2026-08-08 发布，CG-20260808-025）：L1 开发源 = 项目仓 `_专题_技能合集策划/standards-reasoning-rules.md`，运行时只读镜像 = `~/.qoderwork/skills/shared/standards-reasoning-rules.md`；镜像内容修订须经 change-governance.md 流程定级审批，由 L1 修改后字节级同步。
 >
-> **版本**：v1.1（2026-08-08：M3 Step 1a 性能需求激活裁定机制显式化〔IT-4 裁定〕+ §2.4 计数修正 + 首次发布至运行时 shared 镜像；v1.0 = 2026-06-21 初稿）
+> **版本**：v1.2（2026-08-13：SRE 引擎化第一阶段——新增结构化规则包规范、证据对象格式、决策轨迹协议、可执行 reasoner 接口约定与回归测试集要求；v1.1 = 2026-08-08；v1.0 = 2026-06-21 初稿）
 >
-> **定位与成熟度声明（2026-08-07）**：SRE 当前形态为**由 LLM 执行的声明式推理规则文档**，不是可执行程序引擎——尚无结构化规则包、程序化推理器、证据对象、决策轨迹与专项测试集。"标准推理引擎"为该组件的规划级正式名称，引擎化（可执行规则包 + 推理器 + 决策轨迹 + 测试集）为目标形态，纳入第三方评审建议的 Phase 2 路线。在引擎化完成前：按编号前缀的分类结论仅构成形式分类（syntactic_classification），不构成最终适用性决定（applicability_decision）；安全类与合规类结论必须保留条文级证据并经人工复核。各文档中"推理引擎"与"推理规则"两种表述均指向本文件，以本声明为准。
+> **定位与成熟度声明（2026-08-13）**：SRE 进入**引擎化第一阶段**。本文件仍保留 LLM 可读的声明式规则文本，但同步定义结构化规则包（structured rule package）、程序化推理器接口、证据对象（evidence object）与决策轨迹（decision trace）格式，使 IC-10 响应可被机器校验和复现。`prefab-standards-reviewer/sre_reasoner.py` 为参考实现，回归测试集覆盖 M1/M3/M4/M6 核心场景。在引擎化完全成熟前：按编号前缀的分类结论仍标注为 syntactic_classification；安全类与合规类结论必须保留条文级证据并经人工复核；applicability_decision 须由调用方在 SRE 输出基础上结合项目具体约束做出。各文档中"推理引擎"与"推理规则"两种表述均指向本文件，以本声明为准。
 >
 > **维护规则**：本文件的修改须经 prefab-standards-reviewer 复核，变更级别不低于 A 级（详见 change-governance.md §十）。
 >
-> **最后更新**：2026-08-08（v1.1 发布批次，A 级，CG-20260808-025：① M3 Step 1a 性能需求激活裁定机制显式化——激活域 = 表行候选域 ∪ 最小集，acoustic 子域由性能需求做增补/过滤裁定（IT-4 裁定，依据 IC-10 联调 T1/T2/T3 三场景推导）；"住宅 | 户内吊顶"行不补 acoustic(贡献)，避免无隔声需求场景误激活；② §2.4 计数 63→67（对齐 CG-023 standards-index 增量，发布前漂移修复）；③ 首次发布至运行时 shared 镜像；此前：2026-08-07 CL v2 阶段 1 吊顶域集成——Step 1 激活表新增吊顶域 7 行、Step 2 四处族映射补充、§2.4 计数 59→63，关联 CG-20260807-019；更早记录见 §七变更日志）
+> **最后更新**：2026-08-13（v1.2 引擎化第一阶段，A 级，CG-20260813-035：① 新增§七结构化规则包与引擎化规范，定义规则包组成、推理器接口、证据对象、决策轨迹、引擎化成熟度分级与 IC-10 同步要求；② 头部成熟度声明升级为"引擎化第一阶段"；③ 配套实现 `prefab-standards-reviewer/sre_reasoner.py` 参考推理器与 `sre_regression_test.py` 回归测试集；④ interface-contracts.md IC-10 同步升级至 v1.5.8；⑤ 注册 SRE 专属红线。此前：2026-08-08 v1.1 发布批次 CG-20260808-025；更早记录见 §八变更日志）
 >
 > **依赖关系**：本文件定义推理逻辑，`standards-index.md` 提供版本数据，`interface-contracts.md` 定义 IC-07/IC-10 接口。三者共同构成标准管理基础设施。
 
@@ -464,7 +464,89 @@ Step 5-7: 原有流程不变
 
 ---
 
-## 七、变更日志
+## 七、结构化规则包与引擎化规范（v1.2 新增）
+
+### 7.1 规则包组成
+
+SRE 结构化规则包由以下 5 类文件组成，部署时须保持同目录或按相对路径可解析：
+
+| 文件 | 作用 | 必须 | 格式 |
+|------|------|------|------|
+| `standards-reasoning-rules.md` | 声明式规则主文档（本文件） | 是 | Markdown |
+| `standards-index.md` | 标准版本注册中心 | 是 | Markdown |
+| `sre_reasoner.py` | 程序化推理器参考实现 | 是（v1.2 起） | Python 3 |
+| `sre_regression_test.py` | 回归测试集 | 是（v1.2 起） | Python 3 |
+| `sre_evidence_schema.json` | 证据对象 JSON Schema | 否（由 IC-10 Response Schema 覆盖） | JSON Schema |
+
+### 7.2 推理器接口约定
+
+推理器须实现以下最小接口：
+
+```python
+def reason(project_type: str, space_type: str, location: str | None,
+           system: str | None, demands: list[str] | None,
+           return_trace: bool = False) -> dict:
+    """
+    返回符合 IC-10-Response Schema v1.5.8 的字典。
+    必须包含：适用标准集、推理路径、证据对象。
+    可选包含：未覆盖领域、决策轨迹（return_trace=True）。
+    """
+```
+
+### 7.3 证据对象（Evidence Object）
+
+每条证据对象对应推理链中的一个确定性步骤，字段与 IC-10 Response Schema 保持一致：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| 证据ID | string | 全局唯一，如 EVID-001 |
+| 证据类型 | enum | classification / activation / mapping / arbitration / applicability / degradation |
+| 规则来源 | string | 触发本证据的规则定位，如 `standards-reasoning-rules.md §1.2` |
+| 输入事实 | string | 触发本证据的输入项或中间结论 |
+| 输出结论 | string | 本证据产生的结论 |
+| 置信度 | enum | deterministic / inferred / unknown |
+
+**证据产生规则**：
+- 每执行一次 M1 分类产生一条 `classification` 证据；
+- 每激活一个场景行产生一条 `activation` 证据；
+- 每完成一个领域→标准族映射产生一条 `mapping` 证据；
+- 每触发 LA/GS/TA/MD 裁决产生一条 `arbitration` 证据；
+- 每判定地方/团体/时间适用性产生一条 `applicability` 证据；
+- 每进入 M6 降级分支产生一条 `degradation` 证据。
+
+### 7.4 决策轨迹（Decision Trace）
+
+`return_trace=true` 时，推理器返回 `决策轨迹` 字符串，格式如下：
+
+```
+Step 0 输入: 项目类型=住宅, 空间类型=分户墙, 所在地=未提供, 构造体系=轻钢龙骨, 性能需求=隔声
+Step 1 激活域: fire, acceptance, prefab, acoustic(由性能需求增补)
+Step 1a 裁定: 性能需求含[隔声]，增补 acoustic 子域
+Step 2 族映射: acoustic → GB 55038-2025 / GB 50118-2010 / GB/T 50121-2005 + 轻钢龙骨构造族
+Step 3 权限裁决: GB 55038-2025(L1) 优先于 GB 50118-2010(L2)
+Step 4 角色分配: GB 55038-2025 → mandatory_check; GB 50118-2010 → design_basis; ...
+Step 5 排序输出: mandatory_check → design_basis → verification_reference → ...
+Step 6 标注: 地域适用性=全国; 时间状态=现行有效
+```
+
+### 7.5 引擎化成熟度分级
+
+| 等级 | 标志 | 当前状态 |
+|------|------|---------|
+| L0 声明式 | 仅文本规则，无程序实现 | v1.1 及以前 |
+| L1 可执行 | 有参考 reasoner + 回归测试 | **v1.2 目标** |
+| L2 可校验 | 证据对象与决策轨迹被 QA 自动校验 | v1.3 目标 |
+| L3 可裁决 | 安全类结论经条文级证据自动校验 | 未来目标 |
+
+### 7.6 与 IC-10 的同步要求
+
+- `sre_reasoner.py` 的输出字段必须与 `interface-contracts.md` IC-10-Response Schema v1.5.8 保持一致；
+- 新增规则或变更算法时，必须同步更新 `sre_regression_test.py` 并通过全部用例；
+- 证据对象中引用的规则来源必须能在本文件中找到对应章节。
+
+---
+
+## 八、变更日志
 
 | 日期 | 变更类型 | 说明 |
 |------|---------|------|
@@ -478,3 +560,4 @@ Step 5-7: 原有流程不变
 | 2026-08-07 | 标准入库同步 | GB/T 45305.3-2026《声学 建筑构件隔声的实验室测量 第3部分：撞击声隔声测量》（发布 2026-01-28、实施 2026-08-01，全国标准信息公共服务平台核验现行）收录入 standards-index 序号 17（全索引重编号，总数 58→59 条）；§2.4 计数同步；M3 acoustic(impact) 域浮筑地面激活链补充该标准（实验室撞击声测量方法链补全）。关联 CG-20260807-015 |
 | 2026-08-07 | M3 吊顶域扩展 | 吊顶技能（CL）v2 重构阶段 1 标准锚定：Step 1 激活表新增吊顶域 7 行（医院手术部/洁净吊顶、病房吊顶、酒店客房吊顶、住宅厨卫集成吊顶/户内吊顶、学校教室吊顶、办公吊顶，项目类型单值枚举与 PW/WS/FL 域一致）；Step 2 族映射四处——acoustic 域构造=吊顶行（GB/T 11981-2024/GB/T 9775-2025/JC/T 564.1-2018/GB/T 25998-2020 + 07CJ03-1/08J931，附贡献量路由注记：估算经 ACE IC-09、达标归属宿主构件标准）、fire 域构造=吊顶行、acceptance 域构造=吊顶行、environmental 域吊顶板材行（GB 18580-2025/GB 6566-2010）；§2.4 计数 59→63（standards-index 补录序号 60-63）。变更定级 B 级（§4.5"规则调整"，沿 CG-20260624-004/CG-20260806-001 M3 扩展先例）。关联 CG-20260807-019 |
 | 2026-08-08 | **v1.1 发布批次（A 级）** | ① M3 Step 1a 新增——性能需求激活裁定机制显式化：激活域 = 表行候选域 ∪ 最小集，仅 acoustic 子域族由性能需求做增补/过滤裁定（增补：显式声学需求→按场景激活 impact/贡献/吸声子域；过滤：显式枚举无声学需求→表行 acoustic 不激活；兼容：默认"按规范"按表行原样保留）；IT-4 裁定闭环，依据 IC-10 联调 T1/T2/T3 三场景推导（记录/IC-10接口联调验证报告_20260808.md §六）；"住宅 \| 户内吊顶"行经评估不补 acoustic(贡献)（机制层覆盖，避免无隔声需求场景误激活）；② §2.4 计数 63→67（CG-023 standards-index 增量后漏改，发布前漂移修复）；③ 头部部署状态更新为已发布；④ 首次发布至运行时 shared 镜像（L1→镜像字节同步，CRLF=0）；⑤ 回归 4 场景通过（住宅增补/酒店过滤/地方标准激活/默认兼容）+ prefab-standards-reviewer 复核有条件 PASS（6 PASS/1 WARN/0 FAIL），WARN（Step 1a 子域族枚举补 acoustic(边界提示) 排除条款 + OBS-4 术语统一）已于镜像同步前闭环。变更定级 A 级（§4.5"推理算法步骤修改"，用户确认发布）。关联 CG-20260808-025 |
+| 2026-08-13 | **v1.2 引擎化第一阶段（A 级）** | ① 新增§七结构化规则包与引擎化规范，定义规则包组成、推理器接口、证据对象、决策轨迹、引擎化成熟度分级与 IC-10 同步要求；② 头部成熟度声明由"声明式规则文档"升级为"引擎化第一阶段"；③ 配套实现 `prefab-standards-reviewer/sre_reasoner.py` 参考推理器与 `sre_regression_test.py` 回归测试集；④ interface-contracts.md IC-10 同步升级至 v1.5.8，新增证据对象与决策轨迹字段；⑤ 注册 SRE 专属红线（SR-R-P1-5 ~ SR-R-P2-3）。变更定级 A 级（§4.5"推理算法步骤修改/引擎化目标形态推进"）。关联 CG-20260813-035 |

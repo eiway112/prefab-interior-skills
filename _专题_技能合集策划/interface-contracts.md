@@ -4,9 +4,9 @@
 >
 > **维护规则**：任何技能新增或修改接口时，须同步更新本文件并经 prefab-standards-reviewer 复核。新增子技能在纳入合集前，必须先定义其与已有技能的接口契约。
 >
-> **最后更新**：2026-08-13（v1.5.7 IC-10 性能需求字段由必填放宽为可选：与 standards-reasoning-rules.md M3 保持一致，缺失时由 SRE 按"按规范"默认推理；同步更新字段约束表与 JSON Schema；关联 CG-20260813-028）
+> **最后更新**：2026-08-13（v1.5.8 IC-10 响应新增 evidence_objects 证据对象与 decision_trace 决策轨迹，支持 SRE v1.2 引擎化输出；请求新增 return_trace 可选字段；同步更新字段约束表、JSON Schema 与响应示例；关联 CG-20260813-035）
 >
-> **契约版本**：v1.5.7
+> **契约版本**：v1.5.8
 
 ---
 
@@ -2042,7 +2042,18 @@
     }
   ],
   推理路径: "[场景→领域→标准族的推理链路描述]",
-  未覆盖领域: "[如有性能领域无明确适用标准，列出并建议咨询方向]"
+  未覆盖领域: "[如有性能领域无明确适用标准，列出并建议咨询方向]",
+  证据对象: [
+    {
+      证据ID: "[如 EVID-001]",
+      证据类型: "[classification / activation / mapping / arbitration / applicability / degradation]",
+      规则来源: "[如 standards-reasoning-rules.md §1.2 / §3.2 / §4.1]",
+      输入事实: "[触发本证据的输入项或中间结论]",
+      输出结论: "[本证据产生的结论]",
+      置信度: "[deterministic / inferred / unknown]"
+    }
+  ],
+  决策轨迹: "[当 return_trace=true 时返回：Step 0→Step 6 每一步的决策摘要，含激活域集、适用规则、裁决结果]"
 }
 ```
 
@@ -2059,6 +2070,7 @@
 | 项目所在地 | string | 可选 | 省/市名称，如：北京市 / 浙江省 / 广东省 | 缺失时默认"全国"并标注"未筛选地方标准" |
 | 构造体系 | string | 可选 | 自由文本，如：轻钢龙骨 / 条板 / 模块化 / 浮筑地面 / 架空地面 等 | 缺失时返回全构造体系适用标准 |
 | 性能需求 | 数组[string] | 可选 | 枚举：隔声 / 耐火 / 防火 / 环保 / 验收 / 抗震 / 防水 / 其他 | 缺失时由 SRE 按"按规范"默认推理，按表行候选域激活标准集 |
+| return_trace | boolean | 可选 | true / false | 默认为 false；为 true 时返回 decision_trace 决策轨迹 |
 
 *响应参数约束*：
 
@@ -2075,8 +2087,16 @@
 | 适用标准集[].替代警告 | string | 否 | — | 如有部分替代情况，说明具体替代条文；无替代时省略此字段 |
 | 推理路径 | string | 是 | — | 场景→领域→标准族的推理链路描述 |
 | 未覆盖领域 | 数组[string] | 否 | — | 性能领域中无明确适用标准的部分，附建议咨询方向 |
+| 证据对象 | 数组[object] | 是 | 见 IC-10-Response Schema | SRE 推理过程中产生的结构化证据，至少包含一条 |
+| 证据对象[].证据ID | string | 是 | 全局唯一，如 EVID-001 | 证据标识 |
+| 证据对象[].证据类型 | string | 是 | 枚举：classification / activation / mapping / arbitration / applicability / degradation | 证据类别 |
+| 证据对象[].规则来源 | string | 是 | 如 standards-reasoning-rules.md §1.2 | 产生本证据的规则定位 |
+| 证据对象[].输入事实 | string | 是 | — | 触发本证据的输入项或中间结论 |
+| 证据对象[].输出结论 | string | 是 | — | 本证据产生的结论 |
+| 证据对象[].置信度 | string | 是 | 枚举：deterministic / inferred / unknown | 结论置信度 |
+| 决策轨迹 | string | 否 | — | return_trace=true 时返回；Step 0→Step 6 每一步的决策摘要 |
 
-**IC-10 形式化 JSON Schema（v1.4）**：
+**IC-10 形式化 JSON Schema（v1.5.8）**：
 
 > 以下 JSON Schema 由上方字段约束表自动生成，可用于 skill-qa-tester 自动校验。建仓后可直接用于 CI/CD 管线中的接口契约校验。
 
@@ -2115,6 +2135,11 @@
         "enum": ["隔声", "耐火", "防火", "环保", "验收", "抗震", "防水", "其他"]
       },
       "description": "性能需求领域列表，决定检索的标准领域范围；缺失时由 SRE 按"按规范"默认推理"
+    },
+    "return_trace": {
+      "type": "boolean",
+      "default": false,
+      "description": "为 true 时返回 decision_trace 决策轨迹"
     }
   },
   "additionalProperties": false
@@ -2129,7 +2154,7 @@
   "$id": "IC-10-Response",
   "title": "标准推理引擎→任何技能 响应参数",
   "type": "object",
-  "required": ["适用标准集", "推理路径"],
+  "required": ["适用标准集", "推理路径", "证据对象"],
   "properties": {
     "适用标准集": {
       "type": "array",
@@ -2189,6 +2214,48 @@
       "type": "array",
       "items": { "type": "string" },
       "description": "性能领域中无明确适用标准的部分，附建议咨询方向"
+    },
+    "证据对象": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["证据ID", "证据类型", "规则来源", "输入事实", "输出结论", "置信度"],
+        "properties": {
+          "证据ID": {
+            "type": "string",
+            "description": "证据标识，全局唯一，如 EVID-001"
+          },
+          "证据类型": {
+            "type": "string",
+            "enum": ["classification", "activation", "mapping", "arbitration", "applicability", "degradation"],
+            "description": "证据类别"
+          },
+          "规则来源": {
+            "type": "string",
+            "description": "产生本证据的规则定位，如 standards-reasoning-rules.md §1.2"
+          },
+          "输入事实": {
+            "type": "string",
+            "description": "触发本证据的输入项或中间结论"
+          },
+          "输出结论": {
+            "type": "string",
+            "description": "本证据产生的结论"
+          },
+          "置信度": {
+            "type": "string",
+            "enum": ["deterministic", "inferred", "unknown"],
+            "description": "结论置信度"
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "SRE 推理过程中产生的结构化证据，至少包含一条"
+    },
+    "决策轨迹": {
+      "type": "string",
+      "description": "return_trace=true 时返回；Step 0→Step 6 每一步的决策摘要"
     }
   },
   "additionalProperties": false
@@ -2342,6 +2409,7 @@
 | v1.5.5 | 2026-08-07 | IC-02/05/06/07 形式化 | IC-02（总入口→通用专家）、IC-05（墙面→隔墙）、IC-06（收纳→隔墙）补齐字段约束表与请求 JSON Schema（IC-XX-Request，draft 2020-12，交叉路由按 §2.2 含上游技能分析结论必传）；IC-07（任何技能→标准复核工具）按最小查询参数集补齐约束表与 IC-07-Request Schema。注册表 10 条契约中 8 条已具备 JSON Schema（余 IC-01/IC-04 为最小字段约束过渡版）；validate_governance.py 校验范围由 4 条扩展至 8 条；关联 CG-20260807-012 |
 | v1.5.6 | 2026-08-08 | 降级口径修订（IT-2/IT-5） | IC-09 降级策略改锚 CL reference A1.2 v1 经验区间（5-15 dB〔S3〕）+ 定性贡献机制说明，消除"简化估算方法论"悬空引用（§4.2 IC-09 降级策略行 + §6.1 IC-09 行同步）；IC-10 降级改两级策略：发起方内置标准映射优先（标注"SRE 降级：使用 [技能] 内置标准映射"）、standards-index 完整目录兜底（标注"标准集未经场景推理筛选"）。Schema 与字段约束不变；来源：IC-09/IC-10 联调验证报告 IT-2/IT-5；关联 CG-20260808-023 |
 | v1.5.7 | 2026-08-13 | IC-10 参数可选性对齐 | 将 IC-10 请求参数"性能需求"由必填放宽为可选，与 standards-reasoning-rules.md M3 保持一致：缺失时由 SRE 按"按规范"默认推理，按表行候选域激活标准集；同步更新字段约束表、JSON Schema（required 移除"性能需求"、移除 minItems）；关联 CG-20260813-028 |
+| v1.5.8 | 2026-08-13 | IC-10 SRE 引擎化输出 | IC-10 响应新增 evidence_objects 证据对象与 decision_trace 决策轨迹，支持 SRE v1.2 引擎化输出；请求新增 return_trace 可选字段；同步更新字段约束表、JSON Schema 与响应示例；关联 CG-20260813-035 |
 
 ---
 

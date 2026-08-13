@@ -31,6 +31,17 @@ S2 第二梯队基线：补齐 ST/MI v2 架构与全局红线注册，修复 L1 
 - 修复 L1 开发源漂移：`_专题_技能合集策划_/redlines-registry.md` 同步至 130 条版本，L1/shared/运行时/WorkBuddy 四层一致
 - 新增治理记录 CG-20260813-032
 
+## v1.2.2 — 2026-08-13
+
+SRE 引擎化第一阶段：将声明式标准推理规则升级为可执行规则包 + 推理器 + 证据对象 + 决策轨迹 + 回归测试集，并完成 IC-10 契约升级与 SRE 红线注册。
+
+- `shared/standards-reasoning-rules.md` 升级至 v1.2：新增§七结构化规则包与引擎化规范，定义规则包组成、推理器接口、证据对象、决策轨迹、成熟度分级与 IC-10 同步要求
+- `shared/interface-contracts.md` IC-10 升级至 v1.5.8：响应新增 `证据对象` 与 `决策轨迹`，请求新增 `return_trace`，同步更新 JSON Schema 与字段约束表
+- `shared/redlines-registry.md` 注册 SRE 专属红线 3 条（SR-R-P1-5 / P1-6 / P2-3），SR 红线总数 8→11，全合集红线总数 130→133
+- `prefab-standards-reviewer` 升级至 v2.1.0：内置 `sre_reasoner.py` 参考推理器与 `sre_regression_test.py` 回归测试集（23 用例全绿），SKILL.md 更新成熟度声明与平台动作建议
+- 四层镜像同步：L1 开发源 ↔ 技能仓备份 ↔ QoderWork 运行时 ↔ WorkBuddy 运行时保持一致
+- 新增治理记录 CG-20260813-035
+
 ## v1.2.1 — 2026-08-13
 
 S2 运行时契约锚定补丁：在 OR/ST/WS 三个消费端 SKILL.md 路由表中显式标注 IC-02/IC-06/IC-05，消除 interface-contracts v1.5.7 与运行时之间的引用漂移。
