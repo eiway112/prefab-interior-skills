@@ -17,6 +17,11 @@ __pycache__/
 .cache/
 node_modules/
 
+# Pre-change backups and test-generated artifacts (process noise, never publish)
+*_pre[0-9]*
+*_pre2*
+sre_regression_report.json
+
 # Large packaged exports can be added intentionally with -f when needed
 *.zip
 *.7z
