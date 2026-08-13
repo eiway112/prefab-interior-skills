@@ -4,7 +4,7 @@
 >
 > **维护规则**：本文件的修改须经 prefab-standards-reviewer 复核，并记录在变更日志（第九节）中。
 >
-> **最后更新**：2026-08-08（新增 CG-20260808-027 跨平台就绪优化批次（C 级）——FL reference.md CRLF 归一化（1807→0）、PW agents/openai.yaml v1 三行样式升级 B2 全格式、waterproofing-expert 新建 agents 适配层、CL yaml 版本漂移修正 v2.1.2→2.1.3；CG-20260808-026 及更早记录见 §九变更日志）
+> **最后更新**：2026-08-13（新增 CG-20260813-032 第二梯队 v2 重构批次（B 级）——ST/MI 升级 v2.1.0 多文件架构、注册 ST 14 条与 MI 12 条红线、同步 L1/L2/L3/WorkBuddy 四层镜像；CG-20260813-028~031 及更早记录见 §九变更日志）
 >
 > **适用范围**：standards-index.md、glossary.md、interface-contracts.md、redlines-registry.md、standards-reasoning-rules.md，以及各子技能 SKILL.md / reference.md 中与共享资源存在引用关系的内容。
 
@@ -274,6 +274,7 @@ S 级（安全紧急）变更可走快速通道，简化审批流程但保留关
 | CG-20260813-029 | 2026-08-13 | C | 标准索引数量漂移修正：README.md、CHANGELOG.md、S1 验收记录、综合评审报告中的 standards-index 条数由错误的 103 条统一修正为 67 条；修正源为 secondary memory 在跨会话传递中的计数错误，实际 `standards-index.md` 头部声明与清单条目均为 67 条 | README.md、CHANGELOG.md、记录/2026-08-13_S1_验收记录.md、成果/装配式装修智能体综合评审报告_20260813.md | 已发布 |
 | CG-20260813-030 | 2026-08-13 | B | 厨卫技能（BK）SKILL.md v2.0.x→v2.1.0 一致性修复与升级：① 版本号提升至 v2.1.0 并分配 CG-20260813-030；② P1 方法论红线标题计数由 5 条修正为 6 条（实际表列 BK-R-P1-1~P1-6）；③ IC-10 调用规范对齐 interface-contracts.md v1.5.7（原 v1.5.6 残留）；④ 无方法论/接口语义变更，属治理一致性修复 | 技能仓备份/prefab-bathroom-kitchen-system/SKILL.md | 已发布 |
 | CG-20260813-031 | 2026-08-13 | B | 总入口协调器（OR）SKILL.md 红线就地定义与版本升级：① 版本号 2.0.0→2.1.0；② 在 SKILL.md 内完整列出 OR-R-P0-1~P0-5、OR-R-P1-1~P1-3 共 8 条红线及冲突仲裁规则，消除对外部注册表的悬空依赖；③ 补充总入口红线与 BK/PW/FL/CL/WS/MI/ACE 等技能的协同说明；④ 仅治理表述层固化，无接口/路由语义变更 | 技能仓备份/prefab-interior-systems-orchestrator/SKILL.md | 已发布 |
+| CG-20260813-032 | 2026-08-13 | B | 第二梯队技能（ST/MI）v2 多文件架构推广与全局红线注册：① `prefab-storage-system` 升级至 v2.1.0——补齐 `examples.md` 与 `product-solutions.md`，SKILL.md 插入多文件协同架构章节（§8），注册 ST-R-P0-1~P0-4、P1-1~P1-5、P2-1~P2-5 共 14 条红线；② `prefab-mep-integration-system` 升级至 v2.1.0——补齐 `examples.md` 与 `product-solutions.md`，SKILL.md 插入多文件协同架构章节（§8），注册 MI-R-P0-1~P0-5、P1-1~P1-4、P2-1~P2-3 共 12 条红线；③ `shared/redlines-registry.md` 新增 §十三 ST、§十四 MI 章节，头部统计更新为 130 条 / 11/14 技能，待注册章节顺延为 §十五；④ 修复 L1 开发源漂移：将注册表字节级同步回 `_专题_技能合集策划_/redlines-registry.md`（备份 _pre20260813），L1/shared/运行时/WorkBuddy 四层哈希一致，CRLF=0；⑤ 同步 ST/MI 全部文件至 QoderWork 运行时与 WorkBuddy 运行时 | 技能仓备份/prefab-storage-system/*、技能仓备份/prefab-mep-integration-system/*、技能仓备份/shared/redlines-registry.md、_专题_技能合集策划_/redlines-registry.md、运行时/WorkBuddy 对应文件 | 已发布 |
 
 ---
 
