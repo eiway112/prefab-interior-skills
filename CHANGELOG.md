@@ -2,6 +2,17 @@
 
 合集整体版本记录。格式：语义化版本 MAJOR.MINOR.PATCH；标签与条目一一对应。
 
+## v1.7.0 — 2026-08-14
+
+WF 外部技能迁出至独立项目（CG-20260814-003），治理文档 WF 引用清理。
+
+- `waterproofing-expert` 整目录迁出至独立项目 `D:\QoderWork-Files\_项目工作\建筑专业辅材技能合集\`
+- `shared/redlines-registry.md` 移除 WF 标识映射行、标识分配说明 WF 条款、§20.2 待注册行；已注册技能 15/16→15/15（合集内全部已注册）；红线总数 178 不变
+- `shared/interface-contracts.md` 移除 WF 标识映射行、BK→WF 路由、低优先级表厨卫→外部防水条目、source_skill 枚举中 WF
+- `程序文件/sync_skill_backup.py` SKILL_DIRS 移除 waterproofing-expert
+- QoderWork/WorkBuddy 运行时移除 waterproofing-expert 安装
+- 合集内技能从 16 个调整为 15 个（WF 不再属于本合集）
+
 ## v1.0.0 — 2026-08-07
 
 首个公开发布基线。

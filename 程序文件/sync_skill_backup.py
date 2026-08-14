@@ -64,7 +64,6 @@ SKILL_DIRS = [
     "prefab-interior-materials-expert",          # ME 材料专家
     "prefab-standards-reviewer",                 # SR 标准复核
     "skill-qa-tester",                           # QA 测试工具
-    "waterproofing-expert",                      # WF 防水协作
     "prefab-governance-sync",                    # 治理同步流程
     "scanned-standard-clause-verify",            # S1 条文核验流水线
     "acoustic-calculation-engine",               # ACE 隔声计算引擎（2026-08-07 发布运行时）
