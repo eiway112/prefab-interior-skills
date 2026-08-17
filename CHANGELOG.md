@@ -2,6 +2,15 @@
 
 合集整体版本记录。格式：语义化版本 MAJOR.MINOR.PATCH；标签与条目一一对应。
 
+## v1.8.1 — 2026-08-17
+
+WorkBuddy 侧 prefab 结构评估报告核实与修订（CG-20260817-003/004）：报告数据属实（复跑 lint PASS5/WARN7/FAIL0 一致、BOM 属实），A 类建议定性失准部分采纳其精神。
+
+- `prefab-partition-wall-solution`：去除 SKILL.md 头部 UTF-8 BOM（全合集唯一，C 级，版本不递增），消除严格 frontmatter 解析器误判隐患
+- `prefab-acceptance-checklist-generator` v2.2.0→v2.2.1、`prefab-mep-integration-system` v2.1.0→v2.1.1、`prefab-storage-system` v2.1.1→v2.1.2：§7 跨技能路由表尾追加「职责边界」声明（专责范围/路由交接/不越权编排/条文引用口径）
+- 不采纳项：报告样板文本（缺 IC 锚点，劣于既有 §7 内容）、为外部 lint 改章节名（环境独立）；GS/OR/SR 命名与结构差异留档推广批次处理
+- 对方 lint 复跑：PASS 5→6、WARN 7→6、FAIL 0；只增不改断言通过，三层哈希一致
+
 ## v1.8.0 — 2026-08-17
 
 技能定义骨架增强首批（CG-20260817-001/002）：补齐"工作流"与"量化成功指标"两个结构块，门禁从"防乱来"扩展到"防空转、防无限打磨"。

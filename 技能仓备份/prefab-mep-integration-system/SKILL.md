@@ -1,7 +1,7 @@
 ---
 name: prefab-mep-integration-system
 description: 装配式装修机电管线集成与跨部品协同协调。触发词：管线分离、机电集成、管线综合、检修口、设备点位、安装顺序、空腔走线、管井协调、机电冲突。用于管线分离策略制定、机电与墙地顶厨卫收纳部品接口协调、检修路径规划、设备点位定位、安装顺序编排、管线冲突识别。适用于装配式装修项目的跨部品机电协同设计。
-version: 2.1.0
+version: 2.1.1
 ---
 
 # 装配式装修机电集成系统
@@ -263,6 +263,8 @@ version: 2.1.0
 | 标准条文核验 | `prefab-standards-reviewer` | 指标复核、版本确认 |
 | 验收清单生成 | `prefab-acceptance-checklist-generator` | 机电验收条目 |
 | 多系统综合协调 | `prefab-interior-systems-orchestrator` | 全局冲突仲裁 |
+
+> **职责边界**：本技能只做管线分离、检修路径、设备点位、安装顺序与跨部品接口协调等机电集成专业判断；部品系统自身的材料/工艺选型、防水构造、结构与饰面事项按上表路由交对应专项技能；多系统综合协调由 `prefab-interior-systems-orchestrator` 分发，本技能不越权编排。引用规范条文须带条文号与出处，置信度分级沿用 `prefab-standards-reviewer` 统一口径。
 
 ## 8. 多文件协同架构
 

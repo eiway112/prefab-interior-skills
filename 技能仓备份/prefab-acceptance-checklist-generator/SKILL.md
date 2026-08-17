@@ -1,7 +1,7 @@
 ---
 name: prefab-acceptance-checklist-generator
 description: 装配式装修验收清单生成器。触发词：验收清单、过程检查、隐蔽工程验收、分项验收、竣工交付、整改闭环、检查表、验收记录、质量检查、必检项。用于按空间、部品系统和施工阶段生成可检查、可记录、可整改闭环的验收清单。适用于装配式装修项目质量控制、验收准备和交付检查。
-version: 2.2.0
+version: 2.2.1
 ---
 
 # 装配式装修验收清单生成器
@@ -239,6 +239,8 @@ version: 2.2.0
 | 标准条文核验 | `prefab-standards-reviewer` | 条款号准确性、版本有效性 |
 | 标准推理引擎 | `prefab-standards-reviewer`（SRE） | 场景化标准集筛选（IC-10，Step 2 集成调用） |
 | 多系统综合验收 | `prefab-interior-systems-orchestrator` | 跨系统验收顺序协调 |
+
+> **职责边界**：本技能只负责"可检查、可记录、可整改闭环"的验收清单产出，不做部品系统的专业技术判断；各部品系统验收技术要求按上表路由由对应专项技能给出；跨系统验收顺序与整体编排由 `prefab-interior-systems-orchestrator` 负责（本技能为 IC-14 接收方），不越权代写。清单引用规范条文须带条文号与出处，置信度分级沿用 `prefab-standards-reviewer` 统一口径。
 
 ## 8. 参考标准
 

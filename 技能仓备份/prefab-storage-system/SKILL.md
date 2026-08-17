@@ -1,7 +1,7 @@
 ---
 name: prefab-storage-system
 description: 装配式收纳系统技术咨询。触发词：装配式收纳、模块化柜体、玄关柜、衣柜、橱柜、卫浴柜、尺寸模数、收纳部品、柜体安装、工厂化定制、壁挂柜体、嵌入式柜体。用于模块化收纳部品选型、尺寸模数协调、墙地顶接口设计、安装顺序编排、非标风险识别和验收要点分析。适用于住宅、公寓、酒店、办公等空间的收纳部品系统设计与实施。
-version: 2.1.1
+version: 2.1.2
 ---
 
 # 装配式收纳系统
@@ -328,6 +328,8 @@ version: 2.1.1
 | 环保/承载力标准核验 | `prefab-standards-reviewer` | 标准版本、指标复核 |
 | 验收清单生成 | `prefab-acceptance-checklist-generator` | 收纳系统验收条目 |
 | 多系统综合协调 | `prefab-interior-systems-orchestrator` | 全局冲突仲裁 |
+
+> **职责边界**：本技能只做收纳部品的尺寸模数协调、柜体选型、接口设计与安装顺序专业判断；结构基层承载核验、饰面工艺、防水防潮等事项按上表路由交对应专项技能（入墙式/壁挂柜体经 IC-06 向 `prefab-partition-wall-solution` 传递承载与厚度要求）；多系统综合协调由 `prefab-interior-systems-orchestrator` 分发，本技能不越权编排。引用规范条文须带条文号与出处，置信度分级沿用 `prefab-standards-reviewer` 统一口径。
 
 ## 8. 多文件协同架构
 
