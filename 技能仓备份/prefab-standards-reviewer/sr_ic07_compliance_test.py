@@ -32,7 +32,7 @@ IC07_REQUEST_FIELDS = ["引用的标准编号", "引用条文号", "项目所在
 IC07_STATUS_ENUM = ["现行有效", "即将实施", "过渡期", "被部分替代", "已废止", "未知"]
 IC07_OPINION_ENUM = ["可引用", "仅供参考", "需替代", "不适用", "需人工确认"]
 SR_REDLINE_COUNT = 14          # P0×3 + P1×7 + P2×4
-REGISTRY_TOTAL_COUNT = 167     # 全合集红线总数
+REGISTRY_TOTAL_COUNT = 178     # 全合集红线总数（2026-08-14 ME 注册+AC-R-P1-5 后基线；CG-20260817-006 同步）
 SR_VERSION = "2.2.0"
 
 
