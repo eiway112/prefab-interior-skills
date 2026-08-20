@@ -7,8 +7,19 @@ Run after any document change to catch inconsistencies.
 Usage:  python ace_regression_test.py
         python ace_regression_test.py -v          (verbose)
 
-Version: 1.2.0
-Date: 2026-08-07
+Version: 1.3.1
+Date: 2026-08-20
+
+v1.3.1 (2026-08-20, CG-20260820-001 复核整改 F-01):
+  TestDocAnchor.test_M7_baseline_standard_citations 断言由已废止的
+  GB/T 19889.3-2005（2026-02-01 废止，全部被 GB/T 45305.2-2025 代替，
+  全国标准信息公共服务平台核验）更正为 GB/T 45305.2-2025。
+
+v1.3.0 (2026-08-20, CG-20260820-001):
+  ACE v1.1.0 新增 M7 基准校准模型后同步扩展：新增 m7_delta_R_bounds /
+  m7_is_valid_extrapolation 参考实现与 TestM7_BaselineCalibration 测试组
+  （界限公式行为、2026-08-20 算例复现、外推区守卫），TestDocAnchor
+  新增 M7 章节/界限公式/外推区/精度声明/基准标准引用 5 条本体锚定断言。
 
 v1.2.0 (2026-08-07, CG-20260807-013):
   ACE 发布至运行时技能仓后，TestDocAnchor 的 Markdown SOT 由项目仓
@@ -114,6 +125,26 @@ def gap_effective_R(R_wall, gap_fraction, R_gap=0.0):
     tau_gap = 10 ** (-R_gap / 10)
     tau_eff = (1 - gap_fraction) * tau_wall + gap_fraction * tau_gap
     return -10 * math.log10(tau_eff)
+
+
+# M7 valid extrapolation range for areal density ratio r (doc: [0.5, 2])
+M7_VALID_R_RANGE = (0.5, 2.0)
+
+
+def m7_delta_R_bounds(r):
+    """M7: Baseline calibration ΔR bounds.
+    dR_low  = 20*log10(r)  (mass-law dominated / single leaf)
+    dR_high = 40*log10(r)  (ideal cavity, symmetric double leaf, no bridge)
+    For r < 1, dR_high is the larger reduction (more negative).
+    """
+    if r <= 0:
+        raise ValueError("r must be positive")
+    return 20 * math.log10(r), 40 * math.log10(r)
+
+
+def m7_is_valid_extrapolation(r):
+    """M7: r outside [0.5, 2] -> large extrapolation, trend judgment only."""
+    return M7_VALID_R_RANGE[0] <= r <= M7_VALID_R_RANGE[1]
 
 
 # ============================================================
@@ -671,7 +702,66 @@ class TestCrossModel(unittest.TestCase):
 
 
 # ============================================================
-# TEST SUITE 11: Document Anchor (cross-check vs Markdown SOT)
+# TEST SUITE 11: M7 Baseline Calibration
+# ============================================================
+class TestM7_BaselineCalibration(unittest.TestCase):
+
+    def test_r_equals_one_zero_change(self):
+        """r=1（面密度不变）时 ΔR 两界均为 0。"""
+        lo, hi = m7_delta_R_bounds(1.0)
+        self.assertAlmostEqual(lo, 0.0, delta=1e-9)
+        self.assertAlmostEqual(hi, 0.0, delta=1e-9)
+
+    def test_upper_bound_twice_lower(self):
+        """双叶上界恒为下界的 2 倍（40·lg = 2 × 20·lg）。"""
+        for r in (0.6, 0.843, 1.2, 1.5):
+            lo, hi = m7_delta_R_bounds(r)
+            self.assertAlmostEqual(hi, 2 * lo, delta=1e-9,
+                msg=f"r={r}: hi={hi} 应为 lo={lo} 的 2 倍")
+
+    def test_symmetric_double_doubling_up_to_12dB(self):
+        """双叶面密度加倍（r=2）：下界 +6 dB（质量定律），上界 +12 dB（两叶之和）。"""
+        lo, hi = m7_delta_R_bounds(2.0)
+        self.assertAlmostEqual(lo, 6.02, delta=0.05)
+        self.assertAlmostEqual(hi, 12.04, delta=0.1)
+
+    def test_case_2026_08_20_standard_board_variant(self):
+        """算例记录复现：基准 51 kg/㎡（含龙骨分摊）→ 变体 43 kg/㎡。
+        r=0.843，ΔR ∈ [-3.0, -1.5] dB，中值 -2.2 dB → Rw 51-2.2 ≈ 48.8（文档表述约 49 dB）。"""
+        r = 43 / 51
+        self.assertAlmostEqual(r, 0.843, delta=0.001)
+        lo, hi = m7_delta_R_bounds(r)
+        self.assertAlmostEqual(lo, -1.5, delta=0.1)
+        self.assertAlmostEqual(hi, -3.0, delta=0.1)
+        self.assertLess(hi, lo)  # r<1：上界为更大降幅
+        Rw_new = 51 + (lo + hi) / 2
+        self.assertAlmostEqual(Rw_new, 48.75, delta=0.05)
+        self.assertTrue(48.0 <= Rw_new <= 50.0)
+
+    def test_case_panel_only_ratio(self):
+        """面板层口径比值 38/46=0.826 亦应落在文档界限逻辑内（|Δ| 略大）。"""
+        r = 38 / 46
+        lo, hi = m7_delta_R_bounds(r)
+        self.assertAlmostEqual(lo, -1.66, delta=0.05)
+        self.assertAlmostEqual(hi, -3.32, delta=0.05)
+
+    def test_extrapolation_guard(self):
+        """外推区守卫：r ∈ [0.5, 2] 有效，界外无效（仅趋势判断）。"""
+        self.assertTrue(m7_is_valid_extrapolation(0.5))
+        self.assertTrue(m7_is_valid_extrapolation(2.0))
+        self.assertTrue(m7_is_valid_extrapolation(0.843))
+        self.assertFalse(m7_is_valid_extrapolation(0.49))
+        self.assertFalse(m7_is_valid_extrapolation(2.1))
+
+    def test_rejects_nonpositive_ratio(self):
+        with self.assertRaises(ValueError):
+            m7_delta_R_bounds(0)
+        with self.assertRaises(ValueError):
+            m7_delta_R_bounds(-1)
+
+
+# ============================================================
+# TEST SUITE 12: Document Anchor (cross-check vs Markdown SOT)
 # ============================================================
 # 本组测试在运行时读取技能仓 acoustic-calculation-engine/reference.md
 # （Markdown SOT，2026-08-07 起技能文件以运行时为唯一事实源，
@@ -772,6 +862,37 @@ class TestDocAnchor(unittest.TestCase):
         face_lo, face_hi = lo * 0.12, hi * 0.12  # 120mm 楼板
         self.assertTrue(face_lo <= 300 <= face_hi + 1e-9,
             f"IC-08 示例面密度 300 超出 S1 推导区间 {face_lo:.0f}-{face_hi:.0f}")
+
+    def test_M7_section_exists(self):
+        """M7 基准校准模型章节须存在于 reference.md。"""
+        self.assertIn("### M7 基准校准模型（Baseline Calibration）", self.doc,
+            "reference.md 未找到 M7 基准校准模型章节")
+
+    def test_M7_bound_formulas(self):
+        """M7 界限公式：ΔR_low=20·lg(r)、ΔR_high=40·lg(r)。"""
+        self.assertRegex(self.doc, r"ΔR_low\s*=\s*20·lg\(r\)",
+            "reference.md 未找到 M7 下限公式")
+        self.assertRegex(self.doc, r"ΔR_high\s*=\s*40·lg\(r\)",
+            "reference.md 未找到 M7 上限公式")
+
+    def test_M7_extrapolation_range_matches_script(self):
+        """M7 外推区文档值须与脚本 M7_VALID_R_RANGE 一致。"""
+        m = re.search(r"r 超出 \[([\d.]+),\s*([\d.]+)\]", self.doc)
+        self.assertIsNotNone(m, "reference.md 未找到 M7 外推区声明")
+        doc_range = (float(m.group(1)), float(m.group(2)))
+        self.assertEqual(doc_range, M7_VALID_R_RANGE,
+            f"M7 外推区漂移: 文档 {doc_range} vs 脚本 {M7_VALID_R_RANGE}")
+
+    def test_M7_precision_claim(self):
+        """M7 精度声明 ±2-3 dB（同族构造校准）。"""
+        self.assertIn("±2-3 dB（同族构造校准）", self.doc,
+            "reference.md 未找到 M7 精度声明")
+
+    def test_M7_baseline_standard_citations(self):
+        """M7 基准测量/评价与方法论标准引用须存在。"""
+        for std in ("GB/T 45305.2-2025", "GB/T 50121-2005", "ISO 12354-1:2017"):
+            self.assertIn(std, self.doc,
+                f"reference.md M7 缺失标准引用 {std}")
 
 
 # ============================================================
