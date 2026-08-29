@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 技能仓备份同步脚本
-sync_skill_backup.py v1.1（2026-08-08）
+sync_skill_backup.py v1.2（2026-08-29）
 
-用途：将 skills 仓（~/.qoderwork/skills）中装配式装修合集相关的运行时技能
+用途：将 skills 仓（~/.qoder/skills）中装配式装修合集相关的运行时技能
 与治理文件镜像备份到项目仓 技能仓备份/ 目录，随项目仓推送获得异地副本，
 弥补运行时技能文件（SKILL/reference/examples 定稿本体）仅存于本地的缺口。
 
@@ -29,7 +29,7 @@ SRE 的 L1 开发源在项目仓 _专题_技能合集策划/（由项目仓自�
   - 运行后随项目仓提交推送（提交信息注明"技能仓备份同步"）。
 
 恢复方法：将 技能仓备份/ 下各技能目录与 shared/ 复制回
-~/.qoderwork/skills/ 对应位置即可。
+~/.qoder/skills/ 对应位置即可。
 
 用法：
   python sync_skill_backup.py            # 增量镜像同步 + 生成同步说明.md
@@ -49,7 +49,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 DST = PROJECT_ROOT / "技能仓备份"
-SRC = Path.home() / ".qoderwork" / "skills"
+SRC = Path.home() / ".qoder" / "skills"
 
 SKILL_DIRS = [
     "prefab-interior-systems-orchestrator",      # OR 总入口
@@ -196,8 +196,8 @@ def sync(check_only: bool) -> int:
         lines = [
             "# 技能仓备份 — 同步说明",
             "",
-            f"> 最后同步：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}（sync_skill_backup.py v1.1）",
-            "> 源目录：`~/.qoderwork/skills`（QoderWork 运行时技能目录）",
+            f"> 最后同步：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}（sync_skill_backup.py v1.2）",
+            "> 源目录：`~/.qoder/skills`（Qoder 运行时技能目录）",
             "> 备份目的：运行时技能文件本体（SKILL/reference/examples）仅存于 skills 仓本地，",
             "> 本目录随项目仓推送提供异地副本。恢复时将各目录复制回 skills 仓对应位置即可。",
             ">",
