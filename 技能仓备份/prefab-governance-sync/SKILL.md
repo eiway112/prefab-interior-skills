@@ -1,7 +1,7 @@
 ---
 name: prefab-governance-sync
 description: 装配式装修技能合集治理文件三层同步与发布流程（项目仓策划 ↔ 运行时 skills 根 SOT ↔ shared 只读镜像）。当用户要求同步治理文件、发布技能更新、同步 standards-index/glossary/interface-contracts/红线注册表、或发现三层文件不一致需要修复漂移时使用。变更定级与审批规则不在此技能，以 change-governance.md 为唯一事实源。
-version: 1.1.1
+version: 1.1.2
 ---
 
 # 治理文件三层同步（prefab-governance-sync）
@@ -14,7 +14,7 @@ version: 1.1.1
 
 | 层 | 路径 | 角色 |
 |---|---|---|
-| L1 开发源 | `D:\QoderWork-Files\_项目工作\装配式装修技能开发\_专题_技能合集策划\` | 治理文件开发源；各 `_专题_*` 目录存子技能策划稿 |
+| L1 开发源 | `D:\Qoder-Files\装配式装修技能开发\_专题_技能合集策划\` | 治理文件开发源；各 `_专题_*` 目录存子技能策划稿 |
 | L2 运行时 SOT | `~/.qoder/skills/` | standards-index.md（根 SOT，头部含 SOT 声明+镜像说明）+ 各 prefab-*/skill-qa-tester 技能目录 |
 | L3 只读镜像 | `~/.qoder/skills/shared/` | change-governance、glossary、interface-contracts、platform-adapter-reference、redlines-registry、standards-index、standards-reasoning-rules（头部为 shared 路径定位措辞） |
 
@@ -67,7 +67,7 @@ version: 1.1.1
 
 ## git 提交与推送
 
-- 提交在项目仓 `D:\QoderWork-Files\_项目工作\装配式装修技能开发` 执行，信息格式参照既有提交（CG 编号 + 内容摘要 + 同步验证结论）。
+- 提交在项目仓 `D:\Qoder-Files\装配式装修技能开发` 执行，信息格式参照既有提交（CG 编号 + 内容摘要 + 同步验证结论）。
 - 推送：`GIT_TERMINAL_PROMPT=0 git -c credential.helper= -c credential.helper=manager push`（读 Windows 凭据管理器）。
 - **GitHub 连接 reset 连败 2 次即停**，本地提交安全，改日再推，不得无限重试。
 
