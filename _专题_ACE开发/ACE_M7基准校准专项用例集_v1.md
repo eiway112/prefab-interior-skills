@@ -4,7 +4,7 @@
 >
 > **版本**：v1（2026-08-20，CG-20260820-001）
 >
-> **被测对象**：运行时 `~/.qoderwork/skills/acoustic-calculation-engine/`（SKILL.md v1.1.0 §七 + reference.md v1.1 §一 M7，运行时为唯一事实源）
+> **被测对象**：运行时 `~/.qoder/skills/acoustic-calculation-engine/`（SKILL.md v1.1.0 §七 + reference.md v1.1 §一 M7，运行时为唯一事实源）
 >
 > **执行状态**（2026-08-20）：6 例首轮回读全部 PASS（0 WARN / 0 FAIL），执行报告见 `记录/2026-08-20_ACE_M7专项用例集首轮回读执行报告_v1.md`。公式层已由 `程序文件/ace_regression_test.py` v1.3.1 TestM7_BaselineCalibration + TestDocAnchor M7 断言覆盖（2026-08-20 全量 90 例 PASS）；本用例集覆盖行为层（门槛触发与降级路径），两者互补不重复。
 >

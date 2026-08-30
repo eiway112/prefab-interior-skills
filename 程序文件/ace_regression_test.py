@@ -770,7 +770,7 @@ class TestM7_BaselineCalibration(unittest.TestCase):
 # （评审发现 A3/F2：测试与实现同源自引用）。
 # 本组失败时，须按 change-governance.md 流程判定是文档还是脚本漂移，
 # 不得通过同时修改两侧"抹平"差异。
-_DOC_PATH = (Path.home() / ".qoderwork" / "skills"
+_DOC_PATH = (Path.home() / ".qoder" / "skills"
              / "acoustic-calculation-engine" / "reference.md")
 
 
