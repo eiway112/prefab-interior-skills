@@ -2,15 +2,15 @@
 # -*- coding: utf-8 -*-
 """
 技能仓备份同步脚本
-sync_skill_backup.py v1.2（2026-08-29）
+sync_skill_backup.py v1.3（2026-09-02）
 
 用途：将 skills 仓（~/.qoder/skills）中装配式装修合集相关的运行时技能
 与治理文件镜像备份到项目仓 技能仓备份/ 目录，随项目仓推送获得异地副本，
 弥补运行时技能文件（SKILL/reference/examples 定稿本体）仅存于本地的缺口。
 
 备份范围：
-  1. 合集技能目录 16 个（注册表 12 技能 + QA + WF + 治理/核验辅助 2 个 + ACE）：
-     OR/PW/WS/CL/FL/BK/ST/MI/AC/ME/SR/QA/WF 对应目录 +
+  1. 合集技能目录 15 个（注册表 12 技能 + QA + 治理/核验辅助 2 个 + ACE）：
+     OR/PW/WS/CL/FL/BK/ST/MI/AC/ME/SR/QA 对应目录 +
      prefab-governance-sync、scanned-standard-clause-verify +
      acoustic-calculation-engine
   2. skills 根治理文件：standards-index.md、platform-adapter-reference.md
@@ -196,7 +196,7 @@ def sync(check_only: bool) -> int:
         lines = [
             "# 技能仓备份 — 同步说明",
             "",
-            f"> 最后同步：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}（sync_skill_backup.py v1.2）",
+            f"> 最后同步：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}（sync_skill_backup.py v1.3）",
             "> 源目录：`~/.qoder/skills`（Qoder 运行时技能目录）",
             "> 备份目的：运行时技能文件本体（SKILL/reference/examples）仅存于 skills 仓本地，",
             "> 本目录随项目仓推送提供异地副本。恢复时将各目录复制回 skills 仓对应位置即可。",
@@ -204,7 +204,7 @@ def sync(check_only: bool) -> int:
             "> 更新机制：① 每次涉及运行时技能文件或治理文件的 CG 变更发布后运行一次同步；",
             "> ② 每月至少一次 `--check` 核对漂移；③ 同步后随项目仓提交推送。",
             ">",
-            "> 范围说明：仅含合集相关 16 个技能目录 + 根治理文件 + shared 治理 7 文件；",
+            "> 范围说明：仅含合集相关 15 个技能目录 + 根治理文件 + shared 治理 7 文件；",
             "> 不含系统通用技能（lark/docx/pdf 等）与 `*_pre_*` 历史备份；",
             "> ACE 已于 2026-08-07 发布运行时并纳入备份（项目仓 _专题_ACE开发/ 转为开发归档）；",
             "> SRE 于 2026-08-08 首发运行时（shared 镜像，CG-20260808-025），运行时镜像纳入备份；",

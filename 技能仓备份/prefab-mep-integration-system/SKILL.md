@@ -173,7 +173,7 @@ version: 2.1.1
 
 ### 全合集统一编号映射
 
-机电集成技能（技能标识：**MI**）红线在全局注册表 `shared/redlines-registry.md` 中的统一编号：
+机电集成技能（技能标识：**MI**）红线在全局注册表 `../shared/redlines-registry.md` 中的统一编号：
 
 | 技能内部编号 | 全局统一编号 | 红线名称 |
 |------------|----------|--------|
@@ -302,7 +302,7 @@ version: 2.1.1
 ### 8.4 跨文件引用规范
 
 - 引用本技能配套文件时，使用相对路径：`./reference.md`、`./examples.md`、`./product-solutions.md`。
-- 引用跨技能文件时，使用技能名：`prefab-wall-surface-system/SKILL.md`、`shared/redlines-registry.md`。
+- 引用跨技能文件时，使用技能名：`prefab-wall-surface-system/SKILL.md`、`../shared/redlines-registry.md`。
 - 引用具体章节时，使用 `文件§章节` 格式，如 `reference.md§1.2`、`examples.md§B1`。
 - 所有数据须标注来源级别 S1/S2/S3；跨文件引用不改变原数据级别。
 

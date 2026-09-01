@@ -306,7 +306,7 @@ version: 2.2.1
 ### 10.3 跨文件引用规范
 
 - 引用本技能配套文件时，使用相对路径：`./reference.md`、`./examples.md`。
-- 引用跨技能文件时，使用技能名：`prefab-partition-wall-solution/SKILL.md`、`shared/redlines-registry.md`。
+- 引用跨技能文件时，使用技能名：`prefab-partition-wall-solution/SKILL.md`、`../shared/redlines-registry.md`。
 - 引用具体章节时，使用 `文件§章节` 格式，如 `reference.md§2`。
 - 所有数据须标注来源级别 S1/S2/S3；跨文件引用不改变原数据级别。
 
@@ -341,7 +341,7 @@ SRE 返回的**适用标准集**作为 Step 2~5 的合规基准：
 
 ### 11.3 SRE 不可用降级
 
-当 SRE 不可用时（接口超时、技能未安装等），按 `shared/interface-contracts.md` §6.1 IC-10 降级策略执行：
+当 SRE 不可用时（接口超时、技能未安装等），按 `../shared/interface-contracts.md` §6.1 IC-10 降级策略执行：
 
 1. 使用本技能 §8 参考标准表 + §2.4 强制性条文检查项执行标准匹配
 2. 在清单头部标注："SRE 降级：使用 ACG 内置标准映射，标准集未经场景推理筛选"
