@@ -47,7 +47,7 @@
 
 | 命令 | 当前基线 |
 |---|---|
-| `python 程序文件/validate_governance.py` | 总评 PASS，通过 165 / 失败 0 / 警告 0，exit 0 |
+| `python 程序文件/validate_governance.py` | 总评 PASS，通过 169 / 失败 0 / 警告 4，exit 0。**硬判据是「失败 0 + exit 0」**；通过/警告计数随索引本体内容浮动（检查 4 与检查 5 都从本体算数），不得按固定数字判回归。警告 4 条来自检查 5「SRE 静态体检 T-A1—T-A5」的首轮 WARN 档位（T-A1 名称差分、T-A2 引用缺录、T-A3 缺版本键、T-A5Ⅱ 升档标注），不计 `fail_count`，见 CG-20260915-001 |
 | `python 程序文件/ace_regression_test.py` | Ran 90 tests，OK |
 | `python 程序文件/sync_skill_backup.py` | 把 `~/.qoder/skills/` 运行时技能回写 `技能仓备份/` 镜像。**未验证基线**：CG-20260829-001 ⑤ 记其 `同步说明.md` 哈希清单失准、待重跑 |
 
