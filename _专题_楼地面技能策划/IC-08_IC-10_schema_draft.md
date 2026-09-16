@@ -298,7 +298,8 @@
 | 适用标准集[].权限 | string | 是 | 枚举：red_line / binding_support / reference | red_line=红线不可突破, binding_support=约束性支撑, reference=参考性 |
 | 适用标准集[].角色 | string | 是 | 枚举：mandatory_check / design_basis / verification_reference / construction_guide / prefab_evaluation | 该标准在本场景中的角色定位 |
 | 适用标准集[].地域适用性 | string | 是 | 枚举：全国 / 项目所在地适用 / 不适用仅作对比 | 标准的地域适用范围 |
-| 适用标准集[].时间状态 | string | 是 | 枚举：现行有效 / 过渡期 / 即将实施 / 已废止 | 标准的时间有效性状态 |
+| 适用标准集[].时间状态 | string | 是 | 枚举：现行有效 / 即将实施 / 过渡期 / 被部分替代 / 已废止 / 未知 | 标准的时间有效性状态，须精确等于枚举成员（v1.8.0 起括注不再留在本字段）。**本表系 `interface-contracts.md` IC-10 的抄件，以契约为准** |
+| 适用标准集[].状态注记 | string | 否 | 自由文本 | `standards-index.md` §1.1 状态单元自带的全角括注原文，无括注时省略此字段 |
 | 适用标准集[].替代警告 | string | 否 | — | 如有部分替代情况，说明具体替代条文；无替代时省略此字段 |
 | 推理路径 | string | 是 | — | 场景→领域→标准族的推理链路描述 |
 | 未覆盖领域 | 数组[string] | 否 | — | 性能领域中无明确适用标准的部分，附建议咨询方向 |
@@ -397,8 +398,12 @@
           },
           "时间状态": {
             "type": "string",
-            "enum": ["现行有效", "过渡期", "即将实施", "已废止"],
-            "description": "标准的时间有效性状态"
+            "enum": ["现行有效", "即将实施", "过渡期", "被部分替代", "已废止", "未知"],
+            "description": "标准的时间有效性状态，须精确等于枚举成员（取值集与 IC-07 标准状态同源，同步自 interface-contracts.md v1.8.0）"
+          },
+          "状态注记": {
+            "type": "string",
+            "description": "standards-index.md §1.1 状态单元自带的全角括注原文；无括注时省略"
           },
           "替代警告": {
             "type": "string",

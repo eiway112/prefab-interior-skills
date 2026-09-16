@@ -1,11 +1,11 @@
 """
 SRE Reasoner 回归测试集
 ========================
-版本：v1.3（2026-09-16）
+版本：v1.5（2026-09-16）
 运行：python sre_regression_test.py
 
 覆盖：M1 分类协议、M3 场景推理与 Step 1a 裁定、M4 适用性裁判、M6 降级、
-      IC-10 Response v1.5.8 Schema、SR 引擎化红线，
+      IC-10 Response v1.8.0 Schema、SR 引擎化红线，
       以及 SRE 确定性体检行为组 T-B1—T-B7 + A5-B 锚定升档
       （判据源《文档/SRE确定性体检设计方案_v1.0.md》§3.2 / §4.3 / §5.2 / §6.2）。
 """
@@ -43,6 +43,12 @@ _REPORT_PATH = Path(__file__).resolve().parent / "sre_regression_report.json"
 _INDEX_CANDIDATES = [
     SRE_SOURCE.parent.parent / "shared" / "standards-index.md",
     SRE_SOURCE.parent.parent / "standards-index.md",
+]
+
+# IC-10 契约候选，与索引同序（运行时 shared 镜像为 L3、技能目录兜底）
+_CONTRACT_CANDIDATES = [
+    SRE_SOURCE.parent.parent / "shared" / "interface-contracts.md",
+    SRE_SOURCE.parent.parent / "interface-contracts.md",
 ]
 
 # T-B1 的测量点：本模块 import 完毕、任何用例尚未执行之前
@@ -136,6 +142,29 @@ def _verify_state_enum() -> list[str]:
     header, rows = _table(block)
     key = header[0] if header else ""
     return list(dict.fromkeys(r[0] for r in rows if key and r))
+
+
+def _contract_text() -> str:
+    for path in _CONTRACT_CANDIDATES:
+        if path.exists():
+            return path.read_text(encoding="utf-8")
+    return ""
+
+
+def _contract_ic10_status_enum() -> list[str]:
+    """IC-10 `适用标准集[].时间状态` 合法集（从契约 Schema 现读，不写死）。
+
+    契约缺失或正则脱靶时返回空表——调用方按"全表越界"失败收口，不静默放行。
+    """
+    match = re.search(r'"时间状态":\s*\{[^{}]*?"enum":\s*\[([^\]]*)\]', _contract_text(), re.S)
+    if not match:
+        return []
+    return [s.strip().strip('"') for s in match.group(1).split(",") if s.strip()]
+
+
+def _contract_declares(field: str) -> bool:
+    """字段是否已在 IC-10 契约 Schema 里声明（additionalProperties: false 的前置条件）。"""
+    return f'"{field}":' in _contract_text()
 
 
 def _deprecated_rows() -> list[tuple[str, str]]:
@@ -461,7 +490,7 @@ class TestM6Degradation(unittest.TestCase):
 
 
 class TestIC10SchemaCompliance(unittest.TestCase):
-    """IC-10 Response v1.5.8 Schema 合规。"""
+    """IC-10 Response v1.8.0 Schema 合规。"""
 
     def test_required_fields_present(self):
         r = reason("住宅", "分户墙")
@@ -485,6 +514,7 @@ class TestIC10SchemaCompliance(unittest.TestCase):
 
     def test_standard_item_schema(self):
         r = reason("住宅", "分户墙")
+        contract_enum = _contract_ic10_status_enum()
         for s in r["适用标准集"]:
             self.assertIn("标准编号", s)
             self.assertIn("标准名称", s)
@@ -496,6 +526,10 @@ class TestIC10SchemaCompliance(unittest.TestCase):
             self.assertIn(s["角色"], ["mandatory_check", "design_basis", "verification_reference", "construction_guide", "prefab_evaluation"])
             self.assertIn("地域适用性", s)
             self.assertIn("时间状态", s)
+            self.assertIn(s["时间状态"], contract_enum,
+                          f"{s['标准编号']} 时间状态 {s['时间状态']!r} 越出 IC-10 契约枚举")
+            if "状态注记" in s:
+                self.assertTrue(s["状态注记"], f"{s['标准编号']} 状态注记 为空串，应省略该字段")
 
     def test_decision_trace_when_requested(self):
         r = reason("住宅", "分户墙", return_trace=True)
@@ -545,11 +579,13 @@ class _SREDeterminismBase(unittest.TestCase):
     def setUp(self) -> None:
         self._saved_status = dict(sre_reasoner.STANDARD_STATUS)
         self._saved_names = dict(sre_reasoner.STANDARD_NAMES)
+        self._saved_activation = dict(sre_reasoner.ACTIVATION_TABLE)
         sre_reasoner._load_standards_index()
 
     def tearDown(self) -> None:
         for target, saved in ((sre_reasoner.STANDARD_STATUS, self._saved_status),
-                              (sre_reasoner.STANDARD_NAMES, self._saved_names)):
+                              (sre_reasoner.STANDARD_NAMES, self._saved_names),
+                              (sre_reasoner.ACTIVATION_TABLE, self._saved_activation)):
             target.clear()
             target.update(saved)
 
@@ -568,14 +604,17 @@ class _SREDeterminismBase(unittest.TestCase):
 class TestSREDeterminismStatic(_SREDeterminismBase):
     """SRE 确定性体检·行为组（静态可测子集）T-B1 / T-B3 / T-B4 / T-B7。
 
-    判据源《文档/SRE确定性体检设计方案_v1.0.md》§3.2，逐例以 `@unittest.expectedFailure`
-    挂档。**自退役规则（§6.2）**：本类用例转成 unexpected success 即说明对应缺陷已由
-    `sre_reasoner.py` 真实修复——此时必须摘掉装饰器、把断言转为正向常态断言，
-    **禁止回退或注释掉被测代码的修复来让用例重新"预期失败"**。unexpected success
-    会让 `wasSuccessful()` 返回 False、门禁 exit 1，这是设计意图而非故障。
+    判据源《文档/SRE确定性体检设计方案_v1.0.md》§3.2。**自退役规则（§6.2）**：用例转成
+    unexpected success 即说明对应缺陷已由 `sre_reasoner.py` 真实修复——此时必须摘掉装饰器、
+    把断言转为正向常态断言，**禁止回退或注释掉被测代码的修复来让用例重新"预期失败"**。
+    unexpected success 会让 `wasSuccessful()` 返回 False、门禁 exit 1，这是设计意图而非故障。
+
+    **挂档历史**：T-B1、T-B7 随 CG-20260916-003 修复摘档；T-B4 随 CG-20260916-004 修复摘档，
+    判据同步收紧为「拆分主态精确属 IC-10 契约枚举 + 回串无损」（旧前缀口径作废）；T-B3 随
+    CG-20260916-005 补录 `acoustic(贡献)`／`acoustic(吸声)`／`acoustic(边界提示)` 三键后摘档。
+    本组四项现均为正向常态断言，**已无 `expectedFailure` 挂档项**。
     """
 
-    @unittest.expectedFailure
     def test_TB1_index_loaded_at_import(self):
         inside, outside = _main_guard_calls()
         loaded = len(sre_reasoner.STANDARD_STATUS)
@@ -596,7 +635,6 @@ class TestSREDeterminismStatic(_SREDeterminismBase):
         self.assertEqual(IMPORT_TIME_STATUS_COUNT, loaded,
                          "导入态与显式加载态不同：两入口口径已分叉")
 
-    @unittest.expectedFailure
     def test_TB3_activated_domains_have_mapping(self):
         dead = sorted(_reachable_domains() - set(sre_reasoner.DOMAINS))
         redundant = sorted(set(sre_reasoner.DOMAINS) - _reachable_domains())
@@ -613,15 +651,19 @@ class TestSREDeterminismStatic(_SREDeterminismBase):
         self.assertEqual(dead, [], "存在被激活却无映射的死链域")
         self.assertEqual(redundant, [], "存在不可达的冗余映射键")
 
-    @unittest.expectedFailure
     def test_TB4_status_read_by_header(self):
         truth = _main_table_truth()
         enum = _status_enum()
+        contract_enum = _contract_ic10_status_enum()
         mismatch = {k: (sre_reasoner.STANDARD_STATUS.get(k), v)
                     for k, v in truth.items() if sre_reasoner.STANDARD_STATUS.get(k) != v}
-        # 设计 §3.2 取前缀口径（明文允许「现行有效（代替…）」类括号注记），非全等比较
+        # CG-20260916-004 起收紧：状态单元按 §4 契约口径拆为（主态, 括注），主态须**精确**属
+        # IC-10 枚举成员（前缀口径作废——它曾把「现行有效（…）」整串放行到输出侧）
         out_of_enum = {k: v for k, v in sre_reasoner.STANDARD_STATUS.items()
-                       if not any(str(v).startswith(e) for e in enum)}
+                       if sre_reasoner._split_status(v)[0] not in contract_enum}
+        # 拆分必须无损：主态 + 括注要能原样回串为索引状态单元，否则「已废止（无替代）」类限定丢失
+        lossy = {k: v for k, v in sre_reasoner.STANDARD_STATUS.items()
+                 if (lambda h, t: h + (f"（{t}）" if t else ""))(*sre_reasoner._split_status(v)) != v}
         # 两状态独立表达：被部分替代不得被改写为过渡期（真值注入法，不依赖列位缺陷是否已修）
         conversion = ""
         if "被部分替代" in enum and "过渡期" in enum:
@@ -634,22 +676,27 @@ class TestSREDeterminismStatic(_SREDeterminismBase):
         conversion_bad = bool(conversion) and "→ 输出 '被部分替代'" not in conversion
         _record_signal(
             "T-B4", "DRIFT",
-            f"主表 {len(truth)} 项中 {len(mismatch)} 项加载态≠表头真值；加载态越出 §1.1 枚举 "
-            f"{len(out_of_enum)} 项；{conversion or '状态转换项未测（枚举已改名）'}",
-            "状态一律按表头列名读取（与表头感知真值同值）、落在 §1.1 枚举内，"
+            f"主表 {len(truth)} 项中 {len(mismatch)} 项加载态≠表头真值；加载表 {len(sre_reasoner.STANDARD_STATUS)} 项中"
+            f"拆分主态越出契约枚举 {len(out_of_enum)} 项、有损拆分 {len(lossy)} 项；"
+            f"{conversion or '状态转换项未测（枚举已改名）'}",
+            "状态一律按表头列名读取（与表头感知真值同值）、拆分主态精确属 IC-10 契约枚举且回串无损，"
             "且 被部分替代 与 过渡期 不得互转",
             _loc(("固定列号取值", _assign_line("STANDARD_STATUS")),
                  ("_load_standards_index 定义", _def_line("_load_standards_index")),
+                 ("时间状态拆分", _def_line("_split_status")),
                  ("时间状态映射", _def_line("_apply_applicability"))),
-            "A", touched=set(mismatch) | set(out_of_enum),
-            violated=bool(mismatch or out_of_enum or conversion_bad),
+            "A", touched=set(mismatch) | set(out_of_enum) | set(lossy),
+            violated=bool(mismatch or out_of_enum or lossy or conversion_bad),
         )
         self.assertEqual(mismatch, {}, "加载状态与表头真值不一致")
-        self.assertEqual(out_of_enum, {}, "加载状态越出索引 §1.1 六值枚举")
+        self.assertGreater(len(contract_enum), 0, "IC-10 契约枚举现读为空，越界判据不可用")
+        self.assertTrue(_contract_declares("状态注记"),
+                        "引擎可输出 状态注记，但 IC-10 Schema 未声明该字段")
+        self.assertEqual(out_of_enum, {}, "拆分主态越出 IC-10 契约枚举")
+        self.assertEqual(lossy, {}, "状态单元拆分有损，括注限定被丢弃")
         if conversion:
             self.assertFalse(conversion_bad, f"{conversion}｜被部分替代 被方向性改写为 过渡期")
 
-    @unittest.expectedFailure
     def test_TB7_withdrawn_standards_reachable(self):
         registered = _deprecated_rows()
         missing = sorted(i for i, _ in registered if i and i not in sre_reasoner.STANDARD_STATUS)
@@ -669,11 +716,16 @@ class TestSREDeterminismBehavior(_SREDeterminismBase):
 
     自退役规则同 `TestSREDeterminismStatic`（设计方案 §6.2）：unexpected success =
     修复已落地，须摘装饰器转正向断言，**禁止回退 `sre_reasoner.py` 的修复**。
+
+    **挂档历史**：T-B2 随 CG-20260916-004 摘档，并加正向断言「降级值须属 IC-10 契约取值集且
+    全表唯一」；T-B5、T-B6 随 CG-20260916-005 摘档（空族上报 / 全国基线可叠加），各加一条收紧
+    用例——T-B5 负向路径（合成无映射域）、T-B6 逐地点正向期望集。**行为组 T-B1—T-B7 七项至此
+    全部转正，本文件不再挂 `expectedFailure`。**
     """
 
-    @unittest.expectedFailure
     def test_TB2_unregistered_id_degrades(self):
         enum = _status_enum()
+        contract_enum = _contract_ic10_status_enum()
         probes = [_probe_id() for _ in range(5)]
         got = {p: sre_reasoner._standard_status(p) for p in probes}
         # 导入态（setUp 快照、未经显式加载）下锚定编号走同一兜底分支——§9.1 判该行为 anchor=true 的来源
@@ -683,18 +735,24 @@ class TestSREDeterminismBehavior(_SREDeterminismBase):
         anchor_fallback = sorted(a for a in (anchors or set()) if a not in self._saved_status)
         got |= {a: sre_reasoner._standard_status(a) for a in anchor_fallback}
         deterministic = {k: v for k, v in got.items() if v in enum}
+        degraded = {k: v for k, v in got.items() if v not in enum}
+        off_contract = {k: v for k, v in degraded.items() if v not in contract_enum}
         _record_signal(
             "T-B2", "DEGRADE",
             f"{len(probes)} 个随机不存在编号 + 导入态未登记的锚定编号 {len(anchor_fallback)} 条，"
             f"经 _standard_status() 得确定性状态 {len(deterministic)} 项："
-            f"{sorted(set(deterministic.values()))}（触 SR-R-P0-2）",
-            "未登记编号不得返回任何 §1.1 确定性状态，须落显式降级态（待核验/未知）",
+            f"{sorted(set(deterministic.values()))}（触 SR-R-P0-2）；"
+            f"降级侧 {len(degraded)} 项取值 {sorted(set(degraded.values()))}，越出契约取值集 {len(off_contract)} 项",
+            "未登记编号不得返回任何 §1.1 确定性状态，须落 IC-10 契约取值集内的显式降级态且全表同值",
             _loc(("_standard_status 定义（含兜底默认值）", _def_line("_standard_status"))),
-            "S", touched=set(deterministic), violated=bool(deterministic),
+            "S", touched=set(deterministic) | set(off_contract),
+            violated=bool(deterministic or off_contract),
         )
         self.assertEqual(deterministic, {}, "对输入域无界的未登记编号给出了确定性状态")
+        self.assertGreater(len(contract_enum), 0, "IC-10 契约枚举现读为空，降级判据不可用")
+        self.assertEqual(off_contract, {}, "降级输出越出 IC-10 契约取值集（臆造词）")
+        self.assertEqual(len(set(degraded.values())), 1, "兜底返回值不唯一，降级口径不确定")
 
-    @unittest.expectedFailure
     def test_TB5_empty_family_reported_uncovered(self):
         silent: list[tuple[str, str, str | None, str]] = []
         for project_type, space_type, demands in SCENARIOS:
@@ -715,7 +773,20 @@ class TestSREDeterminismBehavior(_SREDeterminismBase):
         )
         self.assertEqual(silent, [], "空标准族被静默吞掉")
 
-    @unittest.expectedFailure
+    def test_TB5_empty_family_negative_path(self):
+        """摘档收紧：矩阵内已无空族，故合成注入无映射域，验上报机制而非数据碰巧非空。"""
+        fake = "synthetic(无映射域)"
+        self.assertNotIn(fake, sre_reasoner.DOMAINS, "合成域撞上真实映射键，负向取证失效")
+        project_type, space_type = next(iter(sre_reasoner.ACTIVATION_TABLE))
+        sre_reasoner.ACTIVATION_TABLE[project_type, space_type] = list(
+            sre_reasoner.ACTIVATION_TABLE[project_type, space_type]) + [fake]
+        response = reason(project_type, space_type, location="全国")
+        empty = self._empty_families(response)
+        uncovered = response.get("未覆盖领域", [])
+        self.assertIn(fake, empty, "合成域未产出空标准族，负向路径根本没走到")
+        self.assertTrue(any(fake in u for u in uncovered),
+                        f"空标准族未上报 未覆盖领域：{uncovered}")
+
     def test_TB6_national_baseline_additive(self):
         lost: list[tuple[str | None, str]] = []
         for project_type, space_type, demands in SCENARIOS:
@@ -733,6 +804,22 @@ class TestSREDeterminismBehavior(_SREDeterminismBase):
             "A", touched={i for _, i in lost}, violated=bool(lost),
         )
         self.assertEqual(lost, [], "地点分支抑制了全国层级标准的输出")
+
+    def test_TB6_national_and_local_coexist(self):
+        """摘档收紧：从「跨地点差分」升级为「逐地点正向期望集」，期望值取自 DOMAINS 现读。"""
+        missing: list[tuple[str, str, str]] = []
+        for project_type, space_type, demands in SCENARIOS:
+            activated, _ = sre_reasoner._activate_domains(
+                project_type, space_type, demands, [])
+            for location in [x for x in LOCATIONS if x]:
+                got = _applicable_ids(project_type, space_type, demands, location)
+                for domain in sorted(activated):
+                    mapping = sre_reasoner.DOMAINS.get(domain, {})
+                    expect = set(mapping.get("全国", [])) | set(mapping.get(location, []))
+                    missing += [(domain, location, i) for i in sorted(
+                        {e for e in expect - got if not e.startswith("（")})]
+        self.assertEqual(missing, [],
+                         f"全国基线或地方增量在该地点缺失：{missing[:6]}")
 
 
 def _fingerprint(path: Path) -> dict:

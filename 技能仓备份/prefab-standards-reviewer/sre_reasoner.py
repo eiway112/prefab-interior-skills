@@ -2,14 +2,14 @@
 SRE Reasoner —— 标准推理引擎参考实现
 =====================================
 版本：v1.2（2026-08-13）
-依据：standards-reasoning-rules.md v1.2 + interface-contracts.md IC-10 v1.5.8
+依据：standards-reasoning-rules.md v1.2 + interface-contracts.md IC-10 v1.8.0
 
 最小接口：
     reason(project_type, space_type, location=None, system=None,
            demands=None, return_trace=False) -> dict
 
-输出符合 IC-10-Response Schema v1.5.8，包含：
-- 适用标准集
+输出符合 IC-10-Response Schema v1.8.0，包含：
+- 适用标准集（条目含 时间状态 与可选 状态注记）
 - 推理路径
 - 证据对象（至少一条）
 - 未覆盖领域（可选）
@@ -130,7 +130,7 @@ DOMAINS: dict[str, Any] = {
     "acoustic": {
         "住宅": ["GB 55038-2025", "GB 50118-2010", "GB/T 50121-2005"],
         "默认": ["GB 50118-2010", "GB/T 50121-2005"],
-        "轻钢龙骨": ["GB/T 19889.1", "JG/T 544-2018", "07CJ03-1", "08J931"],
+        "轻钢龙骨": ["GB/T 19889.1-2026", "JG/T 544-2018", "07CJ03-1", "08J931"],
         "条板": ["GB/T 23451-2023"],
         "吊顶": ["GB/T 11981-2024", "GB/T 9775-2025", "JC/T 564.1-2018", "GB/T 25998-2020", "07CJ03-1", "08J931"],
     },
@@ -139,6 +139,27 @@ DOMAINS: dict[str, Any] = {
         "默认": ["GB 50118-2010", "GB/T 50121-2005"],
         "浮筑地面": ["GB/T 19889.7-2022", "GB/T 19889.8-2006", "GB/T 45305.3-2026", "08J931"],
         "架空地面": ["08J931"],
+    },
+    # 以下三键补 T-B3 死链域（CG-20260916-005）。每条编号均取自仓内既有出处，零新造：
+    "acoustic(贡献)": {
+        # 吊顶对空气声隔声为贡献量而非独立判据，达标归属宿主构件标准
+        # ——rules.md:248 注记 + 吊顶技能 reference.md:507「acoustic(贡献) → IC-09 估算 + 宿主构件标准归属」
+        "住宅": ["GB 55038-2025"],
+        "默认": ["GB 50118-2010"],
+        # 面板/龙骨产品标准与图集，同 rules.md:248 构造=吊顶行的六项列举（与 acoustic/吊顶 同族）
+        "吊顶": ["GB/T 11981-2024", "GB/T 9775-2025", "JC/T 564.1-2018",
+                "GB/T 25998-2020", "07CJ03-1", "08J931"],
+    },
+    "acoustic(吸声)": {
+        # 吸声为主角场景（教室/办公吊顶）→ GB 50118 非住宅条文（混响/允许噪声级），
+        # 见吊顶技能 reference.md:507 与 examples.md:230；GB/T 25998-2020 为吸声板产品标准，
+        # 08J931 图集名《隔声、吸声构造》且系 rules.md:150 锚定 A-L3-02 三技能共同引用
+        "默认": ["GB 50118-2010", "GB/T 25998-2020", "08J931"],
+    },
+    "acoustic(边界提示)": {
+        # rules.md:227 定其为「提示性标注」，故不承载判据编号；墙体整体隔声/耐火认定属隔墙技能
+        # 职能（红线 WS-R-P0-2），见墙面 combined_reference_v2.md:271。占位串形态沿 waterproof(边界)
+        "默认": ["（外部 prefab-partition-wall-solution 技能墙体整体隔声/耐火认定协同）"],
     },
     "fire": {
         "全部": ["GB 55037-2022", "GB 50016-2014", "GB 50222-2017"],
@@ -161,7 +182,7 @@ DOMAINS: dict[str, Any] = {
         "墙面饰面系统": ["T/CECS 1018-2022", "JG/T 579-2021", "JG/T 578-2021"],
     },
     "environmental": {
-        "医院/学校": ["GB 18580-2025", "GB 18582-2020", "T/CSUS 03-2019"],
+        "医院/学校": ["GB 18580-2025", "GB 30981.1-2025", "T/CSUS 03-2019"],
         "默认": ["GB 18580-2025"],
         "吊顶板材": ["GB 18580-2025", "GB 6566-2010"],
     },
@@ -191,7 +212,8 @@ STANDARD_NAMES: dict[str, str] = {
     "GB 50222-2017": "建筑内部装修设计防火规范",
     "GB 55032-2022": "建筑与市政工程施工质量控制通用规范",
     "GB/T 50121-2005": "建筑隔声评价标准",
-    "GB/T 19889.1": "声学 建筑和建筑构件隔声测量方法",
+    # 值须与索引主表序号 14 逐字一致；键须带年份，否则与 DOMAINS 引用失配并静默落兜底（CG-20260916-001）
+    "GB/T 19889.1-2026": "声学 建筑和建筑构件隔声的现场测量 第1部分：房间之间空气声隔声",
     "GB/T 19889.7-2022": "声学 建筑和建筑构件隔声测量方法 第7部分：楼板撞击声隔声的现场测量",
     "GB/T 19889.8-2006": "声学 建筑和建筑构件隔声测量方法 第8部分：重质标准楼板覆面层撞击声改善的实验室测量",
     "GB/T 45305.3-2026": "声学 建筑构件隔声的实验室测量 第3部分：撞击声隔声测量",
@@ -215,7 +237,7 @@ STANDARD_NAMES: dict[str, str] = {
     "JG/T 579-2021": "建筑用集成墙面",
     "JG/T 578-2021": "建筑用轻质高强陶瓷板",
     "GB 18580-2025": "室内装饰装修材料 人造板及其制品中甲醛释放限量",
-    "GB 18582-2020": "建筑用墙面涂料中有害物质限量",
+    "GB 30981.1-2025": "涂料中有害物质限量 第1部分：建筑涂料",
     "GB 6566-2010": "建筑材料放射性核素限量",
     "T/CSUS 03-2019": "医院建筑室内装修工程技术标准",
     "T/CSUS 40-2022": "住宅建筑室内振动与噪声控制技术标准",
@@ -223,31 +245,104 @@ STANDARD_NAMES: dict[str, str] = {
     "08J931": "隔声、吸声构造",
 }
 
+# 修复前降级标注数据源（CG-20260915-002，T-A4①）。
+# change-governance.md §4.5 明文：锚定标准废止/替代 → S 级，且"修复前 SRE 对该领域
+# 的推理结果须降级标注"。GB 50118-2010 为锚定 A-L1-05，其 DOMAINS 命中路径共 6 个
+# 映射键（acoustic/住宅、acoustic/默认、acoustic(impact)/住宅、acoustic(impact)/默认、
+# acoustic(贡献)/默认、acoustic(吸声)/默认；后两条随 CG-20260916-005 补录死链域时增加），
+# 该标准不整体失效，故以"编号 → 替代警告"而非剔除编号的方式承载。
+# 复算配方：`[f"{d}/{k}" for d, v in DOMAINS.items() for k, ids in v.items()
+# if "GB 50118-2010" in ids]` —— 任何向 DOMAINS 增删该编号的改动都须回扫上一行计数。
+PARTIAL_REPLACEMENT_NOTICES: dict[str, str] = {
+    "GB 50118-2010": (
+        "被部分替代：住宅隔声第 4.2.1、4.2.2、4.2.5 条已由 GB 55038-2025 接管"
+        "（住建部公告 2025 年第 39 号），引用这三条须切换至 GB 55038-2025；"
+        "公共建筑隔声及未替代条文仍有效。本域结论为替代范围闭合前的降级输出，"
+        "须经条文级证据复核（TA-2）。"
+    ),
+}
+
 STANDARD_STATUS: dict[str, str] = {}
+
+# IC-10 v1.8.0 `时间状态` 六值中的显式降级值：索引无该编号记录时的唯一输出（T-B2）。
+# 本文件只承载这一个降级值，不复制整个枚举集——合法集由回归测试/门禁从
+# interface-contracts.md 与 standards-index.md §1.1 现读校验，代码内不留第二份。
+STATUS_UNKNOWN = "未知"
+
+_ID_COLS = ("标准编号", "图集编号")
+_NAME_COLS = ("标准名称", "图集名称")
+# 核验记录表的列位与主表不同（其第 7 列是"影响条文说明"之类的自由文本），
+# 一旦按列号放行就会把说明整句写成标准状态（T-B4）。
+_VERIFY_HEADER_KEYS = ("核验日期", "核验状态", "核验结论")
+
+
+def _iter_md_tables(text: str):
+    """表头感知地切出 Markdown 表：表头 = 其后紧跟分隔行的那一行。"""
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines):
+        if lines[i].startswith("|") and i + 1 < len(lines) \
+                and not set(lines[i + 1].replace("|", "").strip()) - set("-: "):
+            header = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+            rows = []
+            j = i + 2
+            while j < len(lines) and lines[j].startswith("|"):
+                rows.append([c.strip() for c in lines[j].strip().strip("|").split("|")])
+                j += 1
+            yield header, rows
+            i = j
+        else:
+            i += 1
+
+
+def _classify_status_table(header: list[str]) -> str | None:
+    """main = 索引 §二～§六 主表；register = §7.2 废止/替代登记表；None = 不参与状态载入。"""
+    joined = "|".join(header)
+    if any(k in joined for k in _VERIFY_HEADER_KEYS) or "锚定ID" in joined:
+        return None
+    if "状态" not in header:
+        return None
+    if not any(c in header for c in _ID_COLS):
+        return None
+    return "main" if header[0] == "序号" else "register"
 
 
 def _load_standards_index() -> None:
-    """尝试从 ../shared/standards-index.md 加载标准状态。"""
-    candidates = [
-        Path(__file__).parent.parent / "shared" / "standards-index.md",
-        Path(__file__).parent.parent / "standards-index.md",
-    ]
-    for path in candidates:
-        if not path.exists():
+    """从 ../shared/standards-index.md 按表头列名加载标准状态。
+
+    主表为状态真值源，§7.2 登记表只补主表未收录的编号（旧版标准在主表单列外），
+    核验记录表不参与——三者共用固定列号是 T-B4/T-B7 的根因。
+    """
+    text = None
+    for path in [Path(__file__).parent.parent / "shared" / "standards-index.md",
+                 Path(__file__).parent.parent / "standards-index.md"]:
+        if path.exists():
+            text = path.read_text(encoding="utf-8")
+            break
+    if text is None:
+        return
+
+    buckets: dict[str, dict[str, str]] = {"main": {}, "register": {}}
+    for header, rows in _iter_md_tables(text):
+        kind = _classify_status_table(header)
+        if kind is None:
             continue
-        text = path.read_text(encoding="utf-8")
-        for line in text.splitlines():
-            parts = [p.strip() for p in line.split("|")]
-            if len(parts) < 7:
+        i_id = next(header.index(c) for c in _ID_COLS if c in header)
+        i_name = next((header.index(c) for c in _NAME_COLS if c in header), None)
+        i_status = header.index("状态")
+        for row in rows:
+            if i_id >= len(row) or not row[i_id]:
                 continue
-            # 匹配 | 序号 | 标准编号 | 标准名称 | ... | 状态 | ...
-            if re.match(r"^\d+$", parts[1]):
-                std_no = parts[2]
-                name = parts[3]
-                status = parts[6]
-                if std_no:
-                    STANDARD_NAMES.setdefault(std_no, name)
-                    STANDARD_STATUS[std_no] = status
+            std_no = row[i_id]
+            if i_status < len(row) and row[i_status]:
+                buckets[kind].setdefault(std_no, row[i_status])
+            if i_name is not None and i_name < len(row) and row[i_name]:
+                STANDARD_NAMES.setdefault(std_no, row[i_name])
+
+    STANDARD_STATUS.clear()
+    STANDARD_STATUS.update(buckets["main"])
+    for std_no, status in buckets["register"].items():
+        STANDARD_STATUS.setdefault(std_no, status)
 
 
 def _standard_name(std_no: str) -> str:
@@ -255,7 +350,29 @@ def _standard_name(std_no: str) -> str:
 
 
 def _standard_status(std_no: str) -> str:
-    return STANDARD_STATUS.get(std_no, "现行有效")
+    """索引登记的原始状态单元；未登记编号返回 STATUS_UNKNOWN（T-B2）。
+
+    兜底不得给确定性状态：SR-R-P0-2 禁止对无依据的输入输出「现行有效」。
+    """
+    return STANDARD_STATUS.get(std_no, STATUS_UNKNOWN)
+
+
+def _split_status(status: str) -> tuple[str, str]:
+    """按 IC-10 v1.8.0 口径把状态单元拆为（时间状态, 状态注记）。
+
+    索引 §1.1 的状态列可自带全角括注（如「现行有效（代替 GB 18580-2017）」）。以首个
+    全角「（」为界切分，前段为契约主态、后段去尾「）」为注记，故为无损拆分——
+    「已废止（无替代）」的限定条件由注记位承载，不因截断丢失。本函数不校验主态是否
+    属枚举：枚举合法集的判据在回归测试与门禁侧现读契约，代码内不留第二份枚举副本。
+    """
+    head, sep, tail = status.partition("（")
+    if not sep:
+        return status, ""
+    return head, tail.rstrip("）")
+
+
+# 导入期即载入：本模块既被 CLI 直跑，也被技能侧 import，两入口必须看到同一份状态（T-B1）。
+_load_standards_index()
 
 
 # ---------------------------------------------------------------------------
@@ -313,7 +430,7 @@ def classify_standard(std_no: str, evidence_list: list[dict]) -> dict[str, Any]:
         domains.append("prefab")
     if any(k in std_no_norm for k in ["8624", "23451", "544", "产品"]):
         domains.append("product")
-    if any(k in std_no_norm for k in ["18580", "18582", "6566", "室内", "空气", "甲醛"]):
+    if any(k in std_no_norm for k in ["18580", "30981", "6566", "室内", "空气", "甲醛"]):
         domains.append("environmental")
 
     evidence_list.append(_evidence(
@@ -431,6 +548,9 @@ def _map_domain_to_standards(
     elif "医院/学校" in mapping and project_type in ("医院", "学校"):
         standards.extend(mapping["医院/学校"])
 
+    # 全国基线可叠加：不得因走地点分支而被抑制（设计方案 §3.2 T-B6，CG-20260916-005）
+    standards.extend(mapping.get("全国", []))
+
     # 地点附加
     if location and location in mapping:
         standards.extend(mapping[location])
@@ -490,13 +610,8 @@ def _apply_applicability(
         else:
             地域适用性 = "全国"
 
-        # 时间状态（TA 规则组）
-        status = _standard_status(std_no)
-        时间状态 = status
-        if status == "被部分替代":
-            时间状态 = "过渡期"
-        elif status.startswith("已废止"):
-            时间状态 = "已废止"
+        # 时间状态（TA 规则组）：主态原样输出，括注走 状态注记，两者不得互转也不得前缀截断
+        时间状态, 状态注记 = _split_status(_standard_status(std_no))
 
         # 角色分配（Step 4）
         if level == "L1":
@@ -507,7 +622,9 @@ def _apply_applicability(
             role = "verification_reference"
         elif level == "L3" or "图集" in std["标准类型"]:
             role = "construction_guide"
-        elif "评价" in std["标准类型"] or "51129" in std_no or "SJG" in std_no:
+        elif "评价" in std["标准类型"] or "51129" in std_no or "SJG" in std_no or "RISN" in std_no:
+            # RISN-TG 055-2025 为 L2/reference，不匹配前四支而落 else 的 "reference"，
+            # 该值不在 IC-10 `角色` 五值枚举内；随其 prefab 域同族语义归入（CG-20260916-005）
             role = "prefab_evaluation"
         else:
             role = "reference"
@@ -516,10 +633,10 @@ def _apply_applicability(
             "applicability", "standards-reasoning-rules.md §四 M4 / §3.2 Step 4",
             f"标准={std_no}, 层级={level}, 权限={authority}, 所在地={location}",
             f"地域适用性={地域适用性}, 时间状态={时间状态}, 角色={role}",
-            "deterministic" if 地域适用性 != "待确认" else "inferred"
+            "deterministic" if 地域适用性 != "待确认" and 时间状态 != STATUS_UNKNOWN else "inferred"
         ))
 
-        result.append({
+        item = {
             "标准编号": std_no,
             "标准名称": _standard_name(std_no),
             "层级": level,
@@ -527,7 +644,27 @@ def _apply_applicability(
             "角色": role,
             "地域适用性": 地域适用性,
             "时间状态": 时间状态,
-        })
+        }
+        if 状态注记:
+            item["状态注记"] = 状态注记
+        if 时间状态 == STATUS_UNKNOWN:
+            evidence_list.append(_evidence(
+                "degradation", "standards-reasoning-rules.md §五 M6 / SR-R-P0-2",
+                f"标准={std_no} 索引 §1.1 无状态记录",
+                "时间状态=未知，为显式降级态，不得作为合规判据，须走官方核验路径确认现行状态",
+                "inferred",
+            ))
+        # IC-10 items 为 additionalProperties: false，降级标注只能走既有的可选字段 `替代警告`
+        notice = PARTIAL_REPLACEMENT_NOTICES.get(std_no)
+        if notice:
+            item["替代警告"] = notice
+            evidence_list.append(_evidence(
+                "degradation", "standards-reasoning-rules.md §4.3 TA-2",
+                f"标准={std_no} 时间状态={时间状态}",
+                "被替代条文切换至替代标准、未替代条文附注引用，本条为替代范围闭合前的降级输出",
+                "deterministic",
+            ))
+        result.append(item)
 
     return result
 
@@ -601,7 +738,7 @@ def reason(
     """
     执行标准推理引擎（SRE）。
 
-    参数与 IC-10-Request v1.5.8 对齐。
+    参数与 IC-10-Request v1.8.0 对齐。
     """
     global _evidence_counter
     _evidence_counter = 0
@@ -624,7 +761,12 @@ def reason(
     # Step 2
     raw_standards: list[str] = []
     for domain in sorted(activated):
-        raw_standards.extend(_map_domain_to_standards(domain, project_type, location, system, evidence_list))
+        family = _map_domain_to_standards(domain, project_type, location, system, evidence_list)
+        if not family:
+            # M6 空族不得静默（设计方案 §3.2 T-B5，CG-20260916-005）：证据对象里的
+            # 标准族=[] 属内部痕迹，使用者只读 未覆盖领域，故信号须同时落到输出。
+            uncovered.append(f"{domain}（该域标准族为空，须补充 Step 2 映射或转专项技能咨询）")
+        raw_standards.extend(family)
 
     # 去重
     seen = set()
@@ -674,7 +816,6 @@ def reason(
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    _load_standards_index()
     import sys
 
     args = sys.argv[1:]
