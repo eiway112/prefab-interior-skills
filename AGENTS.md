@@ -47,7 +47,7 @@
 
 | 命令 | 当前基线 |
 |---|---|
-| `python 程序文件/validate_governance.py` | 总评 PASS，通过 171 / 失败 0 / 警告 2，exit 0。**硬判据是「失败 0 + exit 0」**；通过/警告计数随索引本体内容浮动（检查 4 与检查 5 都从本体算数），不得按固定数字判回归。警告来自检查 5「SRE 静态体检 T-A1—T-A5」的首轮 WARN 档位（T-A1 名称差分 14 处、T-A5Ⅱ 升档标注），不计 `fail_count`，见 CG-20260915-001 与 CG-20260916-002 |
+| `python 程序文件/validate_governance.py` | 总评 PASS，通过 171 / 失败 0 / 警告 2，exit 0。**硬判据是「失败 0 + exit 0」**；通过/警告计数随索引本体内容浮动（检查 4 与检查 5 都从本体算数），不得按固定数字判回归。警告来自检查 5「SRE 静态体检 T-A1—T-A5」的首轮 WARN 档位（T-A1 名称差分 14 处、T-A5Ⅱ 升档标注），不计 `fail_count`。**T-A1 已不属观察期保留组**（其最后 1 处外部真值依赖已按设计方案 §7.4 通道 ② 裁定并落地），但**档位维持 WARN**——升 FAIL 须待其余 14 处差分修完并另线改 `程序文件/validate_governance.py`，见 CG-20260915-001、CG-20260916-001 与 CG-20260916-002 |
 | `python 程序文件/ace_regression_test.py` | Ran 90 tests，OK |
 | `python ~/.qoder/skills/prefab-standards-reviewer/sre_regression_test.py` | Ran 30 tests，`OK (expected failures=7)`，exit 0。7 例 expectedFailure = SRE 确定性体检行为组 T-B1—T-B7（缺陷未修期间挂档以护 exit code），实跑产物 `sre_regression_report.json`（已被 `.gitignore` 收录，机器本地）。见 CG-20260916-002 |
 | `python ~/.qoder/skills/prefab-standards-reviewer/sr_ic07_compliance_test.py` | Ran 20 tests，OK。**计数硬编码**（`SR_REDLINE_COUNT`、`REGISTRY_TOTAL_COUNT`），红线注册类变更须回扫 |
