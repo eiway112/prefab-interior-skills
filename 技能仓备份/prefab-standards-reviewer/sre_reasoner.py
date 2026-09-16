@@ -1,7 +1,7 @@
 """
 SRE Reasoner —— 标准推理引擎参考实现
 =====================================
-版本：v1.2（2026-08-13）
+版本：v1.3（2026-09-16，CG-20260916-009：M1 图集号正则命中修正 + 前缀不可识别支按索引 §二 现读 L1；M4 `else` 兜底值改为契约内 `construction_guide`。上一版 v1.2 = 2026-08-13）
 依据：standards-reasoning-rules.md v1.2 + interface-contracts.md IC-10 v1.8.0
 
 最小接口：
@@ -47,7 +47,8 @@ PREFIX_PATTERNS: list[tuple[str, str, str, str, str]] = [
     (r"^DBJ\b", "地方建设标准", "L3", "binding_support", "对应省份"),
     (r"^T/", "团体标准", "L4", "reference", "全国（管辖地采纳后适用）"),
     (r"^\d+CJ", "图集", "L3", "reference", "全国或区域"),
-    (r"^\d+J\b", "图集", "L3", "reference", "全国或区域"),
+    # 「J」后紧跟数字：`\b` 在 J 与数字之间不成立，08J931 一类图集号会漏过本行
+    (r"^\d+J(?=\d)", "图集", "L3", "reference", "全国或区域"),
     (r"^\d+ZJ", "图集", "L3", "reference", "全国或区域"),
     (r"^RISN-TG", "技术导则", "L2", "reference", "全国"),
 ]
@@ -264,6 +265,12 @@ PARTIAL_REPLACEMENT_NOTICES: dict[str, str] = {
 
 STANDARD_STATUS: dict[str, str] = {}
 
+# 索引 §二 小节标题「## 二、第一层级：强制性国标（红线标准）」的层级标记词
+_INDEX_L1_HEADING = "第一层级"
+# 该小节主表收录的编号集合——前缀不可识别的强制性国标（GB 18580 等）的层级真值源，
+# 由 _load_standards_index() 现读填充，代码内不维护编号清单副本。
+INDEX_L1_IDS: set[str] = set()
+
 # IC-10 v1.8.0 `时间状态` 六值中的显式降级值：索引无该编号记录时的唯一输出（T-B2）。
 # 本文件只承载这一个降级值，不复制整个枚举集——合法集由回归测试/门禁从
 # interface-contracts.md 与 standards-index.md §1.1 现读校验，代码内不留第二份。
@@ -308,7 +315,7 @@ def _classify_status_table(header: list[str]) -> str | None:
 
 
 def _load_standards_index() -> None:
-    """从 ../shared/standards-index.md 按表头列名加载标准状态。
+    """从 ../shared/standards-index.md 按表头列名加载标准状态与 §二 L1 成员集。
 
     主表为状态真值源，§7.2 登记表只补主表未收录的编号（旧版标准在主表单列外），
     核验记录表不参与——三者共用固定列号是 T-B4/T-B7 的根因。
@@ -323,21 +330,29 @@ def _load_standards_index() -> None:
         return
 
     buckets: dict[str, dict[str, str]] = {"main": {}, "register": {}}
-    for header, rows in _iter_md_tables(text):
-        kind = _classify_status_table(header)
-        if kind is None:
-            continue
-        i_id = next(header.index(c) for c in _ID_COLS if c in header)
-        i_name = next((header.index(c) for c in _NAME_COLS if c in header), None)
-        i_status = header.index("状态")
-        for row in rows:
-            if i_id >= len(row) or not row[i_id]:
+    INDEX_L1_IDS.clear()
+    # 层级由小节标题承载（「## 二、第一层级：强制性国标（红线标准）」），故按 ## 切块
+    parts = re.split(r"(?m)^(##.*)$", text)
+    sections = [("", parts[0])] + [(parts[i], parts[i + 1]) for i in range(1, len(parts) - 1, 2)]
+    for heading, chunk in sections:
+        in_l1_section = _INDEX_L1_HEADING in heading
+        for header, rows in _iter_md_tables(chunk):
+            kind = _classify_status_table(header)
+            if kind is None:
                 continue
-            std_no = row[i_id]
-            if i_status < len(row) and row[i_status]:
-                buckets[kind].setdefault(std_no, row[i_status])
-            if i_name is not None and i_name < len(row) and row[i_name]:
-                STANDARD_NAMES.setdefault(std_no, row[i_name])
+            i_id = next(header.index(c) for c in _ID_COLS if c in header)
+            i_name = next((header.index(c) for c in _NAME_COLS if c in header), None)
+            i_status = header.index("状态")
+            for row in rows:
+                if i_id >= len(row) or not row[i_id]:
+                    continue
+                std_no = row[i_id]
+                if kind == "main" and in_l1_section:
+                    INDEX_L1_IDS.add(std_no)
+                if i_status < len(row) and row[i_status]:
+                    buckets[kind].setdefault(std_no, row[i_status])
+                if i_name is not None and i_name < len(row) and row[i_name]:
+                    STANDARD_NAMES.setdefault(std_no, row[i_name])
 
     STANDARD_STATUS.clear()
     STANDARD_STATUS.update(buckets["main"])
@@ -387,6 +402,18 @@ def classify_standard(std_no: str, evidence_list: list[dict]) -> dict[str, Any]:
         if re.match(pat, std_no_norm):
             matched = (std_type, level, authority, scope)
             break
+
+    if matched is None and std_no_norm in INDEX_L1_IDS:
+        # §1.2 前缀表只枚举 GB 5xxxx 段；无 /T 的四、五位强制性国标（GB 18580-2025 等）
+        # 前缀不可识别，但索引 §二「第一层级：强制性国标（红线标准）」持有其层级真值。
+        # 走 §1.4 降级会把红线标准降为参考级，故按 §1.2 的 L1↔red_line 耦合确定性分类。
+        matched = ("强制性国标（索引 §二 收录）", "L1", "red_line", "全国")
+        evidence_list.append(_evidence(
+            "classification", "standards-index.md §二 / standards-reasoning-rules.md §1.4",
+            f"标准编号={std_no_norm}",
+            "前缀不在 §1.2 表内、索引 §二 收录 → 层级=L1, 权限=red_line",
+            "deterministic"
+        ))
 
     if matched is None:
         evidence_list.append(_evidence(
@@ -627,7 +654,11 @@ def _apply_applicability(
             # 该值不在 IC-10 `角色` 五值枚举内；随其 prefab 域同族语义归入（CG-20260916-005）
             role = "prefab_evaluation"
         else:
-            role = "reference"
+            # 兜底不得写 "reference"：那是 IC-10 `权限` 三值枚举的成员，不在 `角色` 五值内，
+            # 串槽后既越契约、又落不进 Step 5 优先级表（_role_priority 返回 99）。
+            # M1 降级支已把层级定为 L4，Step 4 对 L4 的分配条件即 construction_guide；
+            # 分类不确定性由 M1 的 inferred 降级证据承载，不靠越枚举表达。
+            role = "construction_guide"
 
         evidence_list.append(_evidence(
             "applicability", "standards-reasoning-rules.md §四 M4 / §3.2 Step 4",

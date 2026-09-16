@@ -103,16 +103,24 @@ def _section(text: str, start: str, stops: tuple[str, ...]) -> str:
 
 
 def _table(block: str) -> tuple[list[str], list[list[str]]]:
-    """表头感知取块内首张表：返回 (表头单元, 数据行单元)。"""
+    """表头感知取块内首张表：返回 (表头单元, 数据行单元)。
+
+    数据行在首个非表格行处截断——否则同一小节内的第二张表（如索引 §二 末尾的
+    「官方核验记录」）会被并入首表行集，其表头单元被当成编号读出。
+    """
     lines = block.splitlines()
     for i, line in enumerate(lines):
         if not line.startswith("|"):
             continue
-        if i + 1 >= len(lines) or set(lines[i + 1].replace("|", "").strip()) - set("-: "):
+        sep = lines[i + 1].strip() if i + 1 < len(lines) else ""
+        if not sep or set(sep.replace("|", "").strip()) - set("-: "):
             continue
         header = [c.strip() for c in line.strip().strip("|").split("|")]
-        rows = [[c.strip() for c in ln.strip().strip("|").split("|")]
-                for ln in lines[i + 2:] if ln.startswith("|")]
+        rows: list[list[str]] = []
+        for ln in lines[i + 2:]:
+            if not ln.startswith("|"):
+                break
+            rows.append([c.strip() for c in ln.strip().strip("|").split("|")])
         return header, rows
     return [], []
 
@@ -162,9 +170,30 @@ def _contract_ic10_status_enum() -> list[str]:
     return [s.strip().strip('"') for s in match.group(1).split(",") if s.strip()]
 
 
+def _contract_ic10_role_enum() -> list[str]:
+    """IC-10 `适用标准集[].角色` 合法集（从契约 Schema 现读，本文件不留字面量副本）。
+
+    契约缺失或正则脱靶时返回空表——调用方按"全表越界"失败收口，不静默放行。
+    """
+    match = re.search(r'"角色":\s*\{[^{}]*?"enum":\s*\[([^\]]*)\]', _contract_text(), re.S)
+    if not match:
+        return []
+    return [s.strip().strip('"') for s in match.group(1).split(",") if s.strip()]
+
+
 def _contract_declares(field: str) -> bool:
     """字段是否已在 IC-10 契约 Schema 里声明（additionalProperties: false 的前置条件）。"""
     return f'"{field}":' in _contract_text()
+
+
+def _index_l1_ids() -> set[str]:
+    """索引 §二「第一层级：强制性国标（红线标准）」主表编号（从索引现读）。
+
+    不取 `sre_reasoner.INDEX_L1_IDS`——运行时自证自指无交叉核对力，两侧同错即静默放行。
+    """
+    block = _section(_index_text() or "", r"^## 二、", (r"^## 三、",))
+    header, rows = _table(block)
+    return {_cell(r, header, "标准编号") for r in rows} - {""}
 
 
 def _deprecated_rows() -> list[tuple[str, str]]:
@@ -406,6 +435,32 @@ class TestM1Classification(unittest.TestCase):
         self.assertEqual(r["分类置信度"], "inferred")
         self.assertEqual(r["权限"], "reference")
 
+    def test_atlas_j_series_matches_prefix(self):
+        """§1.2「数字+`J`」行须真命中：`\\b` 版式在 J 与数字间不成立，图集号会静默落 §1.4 降级支。"""
+        for atlas in ("08J931", "07J905-1"):
+            r = self._classify(atlas)
+            self.assertEqual(r["标准类型"], "图集", f"{atlas} 未命中 §1.2 图集行")
+            self.assertEqual(r["层级"], "L3")
+            self.assertEqual(r["权限"], "reference")
+            self.assertEqual(r["分类置信度"], "deterministic")
+
+    def test_index_section2_id_is_l1_not_demoted(self):
+        """前缀不可识别但索引 §二「第一层级：强制性国标（红线标准）」收录 → L1/red_line。
+
+        降级为 reference 会把红线标准降为参考级。期望集从索引 §二 现读，不写死编号清单。
+        """
+        l1_ids = _index_l1_ids()
+        self.assertGreater(len(l1_ids), 0, "索引 §二 现读为空，判据不可用")
+        demoted = {i for i in l1_ids if self._classify(i)["层级"] != "L1"}
+        self.assertEqual(demoted, set(), f"索引 §二 收录的强制性国标被降为参考级：{sorted(demoted)}")
+        # 负向半条：索引外编号仍须走 §1.4 降级，本判据不得把任意编号升成 L1
+        fake = "ZZ 9999-1999"
+        self.assertNotIn(fake, l1_ids)
+        self.assertEqual(
+            (self._classify(fake)["层级"], self._classify(fake)["权限"],
+             self._classify(fake)["分类置信度"]),
+            ("L4", "reference", "inferred"), "索引外编号未走 §1.4 降级支")
+
 
 class TestM3ScenarioReasoning(unittest.TestCase):
     """M3 场景→领域→标准族推理链。"""
@@ -474,6 +529,60 @@ class TestM4Applicability(unittest.TestCase):
         gb55038 = next(s for s in r["适用标准集"] if s["标准编号"] == "GB 55038-2025")
         self.assertEqual(gb55038["角色"], "mandatory_check")
 
+    def _matrix_items(self, std_no: str):
+        """全 34 组激活对 × LOCATIONS 里指定编号的产出条目，随附其场景键。"""
+        for project_type, space_type in sre_reasoner.ACTIVATION_TABLE:
+            for location in LOCATIONS:
+                for s in reason(project_type, space_type, location=location)["适用标准集"]:
+                    if s["标准编号"] == std_no:
+                        yield (project_type, space_type, location), s
+
+    def test_index_section2_standard_gets_mandatory_check(self):
+        """GB 18580-2025 裁定值（出处＝索引 §二 红线标准）：全矩阵恒为 L1/red_line/mandatory_check。"""
+        bad = [(k, s["层级"], s["权限"], s["角色"])
+               for k, s in self._matrix_items("GB 18580-2025")
+               if (s["层级"], s["权限"], s["角色"]) != ("L1", "red_line", "mandatory_check")]
+        self.assertGreater(len(list(self._matrix_items("GB 18580-2025"))), 0,
+                           "GB 18580-2025 未进入任何场景输出，判据空跑")
+        self.assertEqual(bad, [], f"甲醛环保红线在部分场景仍被降为参考级：{bad[:4]}")
+
+    def test_atlas_standard_gets_construction_guide(self):
+        """08J931 裁定值（出处＝§1.2「数字+`J`」图集行 + Step 4「L3 图集」）：恒为 L3/construction_guide。"""
+        hits = list(self._matrix_items("08J931"))
+        self.assertGreater(len(hits), 0, "08J931 未进入任何场景输出，判据空跑")
+        bad = [(k, s["层级"], s["角色"]) for k, s in hits
+               if (s["层级"], s["角色"]) != ("L3", "construction_guide")]
+        self.assertEqual(bad, [], f"图集未落 Step 4 的 L3 分支：{bad[:4]}")
+
+    def test_M4_fallback_role_stays_in_contract_enum(self):
+        """负向注入：前缀不可识别、索引未收录的编号经 M4 `else` 兜底，角色仍须属契约五值。
+
+        全矩阵正例在数据面修净后不再含兜底支编号（恒真空跑），故合成注入绑定该支——
+        兜底值回退为 `reference` 时本用例转红（记忆「修净后的守卫须仍能失败」）。
+        """
+        fake = "ZZ 9999-1999"
+        self.assertNotIn(fake, sre_reasoner.INDEX_L1_IDS, "合成编号已在索引 §二，负向取证失效")
+        self.assertFalse(any(re.match(pat, fake) for pat, *_ in sre_reasoner.PREFIX_PATTERNS),
+                         "合成编号撞上真实前缀模式，未走 §1.4 降级支")
+        domain = next(d for d, m in sre_reasoner.DOMAINS.items()
+                      if "默认" in m and "全部" not in m and "住宅" not in m)
+        scenario = next(k for k, v in sre_reasoner.ACTIVATION_TABLE.items() if domain in v)
+        saved = {d: dict(m) for d, m in sre_reasoner.DOMAINS.items()}
+        try:
+            mapping = dict(sre_reasoner.DOMAINS[domain])
+            mapping["默认"] = list(mapping["默认"]) + [fake]
+            sre_reasoner.DOMAINS[domain] = mapping
+            hit = next((s for s in reason(*scenario)["适用标准集"] if s["标准编号"] == fake), None)
+            self.assertIsNotNone(hit, "合成编号未进入输出，负向路径根本没走到")
+            role_enum = _contract_ic10_role_enum()
+            self.assertIn(hit["角色"], role_enum,
+                          f"M4 兜底支产出 {hit['角色']!r}，越出 IC-10 契约枚举 {role_enum}")
+            self.assertLess(sre_reasoner._role_priority(hit["角色"]), 99,
+                            "兜底角色落不进 Step 5 优先级表，排序按未知处理")
+        finally:
+            for d, m in saved.items():
+                sre_reasoner.DOMAINS[d] = m
+
 
 class TestM6Degradation(unittest.TestCase):
     """M6 降级与兜底协议。"""
@@ -513,23 +622,42 @@ class TestIC10SchemaCompliance(unittest.TestCase):
             self.assertIn(ev["置信度"], ["deterministic", "inferred", "unknown"])
 
     def test_standard_item_schema(self):
-        r = reason("住宅", "分户墙")
+        """IC-10 条目逐字段合规：全 34 组激活对 × LOCATIONS 矩阵遍历。
+
+        判据原为 `reason("住宅", "分户墙")` 单场景（CG-20260916-005 复核 F-03 已登记该
+        覆盖面缺口）：该场景不含任何走 M1 降级支的编号，`角色` 断言在 M4 `else` 兜底越枚举
+        真实存在时仍恒真。扩面后凡落进兜底支的编号都进入判据面。
+        """
         contract_enum = _contract_ic10_status_enum()
-        for s in r["适用标准集"]:
-            self.assertIn("标准编号", s)
-            self.assertIn("标准名称", s)
-            self.assertIn("层级", s)
-            self.assertIn(s["层级"], ["L1", "L2", "L3", "L4"])
-            self.assertIn("权限", s)
-            self.assertIn(s["权限"], ["red_line", "binding_support", "reference"])
-            self.assertIn("角色", s)
-            self.assertIn(s["角色"], ["mandatory_check", "design_basis", "verification_reference", "construction_guide", "prefab_evaluation"])
-            self.assertIn("地域适用性", s)
-            self.assertIn("时间状态", s)
-            self.assertIn(s["时间状态"], contract_enum,
-                          f"{s['标准编号']} 时间状态 {s['时间状态']!r} 越出 IC-10 契约枚举")
-            if "状态注记" in s:
-                self.assertTrue(s["状态注记"], f"{s['标准编号']} 状态注记 为空串，应省略该字段")
+        role_enum = _contract_ic10_role_enum()
+        self.assertGreater(len(role_enum), 0, "IC-10 契约 角色 枚举现读为空，降级判据不可用")
+        bad: list[str] = []
+        visited: set[tuple[str, str]] = set()
+        checked = 0
+        for project_type, space_type in sre_reasoner.ACTIVATION_TABLE:
+            for location in LOCATIONS:
+                visited.add((project_type, space_type))
+                for s in reason(project_type, space_type, location=location)["适用标准集"]:
+                    checked += 1
+                    tag = f"{project_type}/{space_type}/{location} {s.get('标准编号')}"
+                    for field in ("标准编号", "标准名称", "层级", "权限", "角色",
+                                  "地域适用性", "时间状态"):
+                        if field not in s:
+                            bad.append(f"{tag} 缺字段 {field}")
+                    if s.get("层级") not in ("L1", "L2", "L3", "L4"):
+                        bad.append(f"{tag} 层级 {s.get('层级')!r} 越界")
+                    if s.get("权限") not in ("red_line", "binding_support", "reference"):
+                        bad.append(f"{tag} 权限 {s.get('权限')!r} 越界")
+                    if s.get("角色") not in role_enum:
+                        bad.append(f"{tag} 角色 {s.get('角色')!r} 越出 IC-10 契约枚举 {role_enum}")
+                    if s.get("时间状态") not in contract_enum:
+                        bad.append(f"{tag} 时间状态 {s.get('时间状态')!r} 越出 IC-10 契约枚举")
+                    if s.get("状态注记") == "":
+                        bad.append(f"{tag} 状态注记 为空串，应省略该字段")
+        self.assertEqual(visited, set(sre_reasoner.ACTIVATION_TABLE), "矩阵遍历漏组")
+        self.assertGreater(checked, len(visited) * len(LOCATIONS),
+                           "矩阵未产出条目（空跑），字段断言无绑定力")
+        self.assertEqual(bad, [], f"IC-10 条目字段越界 {len(bad)} 处：{bad[:6]}")
 
     def test_decision_trace_when_requested(self):
         r = reason("住宅", "分户墙", return_trace=True)
