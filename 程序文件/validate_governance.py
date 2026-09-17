@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 装配式装修技能合集 — 治理文件契约校验脚本
-validate_governance.py v1.6.0
+validate_governance.py v1.7.0
 
 校验六项一致性与完整性：
   1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表，统计表按表头动态解析）
   2. interface-contracts.md — IC-02/IC-03/IC-05/IC-06/IC-07/IC-08/IC-09/IC-10/IC-11/IC-12/IC-13/IC-14 JSON Schema 必填字段完整性
   3. standards-index.md     — 标准状态枚举合法性（实际落检）+ 时间状态双向检查
-                              （实施日期已过仍标"即将实施"→FAIL）+ 核验过期预警
+                              （实施日期已过仍标"即将实施"→FAIL）+ 复查维护提醒及依据记录预警
   4. 跨文件漂移反查          — 项目索引/SRE/standards-index §10.1 中的手写计数
                               与注册表本体动态统计值比对，不一致即 FAIL
   5. SRE 静态体检 T-A1—T-A5  — 运行时 sre_reasoner.py 硬编码字面量（AST 提取，不 import）
@@ -396,11 +396,7 @@ def check_interfaces(text: str, report: Report):
 
 
 # ── 检查 3：标准索引状态 ─────────────────────────────────
-# 核验周期分档（真值源：standards-index.md §1.1A「到期需复核」行——强制性国标超过 3 个月、
-# 推荐性/产品/地方标准超过 6 个月未复核即到期；天数口径取整改方案 P1 item 9 的 92／183）。
-# 判据为严格大于，故第 92 天当日仍在期、第 93 天转超期。到期由机器从核验记录表的
-# 「核验日期」列现算，**不读索引正文散文**（§二 末「核验周期说明」那句「上次核验日期：2026-06-17」
-# 不参与判定）；无「核验日期」记录者按账本纪律视为已超期，不作免检（整改方案 §6.2）。
+# §1.1A 的维护周期派生天数，只用于复查提醒，不裁定标准效力。
 REVIEW_DAYS_MANDATORY = 92
 REVIEW_DAYS_OTHER = 183
 # 强制性国标档的归属判据：索引 §二 小节标题「第一层级：强制性国标（红线标准）」。
@@ -555,34 +551,35 @@ def check_standards(text: str, report: Report):
     # （`**官方核验记录**（已核验标准）：`），锚点命中 0 处 → expired_review 恒为空 →
     # 无条件打印"无超期未核验标准"，属恒真空跑守卫（到期实际由索引散文承载）。
     verify_dates: Dict[str, str] = {}
+    verify_states: Dict[str, str] = {}
     for tbl in iter_md_tables(lines, 0, len(lines)):
         if classify_index_table(tbl["header"]) != "verify":
             continue
         i_vid = find_col(tbl["header"], ID_COL_ALIASES, exact=True)
         i_vdate = find_col(tbl["header"], ("核验日期",), exact=True)
-        if i_vid is None or i_vdate is None:
-            continue          # 核验状态分层表无日期列：不参与时效判定（其状态字面见 3h）
+        i_vstate = find_col(tbl["header"], ("核验状态",), exact=True)
+        if i_vid is None:
+            continue
         for _, cells in tbl["rows"]:
-            if i_vid >= len(cells) or i_vdate >= len(cells):
+            if i_vid >= len(cells):
                 continue
-            m_date = re.search(r"\d{4}-\d{2}-\d{2}", cells[i_vdate])
-            if not m_date:
-                continue
-            # 并列单元（`GB 50016-2014／GB 50210-2018／…`）只按全角／切；
-            # 半角 / 属编号本体（GB/T、T/CECS），切了会得到 "T 19889.1-2026" 这类假键。
+            m_date = (re.search(r"\d{4}-\d{2}-\d{2}", cells[i_vdate])
+                      if i_vdate is not None and i_vdate < len(cells) else None)
             for one in cells[i_vid].split("／"):
                 sid = norm_std_id(one)
                 if not STD_ID_SHAPE.match(sid):
-                    continue      # 「其余强制性国标」等散文兜底单元不是编号
-                if sid not in verify_dates or m_date.group(0) > verify_dates[sid]:
+                    continue
+                if i_vstate is not None and i_vstate < len(cells):
+                    verify_states[sid] = cells[i_vstate].replace("**", "").strip()
+                if m_date and (sid not in verify_dates or m_date.group(0) > verify_dates[sid]):
                     verify_dates[sid] = m_date.group(0)
 
-    # 台账分桶：无「核验日期」记录按账本纪律视为已超期，不作免检（整改方案 §6.2）
     ledger: Dict[bool, Dict[str, list]] = {
         True: {"在期": [], "超期": [], "无日期": []},
         False: {"在期": [], "超期": [], "无日期": []},
     }
     ledger_no_id: List[Tuple[str, int]] = []
+    invalid_verify_dates: List[Tuple[str, str]] = []
     for raw_id, line_no, mandatory in ledger_rows:
         sid = norm_std_id(raw_id)
         if not STD_ID_SHAPE.match(sid):
@@ -596,6 +593,11 @@ def check_standards(text: str, report: Report):
         try:
             age = (today - datetime.strptime(date_str, "%Y-%m-%d")).days
         except ValueError:
+            invalid_verify_dates.append((sid, date_str))
+            ledger[mandatory]["无日期"].append(sid)
+            continue
+        if age < 0:
+            invalid_verify_dates.append((sid, date_str))
             ledger[mandatory]["无日期"].append(sid)
             continue
         if age > tier:
@@ -648,21 +650,29 @@ def check_standards(text: str, report: Report):
                 f"  档位边界（今日恰第 {tier} 天仍在期、次日转超期）：{'、'.join(sorted(boundary))}")
     for mandatory in (True, False):
         for sid, date_str, age, tier in ledger[mandatory]["超期"]:
-            report.warn(
-                f"{sid}：核验日期 {date_str} 距今 {age} 天，超{tier_label[mandatory]}"
-                f"核验周期（{tier} 天），须复核标准状态")
+            report.info(
+                f"{sid}：复查提醒，核验日期 {date_str} 距今 {age} 天，超{tier_label[mandatory]}"
+                f"维护周期（{tier} 天）；不据此判标准失效或降低既有依据确定性，"
+                f"须安排复查；不代表本次已核实最新状态")
+    scheduled_reviews = {sid for sid, state in verify_states.items() if state == "到期需复核"}
+    overdue_reviews = {sid for m in (True, False) for sid, _, _, _ in ledger[m]["超期"]}
+    for sid in sorted(scheduled_reviews - overdue_reviews):
+        report.info(f"{sid}：复查提醒，核验状态=到期需复核，已有显式复查任务；"
+                    "是否具备可复用依据仍按有效日期及核验记录判定，不以任务登记替代核验")
+    for sid, date_str in invalid_verify_dates:
+        report.warn(f"{sid}：核验日期 {date_str} 不可解析或晚于当前日期，记录须核实")
     no_date_total = sum(len(ledger[m]["无日期"]) for m in (True, False))
     if no_date_total:
         report.warn(
-            f"无「核验日期」记录 {no_date_total} 条（强制性国标 "
+            f"无有效「核验日期」记录 {no_date_total} 条（强制性国标 "
             f"{len(ledger[True]['无日期'])}／其余 {len(ledger[False]['无日期'])}）："
-            f"按账本纪律视为已超期、不作免检；出口二选一——补官方核验记录，"
-            f"或接受 SRE 降低确定性输出（整改方案 §6.2／P1 item 9-10，"
+            f"依据链未确认，不等于标准已失效或已超期；出口二选一——补足真实核验记录，"
+            f"或接受 SRE 降低确定性输出（standards-index.md §1.1A，"
             f"运行时侧降级见 sre_reasoner._verification_confirmed）")
-    if not any(ledger[m]["超期"] for m in (True, False)):
-        report.ok(
-            f"无「已核验但超期」标准（{tier_label[True]} {REVIEW_DAYS_MANDATORY} 天／"
-            f"{tier_label[False]} {REVIEW_DAYS_OTHER} 天，机器从「核验日期」列现算）")
+    if not overdue_reviews and not scheduled_reviews:
+        report.info(
+            f"无到期复查任务（{tier_label[True]} {REVIEW_DAYS_MANDATORY} 天／"
+            f"{tier_label[False]} {REVIEW_DAYS_OTHER} 天，从日期现算且核对显式任务；不代表状态重新核验）")
     if ledger_no_id:
         report.info(
             f"无编号条目 {len(ledger_no_id)} 处（指南类，官方无编号）不入编号台账："

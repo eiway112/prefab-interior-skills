@@ -1,8 +1,8 @@
 """
 SRE Reasoner —— 标准推理引擎参考实现
 =====================================
-版本：v1.6（2026-09-17，CG-20260917-006：第三方审阅整改 P1 item 10——`_load_standards_index()` 增读索引核验记录表的 `核验状态` 与 `核验日期`（按列名现读，不按固定列号），新增 `_verification_confirmed()` 按索引 §1.1A 分档判定时效（强制性国标/L1 92 天、其余 183 天；无核验日期按账本纪律视为已超期，不作免检），M4 对未确认者**复用既有 STATUS_UNKNOWN 降级语义**——applicability 证据置信度 deterministic→inferred ＋ 一条 `degradation` 证据，**不新造枚举、不动 IC-10 items 字段**（故契约仍 v1.9.0）。上一版 v1.5 = 2026-09-17 CG-20260917-003）
-依据：standards-reasoning-rules.md v1.2.5 + interface-contracts.md IC-10 v1.9.0
+版本：v1.7（2026-09-17，CG-20260917-009：复查到期仅提醒，既有依据未确认仍降级）
+依据：standards-reasoning-rules.md v1.2.6 + interface-contracts.md IC-10 v1.9.0
 
 最小接口：
     reason(project_type, space_type, location=None, system=None,
@@ -11,7 +11,7 @@ SRE Reasoner —— 标准推理引擎参考实现
 输出符合 IC-10-Response Schema v1.9.0，包含：
 - 适用标准集（条目含 时间状态 与可选 状态注记）
 - 推理路径
-- 证据对象（至少一条；核验时效未确认者其 applicability 证据降为 inferred 并附 degradation 证据）
+- 证据对象（至少一条；依据未确认者降级，单纯复查到期仅在 applicability 证据中提醒）
 - 未覆盖领域（可选）
 - 外部协同（可选；断点5 新增，外协占位结构化对外可见）
 - 决策轨迹（return_trace=True 时）
@@ -312,15 +312,9 @@ _NAME_COLS = ("标准名称", "图集名称")
 # 一旦按列号放行就会把说明整句写成标准状态（T-B4）。
 _VERIFY_HEADER_KEYS = ("核验日期", "核验状态", "核验结论")
 
-# 索引 §1.1A「到期需复核」行的机器口径：强制性国标超过 3 个月、推荐性/产品/地方标准
-# 超过 6 个月未复核即到期。天数取 92／183（整改方案 P1 item 9），判据为严格大于，
-# 故第 92 天当日仍在期、第 93 天转超期。到期由机器从「核验日期」列现算，
-# 不读索引正文散文（§二 末「核验周期说明」那句「上次核验日期：…」不参与判定）。
+# §1.1A 的维护周期派生天数，只生成复查提醒，不裁定标准效力。
 REVIEW_DAYS_L1 = 92
 REVIEW_DAYS_OTHER = 183
-# 索引 §1.1「只有`已官方核验`且未超过核验周期的标准，技能才可输出确定性状态」的字面判据。
-# 以此前缀开头者视为已确认（含「已官方核验（条文级）」）；「条文级核验（S1／S1-）」不以该词
-# 开头故不确认——条文级核验只覆盖已核条文，不构成全标准状态确认（§二 核验状态分层表引用限制列）。
 CONFIRMED_VERIFY_PREFIX = "已官方核验"
 # 编号→{核验日期, 核验状态}，由 _load_standards_index() 从核验记录/分层表按列名现读填充，
 # 代码内不维护编号清单副本，也不维护任何核验日期的硬编码值。
@@ -476,31 +470,28 @@ def _split_status(status: str) -> tuple[str, str]:
 
 
 def _verification_confirmed(std_no: str, level: str) -> tuple[bool, str]:
-    """核验时效判定（索引 §1.1A／§1.1）：返回（可否输出确定性状态, 未确认事由）。
-
-    判据三条，全为机器现算，不采信索引正文散文：
-    ① 无「核验日期」记录 → 按账本纪律视为**已超期**（整改方案 §6.2／P1 item 9），
-       不作免检——「补官方核验」与「降低确定性」是等价出口，积压不阻塞业务也不假装合规；
-    ② 有日期但距今超过核验周期（L1 强制性国标 92 天、其余 183 天）→ 未确认；
-    ③ 「核验状态」列存在且不以「已官方核验」开头（条文级核验 S1／S1-、待核验、无法核验）
-       → 未确认。该列**缺失不否定**核验日期记录：产品标准官方核验记录表本就无此列，
-       其「已核验」身份由该表标题与日期列承载。
-    """
+    """返回既有核验记录可否复用，以及未确认事由或复查提醒。"""
     rec = STANDARD_VERIFY.get(std_no)
     tier = REVIEW_DAYS_L1 if level == "L1" else REVIEW_DAYS_OTHER
     if rec is None or not rec.get("核验日期"):
-        return False, f"索引无「核验日期」记录，按账本纪律视为已超期（{tier} 天档）"
+        return False, "索引无「核验日期」记录，既有核验依据未确认（不等于标准已失效）"
     state = rec.get("核验状态")
-    if state and not state.startswith(CONFIRMED_VERIFY_PREFIX):
-        return False, f"核验状态＝{state}，非「{CONFIRMED_VERIFY_PREFIX}」（条文级核验不构成全标准状态确认）"
+    if state and not state.startswith(CONFIRMED_VERIFY_PREFIX) and state != "到期需复核":
+        return False, f"核验状态＝{state}，既有核验依据未确认（条文级核验不构成全标准状态确认）"
     date_str = rec["核验日期"]
     try:
         verified_at = datetime.strptime(date_str, "%Y-%m-%d")
     except ValueError:
         return False, f"核验日期 {date_str} 不可解析"
     age = (datetime.now() - verified_at).days
-    if age > tier:
-        return False, f"核验日期 {date_str} 距今 {age} 天，超 {tier} 天核验周期"
+    if age < 0:
+        return False, f"核验日期 {date_str} 晚于当前日期，记录须核实"
+    if age > tier or state == "到期需复核":
+        return True, (
+            f"复查提醒：核验日期 {date_str}，距今 {age} 天，维护周期 {tier} 天"
+            f"（核验状态={state or '未单列'}）；保留既有核验结论，不代表本次已核实最新状态，"
+            "不因复查到期判为失效；项目引用前仍须核对适用条文及废止、替代、修订或勘误依据"
+        )
     return True, ""
 
 
@@ -797,10 +788,11 @@ def _apply_applicability(
         核验确认, 核验事由 = _verification_confirmed(std_no, level)
 
         evidence_list.append(_evidence(
-            "applicability", "standards-reasoning-rules.md §四 M4 / §3.2 Step 4",
+            "applicability", "standards-reasoning-rules.md §四 M4 / §3.2 Step 4 / standards-index.md §1.1A",
             f"标准={std_no}, 层级={level}, 权限={authority}, 所在地={location}",
-            f"地域适用性={地域适用性}, 时间状态={时间状态}, 角色={role}",
-            "deterministic" if 地域适用性 != "待确认" and 时间状态 != STATUS_UNKNOWN
+            f"地域适用性={地域适用性}, 时间状态={时间状态}, 角色={role}"
+            + (f"；{核验事由}" if 核验确认 and 核验事由 else ""),
+            "deterministic" if 地域适用性 != "待确认" and 时间状态 not in (STATUS_UNKNOWN, "已废止")
             and 核验确认 else "inferred"
         ))
 
@@ -822,6 +814,15 @@ def _apply_applicability(
                 "时间状态=未知，为显式降级态，不得作为合规判据，须走官方核验路径确认现行状态",
                 "inferred",
             ))
+        if 时间状态 == "已废止":
+            evidence_list.append(_evidence(
+                "degradation", "standards-reasoning-rules.md §4.3 TA-3 / SR-R-P0-1",
+                f"标准={std_no} 时间状态={时间状态}, 状态注记={状态注记 or '未登记'}",
+                "已废止标准不得作为现行合规判据；须通过 IC-07 核实替代关系，"
+                "无直接替代时咨询主管部门。保留条目用于风险披露，角色不代表可引用；"
+                "锚定标准废止须由维护者执行 S 级变更并停止相关结论使用。",
+                "inferred",
+            ))
         if not 核验确认:
             # 复用 STATUS_UNKNOWN 那条降级支的同一语义（置信度降 inferred ＋ degradation 证据），
             # 不新造枚举、不给 item 加字段：IC-10 items 为 additionalProperties: false，
@@ -830,9 +831,10 @@ def _apply_applicability(
                 "degradation",
                 "standards-reasoning-rules.md §五 M6 / standards-index.md §1.1A 核验状态执行规则",
                 f"标准={std_no}, 层级={level}, {核验事由}",
-                "核验时效未确认，本条为降低确定性的降级输出：不得作为唯一合规判据，"
-                "涉及安全/消防/隔声强制指标时须走 IC-07 或官方平台核验后升回确定性"
-                "（出口二选一：补官方核验记录，或接受本降级态）",
+                "既有核验依据未确认，本条为降低确定性的降级输出，不等于标准已失效："
+                "不得作为唯一合规判据；涉及安全/消防/隔声强制指标时须走 IC-07，"
+                "依据可追溯的正式文本或权威公告核实，不以获取渠道定级"
+                "（出口二选一：补足与结论范围相符的真实核验记录，或接受本降级态）",
                 "inferred",
             ))
         # IC-10 items 为 additionalProperties: false，降级标注只能走既有的可选字段 `替代警告`
