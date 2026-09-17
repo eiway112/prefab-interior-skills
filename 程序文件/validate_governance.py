@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 装配式装修技能合集 — 治理文件契约校验脚本
-validate_governance.py v1.5.1
+validate_governance.py v1.6.0
 
-校验五类治理文件的一致性和完整性：
+校验六项一致性与完整性：
   1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表，统计表按表头动态解析）
   2. interface-contracts.md — IC-02/IC-03/IC-05/IC-06/IC-07/IC-08/IC-09/IC-10/IC-11/IC-12/IC-13/IC-14 JSON Schema 必填字段完整性
   3. standards-index.md     — 标准状态枚举合法性（实际落检）+ 时间状态双向检查
@@ -15,6 +15,17 @@ validate_governance.py v1.5.1
                               与 standards-index.md 双源一致性 + 索引本体自洽 + 锚定集守卫
                               首轮一律 WARN（不计 fail_count），不打破 exit code 基线
                               判据见《文档/SRE确定性体检设计方案_v1.0.md》§3.1
+  6. 跨层一致性比对          — 三层模型（L1 开发源 / 运行时根 SOT / shared 镜像 / 技能仓备份）
+                              两条独立断言：(A) L1 → 该件声明的全部下游副本字节全等
+                              （抓跨批落后），(B) 运行时层 ↔ 技能仓备份同层全等
+                              （抓 sync_skill_backup.py 漏跑或半跑）
+                              比对集按文件逐个声明分层归属，不用目录 glob，故 *_pre* 回退件
+                              天然不入比对；基准取本次实读字节，不读 同步说明.md 的哈希清单
+                              （那是被测同步工具自身的产物，作基准属自指）
+                              运行时目录不可达 → 涉及该层的项降级 WARN 不 FAIL（同检查 5 口径），
+                              且被跳过的 (文件@层) 组合逐条列出，不只报总数
+                              比对集成员另与 sync_skill_backup.py 的 ROOT_FILES ∪ SHARED_FILES
+                              做双源交叉校验（AST 提取，不 import），漏配即 FAIL
 
 v1.1 变更（2026-08-06，CG-20260806-008）：
   - 修复 §十一/十二 统计表硬编码 6 技能导致 WS 加入后误判合计（改为按表头动态解析）
@@ -48,6 +59,17 @@ v1.5.1 变更（2026-09-15，CG-20260915-001 复核整改 F-01/F-02）：
   - T-A5Ⅱ 文案显式声明只聚合已实装的静态组 T-A1—T-A4，行为组未实装故计数
     低于设计全组实测值，不得据此判漏报
 
+v1.6.0 变更（2026-09-16，CG-20260916-010）：
+  - 新增检查 6：治理文件跨层一致性比对（承接 CG-20260916-006 ⑧(a) 与 -009 遗留 (c)——
+    `standards-index.md` 那次 6,689 B 跨批漂移此前只能靠人工发现，因校验面无任何跨层比对）
+  - 新增 CROSS_LAYER_SET（逐文件声明归属层）与 check_cross_layer()；派生层路径常量
+    REPO_BACKUP_DIR / REPO_BACKUP_SHARED_DIR
+  - RUNTIME_SHARED_DIR 自 v1.5 起声明后零引用（死常量），本批由检查 6 消费，
+    即"校验面不含跨层一致性比对"这一登记缺口闭合
+  - 检查 6 的层路径取模块常量（三层模型为固定结构），不受 --runtime-dir 影响；
+    该选项只重定位检查 5 的 sre_reasoner.py 数据源
+  - 档位：同机字面哈希比对、无外部真值依赖，故落地即 FAIL 档（不计入首轮 WARN 组）
+
 用法：
   python validate_governance.py
   python validate_governance.py --dir <项目根目录>
@@ -58,6 +80,7 @@ v1.5.1 变更（2026-09-15，CG-20260915-001 复核整改 F-01/F-02）：
 """
 
 import ast
+import hashlib
 import re
 import json
 import sys
@@ -71,10 +94,14 @@ from typing import Dict, List, Tuple, Optional, Any
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_BASE = SCRIPT_DIR.parent / "_专题_技能合集策划"
 
-# ── 运行时技能目录（L2 SOT，检查 5 的数据源）─────────────
+# ── 运行时技能目录（L2 SOT / L3 镜像，检查 5 与检查 6 的数据源）──
 RUNTIME_SKILLS = Path.home() / ".qoder" / "skills"
 SRE_DIR = RUNTIME_SKILLS / "prefab-standards-reviewer"
 RUNTIME_SHARED_DIR = RUNTIME_SKILLS / "shared"
+
+# ── 仓内镜像（运行时技能的 git 侧副本，检查 6 的数据源）────
+REPO_BACKUP_DIR = SCRIPT_DIR.parent / "技能仓备份"
+REPO_BACKUP_SHARED_DIR = REPO_BACKUP_DIR / "shared"
 
 # ── 输出工具 ──────────────────────────────────────────────
 class Report:
@@ -1213,6 +1240,153 @@ def check_sre_static(base_dir: Path, runtime_dir: Path, report: Report,
                     "升档依据缺失，须按 §4.3 降级态处理")
 
 
+# ── 检查 6：治理文件跨层一致性比对 ────────────────────────
+# 归属层逐文件声明（不用目录 glob）。某层无此件属声明事实而非缺失，出处写在各行备注里。
+CROSS_LAYER_SET = [
+    ("standards-index.md",
+     ("L1", "RT_ROOT", "RT_SHARED", "REPO_ROOT", "REPO_SHARED"),
+     "五层字节全等＝本表通过态。注意 prefab-governance-sync:40 约定「根含 SOT 声明＋镜像说明、"
+     "镜像为 shared 措辞，只同步正文」，而该头部差异未被维持（CG-20260916-006 ⑧(b) 既存偏差）；"
+     "若日后恢复头部约定，本件须同批改为本体比对＋头部豁免，否则假红"),
+    ("change-governance.md",
+     ("L1", "RT_SHARED", "REPO_SHARED"),
+     ""),
+    ("glossary.md",
+     ("L1", "RT_SHARED", "REPO_SHARED"),
+     ""),
+    ("interface-contracts.md",
+     ("L1", "RT_SHARED", "REPO_SHARED"),
+     ""),
+    ("redlines-registry.md",
+     ("L1", "RT_SHARED", "REPO_SHARED"),
+     "运行时只有 shared/ 镜像一处（prefab-governance-sync 三层映射表特例行）"),
+    ("standards-reasoning-rules.md",
+     ("L1", "RT_SHARED", "REPO_SHARED"),
+     ""),
+    ("platform-adapter-reference.md",
+     ("RT_ROOT", "RT_SHARED", "REPO_ROOT", "REPO_SHARED"),
+     "SOT 直接建于运行时根、项目仓无开发副本（技能合集总入口策划方案 文件清单）；"
+     "根↔镜像的头部差异系技能约定，故只比同层（RT_ROOT↔REPO_ROOT、RT_SHARED↔REPO_SHARED）"),
+]
+RUNTIME_LAYERS = ("RT_ROOT", "RT_SHARED")
+
+
+def sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def check_cross_layer(base_dir: Path, report: Report):
+    """三层模型的字节一致性。两条断言各自独立，故一条红不掩盖另一条。
+
+    (A) L1 → 该件声明的全部下游副本：抓 CG-20260916-006 那类跨批落后。
+    (B) 运行时层 ↔ 技能仓备份同层：抓 sync_skill_backup.py 漏跑或半跑。
+    """
+    report.section("治理文件跨层一致性 — (A) L1→下游副本 ／ (B) 运行时↔技能仓备份")
+
+    layer_dir = {"L1": base_dir, "RT_ROOT": RUNTIME_SKILLS, "RT_SHARED": RUNTIME_SHARED_DIR,
+                 "REPO_ROOT": REPO_BACKUP_DIR, "REPO_SHARED": REPO_BACKUP_SHARED_DIR}
+
+    # 双源交叉校验：本表成员须等于被测同步脚本的管辖范围，否则「脚本管、本表漏」会静默放过
+    sync_path = SCRIPT_DIR / "sync_skill_backup.py"
+    declared = {name for name, _, _ in CROSS_LAYER_SET}
+    if sync_path.is_file():
+        lits = extract_py_literals(
+            sync_path.read_text(encoding="utf-8"), ["ROOT_FILES", "SHARED_FILES"])
+        scope = set(lits.get("ROOT_FILES") or []) | set(lits.get("SHARED_FILES") or [])
+        if scope:
+            for miss in sorted(scope - declared):
+                report.fail(f"{miss}：在 sync_skill_backup.py 管辖范围内而 CROSS_LAYER_SET 未声明"
+                            f" → 该件的跨层漂移不经门禁（漏配）")
+            for extra in sorted(declared - scope):
+                report.fail(f"{extra}：在 CROSS_LAYER_SET 内而不属 sync_skill_backup.py 范围"
+                            f" → 声明表越界，须核归属或让该脚本纳管")
+            if scope == declared:
+                report.ok(f"比对集与 sync_skill_backup.py 管辖范围成员一致（{len(scope)} 件）")
+        else:
+            report.warn(f"未能从 {sync_path.name} 提取 ROOT_FILES/SHARED_FILES → 本项不判")
+    else:
+        report.warn(f"sync_skill_backup.py 不可达：{sync_path} → 范围交叉校验本项不判")
+
+    unreachable = {k for k in RUNTIME_LAYERS if not layer_dir[k].is_dir()}
+    if unreachable:
+        report.warn(f"运行时目录不可达：{'、'.join(sorted(unreachable))} → 涉该层各项本轮不判，"
+                    f"只降级不判红（检查 5 同口径）；L1 与 `技能仓备份/` 属本仓固定面，缺失仍判 FAIL")
+    skipped: List[str] = []
+
+    digest: Dict[Tuple[str, str], Optional[str]] = {}
+    for name, layers, _note in CROSS_LAYER_SET:
+        for layer in layers:
+            if layer in unreachable:
+                digest[(name, layer)] = None
+                skipped.append(f"{name}@{layer}")
+                continue
+            path = layer_dir[layer] / name
+            if path.is_file():
+                digest[(name, layer)] = sha256_file(path)
+            elif not layer_dir[layer].is_dir():
+                digest[(name, layer)] = None
+                report.fail(f"{name}：声明归属 {layer} 层，该层目录不存在（{layer_dir[layer]}）")
+            else:
+                digest[(name, layer)] = None
+                report.fail(f"{name}：声明归属 {layer} 层，实际无此件（{path}）")
+
+    for name, _layers, note in CROSS_LAYER_SET:
+        if note:
+            report.info(f"{name}：{note}")
+
+    a_checked = b_checked = 0
+
+    for name, layers, note in CROSS_LAYER_SET:
+        if "L1" not in layers:
+            report.info(f"{name}：无 L1 归属 → 不入 (A) 链")
+            continue
+        l1 = digest[(name, "L1")]
+        if l1 is None:
+            continue          # 不可读已在上一步 FAIL
+        for layer in layers:
+            if layer == "L1":
+                continue
+            other = digest[(name, layer)]
+            if other is None:
+                continue      # 降级或已 FAIL，不重复计项
+            a_checked += 1
+            if other == l1:
+                report.ok(f"(A) {name}：{layer} = L1（{l1[:16]}）")
+            else:
+                report.fail(f"(A) {name}：{layer} {other[:16]} ≠ L1 {l1[:16]}"
+                            f" → 跨层落后，须由 prefab-governance-sync 按 L1→下游带平")
+
+    for name, layers, _note in CROSS_LAYER_SET:
+        for rt, repo in (("RT_ROOT", "REPO_ROOT"), ("RT_SHARED", "REPO_SHARED")):
+            if rt not in layers or repo not in layers:
+                continue
+            h_rt, h_repo = digest[(name, rt)], digest[(name, repo)]
+            if h_rt is None or h_repo is None:
+                continue
+            b_checked += 1
+            if h_rt == h_repo:
+                report.ok(f"(B) {name}：{rt} = {repo}（{h_rt[:16]}）")
+            else:
+                report.fail(f"(B) {name}：{rt} {h_rt[:16]} ≠ {repo} {h_repo[:16]}"
+                            f" → sync_skill_backup.py 漏跑或半跑")
+
+    if skipped:
+        report.warn(f"降级不判项 {len(skipped)} 处：{'、'.join(skipped)}"
+                    f"（运行时不可达所致，非该层与 L1 一致）")
+    report.info(f"(A) 比对 {a_checked} 项 ／ (B) 比对 {b_checked} 项；"
+                f"比对集逐文件声明（{len(CROSS_LAYER_SET)} 件），不 glob 故回退件不入")
+    report.info("覆盖面边界：本检查只覆盖上表声明的治理件；技能目录内各件"
+                "（SKILL.md／reference.md／examples.md 等）与机器本地产物"
+                "（如 sre_regression_report.json）不经本检查")
+    report.info("哈希口径：sha256 取原始字节、不做 eol／编码归一。跨机若 core.autocrlf=true "
+                "会使 `技能仓备份/` 层转 CRLF 而产假红（本机复算：git config core.autocrlf=false，"
+                "治理件 CR 字节 0，唯 platform-adapter-reference.md 四层同为 CRLF=26 且同层互等）")
+    report.info(f"层路径：L1={base_dir} ／ 运行时={RUNTIME_SKILLS} ／ 仓内镜像={REPO_BACKUP_DIR}"
+                f"（本检查取模块常量，不受 --runtime-dir 影响）")
+    if not unreachable and a_checked + b_checked == 0:
+        report.fail("(A)(B) 零比对项且非降级态 —— 声明表或层路径已失效，本检查不得判绿")
+
+
 # ── 主流程 ────────────────────────────────────────────────
 def main():
     # Windows 终端 UTF-8 兼容
@@ -1282,6 +1456,9 @@ def main():
 
     # 检查 5：SRE 静态体检 T-A1—T-A5（首轮一律 WARN，不计 fail_count）
     check_sre_static(base_dir, runtime_dir, report, si_text, std_rows, std_names)
+
+    # 检查 6：治理文件跨层一致性（FAIL 档，计入 fail_count）
+    check_cross_layer(base_dir, report)
 
     # 输出报告
     fail_count = report.print_report()

@@ -1,11 +1,11 @@
 """
 SRE Reasoner 回归测试集
 ========================
-版本：v1.5（2026-09-16）
+版本：v1.6（2026-09-17，CG-20260917-003：团体标准 T/ 层级断言 L4→L2、新增 DBJ+省码数字形态用例 test_dbj_province_code_form_matches）
 运行：python sre_regression_test.py
 
 覆盖：M1 分类协议、M3 场景推理与 Step 1a 裁定、M4 适用性裁判、M6 降级、
-      IC-10 Response v1.8.0 Schema、SR 引擎化红线，
+      IC-10 Response v1.9.0 Schema、SR 引擎化红线，
       以及 SRE 确定性体检行为组 T-B1—T-B7 + A5-B 锚定升档
       （判据源《文档/SRE确定性体检设计方案_v1.0.md》§3.2 / §4.3 / §5.2 / §6.2）。
 """
@@ -421,13 +421,39 @@ class TestM1Classification(unittest.TestCase):
         self.assertEqual(r["权限"], "binding_support")
 
     def test_db_is_local(self):
+        # 断点7（CG-20260917-002）：层级真值源是 rules.md §1.2，DB/DBJ 地方标准=L2
+        # （binding_support 设计/验收），非 L3。此前代码给 L3 与 rules.md 实质分歧。
         r = self._classify("DB33/T 1168-2019")
-        self.assertEqual(r["层级"], "L3")
+        self.assertEqual(r["层级"], "L2")
+        self.assertEqual(r["权限"], "binding_support")
         self.assertEqual(r["地域范围"], "浙江")
 
-    def test_t_group_is_l4_reference(self):
+    def test_dbj_is_local_l2(self):
+        """断点7（CG-20260917-002）：DBJ/T 序号型（15=广东、13=福建）亦为 L2。"""
+        for no in ("DBJ/T 15-208-2020", "DBJ/T 13-428-2023"):
+            r = self._classify(no)
+            self.assertEqual(r["层级"], "L2", f"{no} 应为 L2")
+            self.assertEqual(r["权限"], "binding_support")
+
+    def test_dbj_province_code_form_matches(self):
+        """遗留2（CG-20260917-003）：DBJ+省码数字形态（DBJ33/T 1327-2024）须命中前缀，
+        不再落 unknown_type；省份从索引 §5.3「适用地区」现读为浙江。
+        负向半条：DBJX 一类非法形态仍须降级（守卫修净后仍能失败）。"""
+        r = self._classify("DBJ33/T 1327-2024")
+        self.assertEqual(r["标准类型"], "地方建设标准")
+        self.assertEqual(r["层级"], "L2")
+        self.assertEqual(r["权限"], "binding_support")
+        self.assertEqual(r["地域范围"], "浙江")
+        self.assertEqual(r["分类置信度"], "deterministic")
+        bad = self._classify("DBJX 123-2024")
+        self.assertEqual(bad["标准类型"], "unknown_type")
+        self.assertEqual(bad["分类置信度"], "inferred")
+
+    def test_t_group_is_l2_reference(self):
+        # 遗留1（CG-20260917-003）：团体标准层级真值源 rules.md §1.2 定 L2（原代码 L4 分歧）；
+        # 权限仍 reference（GS-1 团标不优先于 GB/T）。
         r = self._classify("T/CSUS 40-2022")
-        self.assertEqual(r["层级"], "L4")
+        self.assertEqual(r["层级"], "L2")
         self.assertEqual(r["权限"], "reference")
 
     def test_unknown_prefix_degrades(self):
@@ -599,7 +625,7 @@ class TestM6Degradation(unittest.TestCase):
 
 
 class TestIC10SchemaCompliance(unittest.TestCase):
-    """IC-10 Response v1.8.0 Schema 合规。"""
+    """IC-10 Response v1.9.0 Schema 合规（v1.9.0：新增响应字段「外部协同」，CG-20260917-002）。"""
 
     def test_required_fields_present(self):
         r = reason("住宅", "分户墙")
@@ -693,6 +719,148 @@ class TestSRRedlines(unittest.TestCase):
         r = reason("住宅", "分户墙")
         types = {ev["证据类型"] for ev in r["证据对象"]}
         self.assertIn("degradation", types)
+
+
+class TestP0SceneExpectations(unittest.TestCase):
+    """P0 断点 1-4 修复的场景级期望值断言（第三方审阅报告 §三 / §6.3）。
+
+    每条均为「给定输入 → 断言输出标准集/字段」，这是报告指出当前完全缺失的一类机检；
+    并各带负向半条防过度修正。回退对应修复后本组用例须复红（反向注入自证）。
+    """
+
+    # ---- 断点1：环保分支不可达（医院/学校键被「默认」拦截）----
+    def test_BP1_hospital_school_environmental_branch_reachable(self):
+        """医院/学校 environmental 须拿到 rules.md §3.2 该行全部三条标准。"""
+        for pt, sp in (("医院", "病房"), ("医院", "诊疗室"), ("学校", "教室墙面")):
+            stds = {s["标准编号"] for s in reason(pt, sp)["适用标准集"]}
+            for need in ("GB 18580-2025", "GB 30981.1-2025", "T/CSUS 03-2019"):
+                self.assertIn(need, stds, f"{pt}|{sp} 环保分支丢 {need}")
+
+    def test_BP1_non_hospital_environmental_stays_default(self):
+        """负向半条：住宅户内墙面 environmental 仍只走「默认」族，不得误得医院/学校专属三条。
+
+        若把「医院/学校」分支提前时漏掉 project_type 限定，本用例转红。
+        """
+        stds = {s["标准编号"] for s in reason("住宅", "户内墙面")["适用标准集"]}
+        self.assertIn("GB 18580-2025", stds)
+        for forbidden in ("T/CSUS 03-2019", "GB 30981.1-2025"):
+            self.assertNotIn(forbidden, stds, f"住宅场景误命中医院/学校专属族 {forbidden}")
+
+    # ---- 断点2：地点入参归一化（北京市→北京）----
+    def test_BP2_location_full_name_normalized(self):
+        """「北京市/浙江省/广东省」全称须与 stripped 形态命中同一适用标准集。"""
+        for full, stripped in (("北京市", "北京"), ("浙江省", "浙江"), ("广东省", "广东")):
+            a = {s["标准编号"] for s in reason("住宅", "分户墙", location=full)["适用标准集"]}
+            b = {s["标准编号"] for s in reason("住宅", "分户墙", location=stripped)["适用标准集"]}
+            self.assertEqual(a, b, f"{full} 与 {stripped} 适用标准集不一致（归一化失效）")
+        r = reason("住宅", "分户墙", location="北京市")
+        db11 = [s for s in r["适用标准集"] if s["标准编号"] == "DB11/T 1553-2025"]
+        self.assertTrue(db11, "北京市未命中 DB11/T 1553-2025")
+        self.assertEqual(db11[0]["地域适用性"], "项目所在地适用")
+
+    # ---- 断点3：DBJ 省码索引现读 ----
+    @staticmethod
+    def _index_region_truth() -> dict[str, str]:
+        """索引 §5.3「适用地区」现读（编号→地区），独立于被测代码的解析路径。"""
+        block = _section(_index_text() or "", r"^### 5\.3", (r"^### ", r"^## "))
+        header, rows = _table(block)
+        out: dict[str, str] = {}
+        for row in rows:
+            no = _cell(row, header, "标准编号")
+            reg = _cell(row, header, "适用地区")
+            if no and reg and not no.startswith("—"):
+                out[no] = reg
+        return out
+
+    def test_BP3_dbj_province_resolved_from_index(self):
+        """DB/DBJ 地方标准省份须从索引 §5.3「适用地区」现读，不落「待确认省份」。
+
+        对引擎能分类为地方标准者断言。DBJ+省码数字形态（DBJ33/T 1327-2024）此前因
+        `^DBJ\\b` 漏命中而落 unknown_type、被本用例跳过；该缺口已由遗留2（CG-20260917-003）
+        闭合，DBJ33/T 现可分类，其省份（浙江）由本用例一并现读校验。
+        """
+        region_truth = self._index_region_truth()
+        self.assertTrue(region_truth, "索引 §5.3 适用地区现读为空，判据不可用")
+        checked = 0
+        for no, reg in region_truth.items():
+            if not no.startswith(("DB", "DBJ")):
+                continue
+            c = classify_standard(no, [])
+            if c["标准类型"] == "unknown_type":
+                continue
+            self.assertEqual(c["地域范围"], reg, f"{no} 地域范围应为 {reg}（索引现读）")
+            checked += 1
+        self.assertGreaterEqual(checked, 2, "断点3 判据空跑：可分类的 DB/DBJ 条目不足")
+
+    def test_BP3_dbj_applicable_in_own_province(self):
+        """DBJ/T 15-208-2020 在广东场景须判「项目所在地适用」，不再误判「不适用仅作对比」。"""
+        r = reason("住宅", "分户墙", location="广东")
+        dbj15 = [s for s in r["适用标准集"] if s["标准编号"] == "DBJ/T 15-208-2020"]
+        self.assertTrue(dbj15, "广东场景未命中 DBJ/T 15-208-2020")
+        self.assertEqual(dbj15[0]["地域适用性"], "项目所在地适用")
+
+    # ---- 断点4：场景未命中降级提示写入「未覆盖领域」----
+    def test_BP4_unmatched_scene_surfaced_in_uncovered(self):
+        # 断点6（CG-20260917-002）：原用例含 ("住宅","卫生间")，自 ACTIVATION_TABLE
+        # 改由空间类型维度承载厨卫湿区后，卫生间经 SPACE_ALIASES→厨卫湿区 已命中，不再是
+        # 未命中场景。换成真正无映射的 ("商业","地下车库")，保持本判据不空跑。
+        for pt, sp in (("养老机构", "失智照护区"), ("商业", "地下车库"), ("其他", "特殊空间")):
+            unc = reason(pt, sp).get("未覆盖领域")
+            self.assertTrue(unc, f"{pt}|{sp} 未命中场景但「未覆盖领域」为空")
+            self.assertTrue(any("场景未命中" in u for u in unc),
+                            f"{pt}|{sp}「未覆盖领域」缺场景未命中降级提示: {unc}")
+
+    def test_BP4_matched_scene_no_false_uncovered(self):
+        """负向半条：命中激活表的场景不得误报「场景未命中」。"""
+        unc = reason("住宅", "分户墙").get("未覆盖领域", [])
+        self.assertFalse(any("场景未命中" in u for u in unc),
+                         f"命中场景误报场景未命中: {unc}")
+
+    # ---- 断点6：厨卫湿区归入空间类型维度（别名路径复活）----
+    def test_BP6_wet_area_matches_via_space_dimension(self):
+        """("住宅","卫生间")/("住宅","厨房") 经 SPACE_ALIASES→厨卫湿区 须命中激活表，不再降级。"""
+        for sp in ("卫生间", "厨房", "厨卫湿区"):
+            r = reason("住宅", sp)
+            self.assertTrue(r["适用标准集"], f"住宅|{sp} 命中厨卫湿区行但适用标准集为空")
+            unc = r.get("未覆盖领域", [])
+            self.assertFalse(any("场景未命中" in u for u in unc),
+                             f"住宅|{sp} 应经别名命中厨卫湿区，却报场景未命中: {unc}")
+
+    def test_BP6_acoustic_demands_accepted(self):
+        """吸声/撞击声 是 IC-10 性能需求枚举成员，须能激活且不崩溃（遗漏A：契约补枚举）。"""
+        for d in ("吸声", "撞击声", "隔声"):
+            r = reason("住宅", "楼板", demands=[d])
+            self.assertIsInstance(r["适用标准集"], list, f"性能需求 {d} 激活异常")
+
+    # ---- 断点5：外协占位改结构化「外部协同」字段对外可见 ----
+    def test_BP5_external_collab_structured_visible(self):
+        """住宅+厨卫湿区触发 waterproof(外部协同)，须出结构化「外部协同」条目而非被静默去重。"""
+        r = reason("住宅", "卫生间")
+        self.assertIn("外部协同", r, "厨卫湿区未产出结构化「外部协同」字段")
+        collab = r["外部协同"]
+        self.assertTrue(collab, "「外部协同」为空")
+        item = collab[0]
+        self.assertEqual(item["协同技能"], "waterproofing-expert")
+        # 话术须与 interface-contracts.md 头部记录一致：已迁出至独立项目，非「待建」
+        self.assertIn("已迁出", item["技能状态"],
+                      f"外协话术与迁出记录矛盾（不得为「待建」）: {item['技能状态']}")
+        self.assertNotIn("待建", item["技能状态"])
+        # 占位「（…」不得再泄漏进对外标准编号集
+        for s in r["适用标准集"]:
+            self.assertFalse(s["标准编号"].startswith("（"),
+                             f"外协占位泄漏进适用标准集: {s['标准编号']}")
+
+    def test_BP5_external_collab_carries_degradation_evidence(self):
+        """每条「外部协同」须附一条 degradation 证据（M6：外协不得静默）。
+
+        判据须锁定外协专属证据（规则来源含「外部协同」），否则会被「地方标准不适用」
+        那条无关 degradation 证据顶替而恒真（反向注入4 实测：松判据下回退仍绿＝空跑）。
+        """
+        r = reason("住宅", "卫生间")
+        collab_ev = [ev for ev in r["证据对象"]
+                     if ev["证据类型"] == "degradation" and "外部协同" in ev["规则来源"]]
+        self.assertTrue(collab_ev, "外部协同缺专属 degradation 降级证据（规则来源未含「外部协同」）")
+        self.assertIn("waterproofing-expert", collab_ev[0]["输出结论"])
 
 
 class _SREDeterminismBase(unittest.TestCase):

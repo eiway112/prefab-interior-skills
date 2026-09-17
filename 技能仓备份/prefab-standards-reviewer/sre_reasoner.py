@@ -1,18 +1,19 @@
 """
 SRE Reasoner —— 标准推理引擎参考实现
 =====================================
-版本：v1.3（2026-09-16，CG-20260916-009：M1 图集号正则命中修正 + 前缀不可识别支按索引 §二 现读 L1；M4 `else` 兜底值改为契约内 `construction_guide`。上一版 v1.2 = 2026-08-13）
-依据：standards-reasoning-rules.md v1.2 + interface-contracts.md IC-10 v1.8.0
+版本：v1.5（2026-09-17，CG-20260917-003：遗留1 团体标准 `T/` 层级 L4→L2（真值源 rules.md §1.2，权限 reference 不变）；遗留2 `^DBJ\b`→`^DBJ(?=\d|\b)` 闭合 DBJ+省码数字形态（DBJ33/T 1327-2024）识别缺口。IC-10 契约本批未升版，仍 v1.9.0。上一版 v1.4 = 2026-09-17 CG-20260917-002）
+依据：standards-reasoning-rules.md v1.2 + interface-contracts.md IC-10 v1.9.0
 
 最小接口：
     reason(project_type, space_type, location=None, system=None,
            demands=None, return_trace=False) -> dict
 
-输出符合 IC-10-Response Schema v1.8.0，包含：
+输出符合 IC-10-Response Schema v1.9.0，包含：
 - 适用标准集（条目含 时间状态 与可选 状态注记）
 - 推理路径
 - 证据对象（至少一条）
 - 未覆盖领域（可选）
+- 外部协同（可选；断点5 新增，外协占位结构化对外可见）
 - 决策轨迹（return_trace=True 时）
 """
 
@@ -43,9 +44,19 @@ PREFIX_PATTERNS: list[tuple[str, str, str, str, str]] = [
     (r"^JC/T", "推荐性行业标准（建材）", "L2", "binding_support", "全国"),
     (r"^HG\b", "行业标准（化工）", "L2", "binding_support", "全国"),
     (r"^HG/T", "推荐性行业标准（化工）", "L2", "binding_support", "全国"),
-    (r"^DB\d{2}/", "地方标准", "L3", "binding_support", "对应省份"),
-    (r"^DBJ\b", "地方建设标准", "L3", "binding_support", "对应省份"),
-    (r"^T/", "团体标准", "L4", "reference", "全国（管辖地采纳后适用）"),
+    # 断点7（CG-20260917-002）：层级真值源是 rules.md §1.2，定 DB/DBJ 地方标准=L2
+    # （binding_support 设计/验收）。此前代码给 L3 与 rules.md 实质分歧（报告§二「机制层
+    # 唯一实质分歧」）。DBJ 在 §1.2 为「L2 或 L4」——仅 reference 型产品应用 DBJ 才是 L4，
+    # 当前数据面无此类，静态元组取 binding_support 对应的 L2。图集仍为 L3（见下）。
+    (r"^DB\d{2}/", "地方标准", "L2", "binding_support", "对应省份"),
+    # 「DBJ」后紧跟省码数字（DBJ33/T 1327-2024）：`\b` 在 J 与数字间不成立，旧 `^DBJ\b`
+    # 会漏过该形态致其落 unknown_type（遗留2，CG-20260917-003）；`(?=\d|\b)` 同时兼容
+    # DBJ/T 15（J↔/ 边界）与 DBJ33/T（J↔数字），仍拒 DBJX 一类非法形态。
+    (r"^DBJ(?=\d|\b)", "地方建设标准", "L2", "binding_support", "对应省份"),
+    # 团体标准 T/=L2 而非 L4：层级真值源 rules.md §1.2（团标定 L2），M2 锚定 A-L2-04
+    # (T/CSUS 40-2022) 亦列 L2，IC-10 的 L4 释义专指企业标准及 DBJ 产品应用型、不含团标。
+    # 权限 reference 不变（GS-1 团标不优先于 GB/T）；此前代码 L4 与判据分歧（遗留1，CG-20260917-003）。
+    (r"^T/", "团体标准", "L2", "reference", "全国（管辖地采纳后适用）"),
     (r"^\d+CJ", "图集", "L3", "reference", "全国或区域"),
     # 「J」后紧跟数字：`\b` 在 J 与数字之间不成立，08J931 一类图集号会漏过本行
     (r"^\d+J(?=\d)", "图集", "L3", "reference", "全国或区域"),
@@ -100,7 +111,11 @@ ACTIVATION_TABLE: dict[tuple[str, str], list[str]] = {
     ("住宅", "户内墙面"): ["prefab(认定)", "acceptance", "environmental"],
     ("学校", "教室墙面"): ["fire", "environmental", "acceptance"],
     ("办公", "办公墙面"): ["acceptance", "environmental", "prefab"],
-    ("厨卫湿区", "墙板"): ["prefab", "waterproof(外部协同)", "acceptance"],
+    # 断点6（CG-20260917-002）：厨卫湿区 是空间类型（与 SPACE_ALIASES 卫生间/厨房→厨卫湿区
+    # 一致），非项目类型。原 ("厨卫湿区","墙板") 把湿区放项目槽，IC-10 项目类型枚举不含它、
+    # 按契约调用永不命中，且别名路径（空间槽）此前是死的。改由空间类型维度承载后，
+    # ("住宅","卫生间")→别名→("住宅","厨卫湿区") 命中本行。空间类型系自由文本，无需扩枚举。
+    ("住宅", "厨卫湿区"): ["prefab", "waterproof(外部协同)", "acceptance"],
     ("住宅", "分户楼板"): ["acoustic(impact)", "fire", "acceptance", "prefab"],
     ("住宅", "楼地面"): ["acoustic(impact)", "acceptance", "prefab"],
     ("酒店", "客房地面"): ["acoustic(impact)", "acceptance", "prefab"],
@@ -188,15 +203,24 @@ DOMAINS: dict[str, Any] = {
         "吊顶板材": ["GB 18580-2025", "GB 6566-2010"],
     },
     "waterproof(外部协同)": {
-        "默认": ["（外部 waterproofing-expert 技能协同）"],
+        "默认": ["（防水专项协同）"],
     },
     "waterproof(边界)": {
-        "默认": ["（外部 waterproofing-expert 技能边界咨询）"],
+        "默认": ["（防水边界咨询）"],
     },
     "prefab(认定)": {
         "默认": ["GB/T 51129-2017", "JGJ/T 491-2021"],
     },
 }
+
+
+# 断点5（CG-20260917-002）：外协技能状态话术。waterproofing-expert 已于 2026-08-14
+# 迁出至独立项目「建筑专业辅材技能合集」（见 interface-contracts.md 头部既有记录），
+# 本运行时不可直接调用。原「待建」话术与该记录矛盾，按证据取「已迁出」。
+EXTERNAL_COLLAB_SKILL = "waterproofing-expert"
+EXTERNAL_COLLAB_STATUS = (
+    "已迁出至独立项目「建筑专业辅材技能合集」，本运行时不可直接调用，需跨项目协同"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -265,13 +289,18 @@ PARTIAL_REPLACEMENT_NOTICES: dict[str, str] = {
 
 STANDARD_STATUS: dict[str, str] = {}
 
+# 编号→适用地区真值，由 _load_standards_index() 从索引 §5.3「适用地区」列现读填充。
+# DBJ 系序号（DBJ/T 15=广东、DBJ/T 13=福建）是地方建设标准序号、非 GB 行政区划码，
+# PROVINCE_MAP 与 `DB\s*(\d{2})` 正则均无法解析（断点3），故地方标准省份以索引现读为准。
+STANDARD_PROVINCE: dict[str, str] = {}
+
 # 索引 §二 小节标题「## 二、第一层级：强制性国标（红线标准）」的层级标记词
 _INDEX_L1_HEADING = "第一层级"
 # 该小节主表收录的编号集合——前缀不可识别的强制性国标（GB 18580 等）的层级真值源，
 # 由 _load_standards_index() 现读填充，代码内不维护编号清单副本。
 INDEX_L1_IDS: set[str] = set()
 
-# IC-10 v1.8.0 `时间状态` 六值中的显式降级值：索引无该编号记录时的唯一输出（T-B2）。
+# IC-10 v1.9.0 `时间状态` 六值中的显式降级值：索引无该编号记录时的唯一输出（T-B2）。
 # 本文件只承载这一个降级值，不复制整个枚举集——合法集由回归测试/门禁从
 # interface-contracts.md 与 standards-index.md §1.1 现读校验，代码内不留第二份。
 STATUS_UNKNOWN = "未知"
@@ -331,6 +360,7 @@ def _load_standards_index() -> None:
 
     buckets: dict[str, dict[str, str]] = {"main": {}, "register": {}}
     INDEX_L1_IDS.clear()
+    STANDARD_PROVINCE.clear()
     # 层级由小节标题承载（「## 二、第一层级：强制性国标（红线标准）」），故按 ## 切块
     parts = re.split(r"(?m)^(##.*)$", text)
     sections = [("", parts[0])] + [(parts[i], parts[i + 1]) for i in range(1, len(parts) - 1, 2)]
@@ -343,6 +373,7 @@ def _load_standards_index() -> None:
             i_id = next(header.index(c) for c in _ID_COLS if c in header)
             i_name = next((header.index(c) for c in _NAME_COLS if c in header), None)
             i_status = header.index("状态")
+            i_region = header.index("适用地区") if "适用地区" in header else None
             for row in rows:
                 if i_id >= len(row) or not row[i_id]:
                     continue
@@ -353,6 +384,8 @@ def _load_standards_index() -> None:
                     buckets[kind].setdefault(std_no, row[i_status])
                 if i_name is not None and i_name < len(row) and row[i_name]:
                     STANDARD_NAMES.setdefault(std_no, row[i_name])
+                if i_region is not None and i_region < len(row) and row[i_region]:
+                    STANDARD_PROVINCE.setdefault(std_no, row[i_region])
 
     STANDARD_STATUS.clear()
     STANDARD_STATUS.update(buckets["main"])
@@ -373,7 +406,7 @@ def _standard_status(std_no: str) -> str:
 
 
 def _split_status(status: str) -> tuple[str, str]:
-    """按 IC-10 v1.8.0 口径把状态单元拆为（时间状态, 状态注记）。
+    """按 IC-10 v1.9.0 口径把状态单元拆为（时间状态, 状态注记）。
 
     索引 §1.1 的状态列可自带全角括注（如「现行有效（代替 GB 18580-2017）」）。以首个
     全角「（」为界切分，前段为契约主态、后段去尾「）」为注记，故为无损拆分——
@@ -437,13 +470,18 @@ def classify_standard(std_no: str, evidence_list: list[dict]) -> dict[str, Any]:
     # 地域范围细化
     actual_scope = scope
     if std_no_norm.startswith(("DB", "DBJ")):
-        m = re.search(r"DB\s*(\d{2})", std_no_norm)
-        if m:
-            province_code = m.group(1)
-            province = PROVINCE_MAP.get(province_code, province_code)
-            actual_scope = province
+        # 断点3：优先取索引 §5.3「适用地区」现读值。DBJ 系序号（15=广东、13=福建）非 GB
+        # 行政区划码，PROVINCE_MAP 与下方正则均无法解析，故地方标准省份以索引现读为准。
+        if std_no_norm in STANDARD_PROVINCE:
+            actual_scope = STANDARD_PROVINCE[std_no_norm]
         else:
-            actual_scope = "待确认省份"
+            m = re.search(r"DB\s*(\d{2})", std_no_norm)
+            if m:
+                province_code = m.group(1)
+                province = PROVINCE_MAP.get(province_code, province_code)
+                actual_scope = province
+            else:
+                actual_scope = "待确认省份"
 
     # 性能领域推断（简化）
     domains: list[str] = []
@@ -487,6 +525,7 @@ def _activate_domains(
     space_type: str,
     demands: list[str] | None,
     evidence_list: list[dict],
+    uncovered: list[str] | None = None,
 ) -> tuple[set[str], str]:
     """M3 Step 1 / Step 1a：返回激活域集与裁定说明。"""
     # 先尝试精确匹配，再尝试空间类型归一化
@@ -505,6 +544,13 @@ def _activate_domains(
             "未命中场景表，使用最小集 fire + acceptance",
             "inferred"
         ))
+        # 断点4：证据对象里的 inferred 属内部痕迹，使用者只读「未覆盖领域」。
+        # 场景未命中须同时把降级提示落到用户可见输出，对齐 M6「建议可见」（rules.md §五）。
+        if uncovered is not None:
+            uncovered.append(
+                f"场景未命中激活表（项目类型={project_type}, 空间类型={space_type}），"
+                f"已降级为最小集 fire+acceptance；建议确认场景表述或转专项技能咨询"
+            )
     else:
         evidence_list.append(_evidence(
             "activation", "standards-reasoning-rules.md §3.2 Step 1",
@@ -565,15 +611,18 @@ def _map_domain_to_standards(
     mapping = DOMAINS.get(domain, {})
     standards: list[str] = []
 
-    # 基础族
+    # 基础族：项目类型专属键须先于「默认」兜底命中。
+    # 「医院/学校」若排在「默认」之后，environmental 域对医院/学校将永远先命中「默认」
+    # （仅 GB 18580-2025），拿不到 rules.md §3.2 environmental 表规定的 GB 30981.1-2025
+    # 与 T/CSUS 03-2019（断点1）。
     if project_type == "住宅" and "住宅" in mapping:
         standards.extend(mapping["住宅"])
     elif "全部" in mapping:
         standards.extend(mapping["全部"])
-    elif "默认" in mapping:
-        standards.extend(mapping["默认"])
     elif "医院/学校" in mapping and project_type in ("医院", "学校"):
         standards.extend(mapping["医院/学校"])
+    elif "默认" in mapping:
+        standards.extend(mapping["默认"])
 
     # 全国基线可叠加：不得因走地点分支而被抑制（设计方案 §3.2 T-B6，CG-20260916-005）
     standards.extend(mapping.get("全国", []))
@@ -754,6 +803,42 @@ def _build_trace(
     return "\n".join(lines)
 
 
+def _normalize_location(location: str | None) -> str | None:
+    """地点入参归一化：剥离尾部「省/市」行政后缀（断点2）。
+
+    M3 Step 2 的地点附加（`location in mapping`）按精确键匹配，而各域地点键与 M4
+    `_apply_applicability` 的 `location.rstrip("省市")` 均为 stripped 形态（北京/浙江/
+    广东…）。IC-10 契约示例却用「北京市/浙江省」全称，不归一化会导致地方标准族整族
+    漏命中。与 M4 同口径，使「北京市」→「北京」后再匹配。空值/退化值原样返回。
+    """
+    if not location:
+        return location
+    return location.rstrip("省市") or location
+
+
+def _external_collab_entry(
+    domain: str, placeholder: str, evidence_list: list[dict]
+) -> dict[str, Any]:
+    """断点5（CG-20260917-002）：外协占位 → 结构化「外部协同」条目 ＋ 降级证据。
+
+    原实现把 （ 前缀占位串在去重时以 `not s.startswith("（")` 静默过滤，而占位串又使
+    family 非空、不触发空族提示——用户既看不到标准也看不到外协提示（报告断点5）。改为
+    对外可见的结构化字段；技能状态话术按 interface-contracts.md 既有记录取「已迁出」。
+    """
+    evidence_list.append(_evidence(
+        "degradation", "standards-reasoning-rules.md §五 M6 / IC-10 外部协同",
+        f"触发域={domain}",
+        f"外部协同：{EXTERNAL_COLLAB_SKILL}（{EXTERNAL_COLLAB_STATUS}）",
+        "deterministic",
+    ))
+    return {
+        "协同技能": EXTERNAL_COLLAB_SKILL,
+        "技能状态": EXTERNAL_COLLAB_STATUS,
+        "触发域": domain,
+        "协同事项": placeholder.strip("（）"),
+    }
+
+
 # ---------------------------------------------------------------------------
 # 主入口
 # ---------------------------------------------------------------------------
@@ -769,7 +854,7 @@ def reason(
     """
     执行标准推理引擎（SRE）。
 
-    参数与 IC-10-Request v1.8.0 对齐。
+    参数与 IC-10-Request v1.9.0 对齐。
     """
     global _evidence_counter
     _evidence_counter = 0
@@ -777,6 +862,8 @@ def reason(
 
     # M6 降级：项目地点未提供时 LA-4 追问
     uncovered: list[str] = []
+    # 断点2：地点入参先归一化（北京市→北京），使 M3 Step2 地点附加与 M4 同口径
+    location = _normalize_location(location)
     if not location:
         evidence_list.append(_evidence(
             "degradation", "standards-reasoning-rules.md §4.1 LA-4 / §五 M6",
@@ -787,23 +874,32 @@ def reason(
         uncovered.append("地方标准适用性（需确认项目所在地）")
 
     # Step 1 / 1a
-    activated, arbitration_note = _activate_domains(project_type, space_type, demands, evidence_list)
+    activated, arbitration_note = _activate_domains(
+        project_type, space_type, demands, evidence_list, uncovered)
 
     # Step 2
     raw_standards: list[str] = []
+    external_collab: list[dict[str, Any]] = []
     for domain in sorted(activated):
         family = _map_domain_to_standards(domain, project_type, location, system, evidence_list)
         if not family:
             # M6 空族不得静默（设计方案 §3.2 T-B5，CG-20260916-005）：证据对象里的
             # 标准族=[] 属内部痕迹，使用者只读 未覆盖领域，故信号须同时落到输出。
             uncovered.append(f"{domain}（该域标准族为空，须补充 Step 2 映射或转专项技能咨询）")
-        raw_standards.extend(family)
+            continue
+        # 断点5（CG-20260917-002）：（ 前缀为外协占位，分流到结构化「外部协同」对外可见，
+        # 不再被去重静默过滤；其余为真实标准编号，进 raw_standards。
+        for s in family:
+            if s.startswith("（"):
+                external_collab.append(_external_collab_entry(domain, s, evidence_list))
+            else:
+                raw_standards.append(s)
 
-    # 去重
+    # 去重（外协占位已在 Step 2 分流，此处只处理真实标准编号）
     seen = set()
     unique_raw: list[str] = []
     for s in raw_standards:
-        if s not in seen and not s.startswith("（"):
+        if s not in seen:
             seen.add(s)
             unique_raw.append(s)
 
@@ -832,6 +928,10 @@ def reason(
 
     if uncovered:
         response["未覆盖领域"] = uncovered
+
+    if external_collab:
+        # 断点5（CG-20260917-002）：外协动作对外可见，IC-10 v1.9.0 新增响应字段。
+        response["外部协同"] = external_collab
 
     if return_trace:
         response["决策轨迹"] = _build_trace(
