@@ -928,7 +928,9 @@ class TestP0SceneExpectations(unittest.TestCase):
         证明名称分支为活代码、只是被 binding_support 支遮蔽——本守卫因此非恒真空跑（回退分支序即转红）。
         """
         # 遮蔽组：L2/binding_support + 名称含「评价」→ 角色恒 design_basis（不被名称改写）
-        for no in ("DB33/T 1168-2019", "DBJ/T 15-208-2020"):
+        # 第二成员由 DBJ/T 15-208-2020 换为 DBJ/T 13-428-2023（CG-20260917-008）：前者名称修正为
+        # 「建筑室内装配式轻质隔墙技术规程」已不含「评价」，不再满足遮蔽组前置；后者名称含「评价」且 L2/binding_support。
+        for no in ("DB33/T 1168-2019", "DBJ/T 13-428-2023"):
             c = classify_standard(no, [])
             self.assertEqual(c["层级"], "L2", f"{no} 应为 L2（断点7 裁定）")
             self.assertEqual(c["权限"], "binding_support", f"{no} 应为 binding_support")
