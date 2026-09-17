@@ -85,7 +85,7 @@ import re
 import json
 import sys
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 
@@ -396,6 +396,17 @@ def check_interfaces(text: str, report: Report):
 
 
 # ── 检查 3：标准索引状态 ─────────────────────────────────
+# 核验周期分档（真值源：standards-index.md §1.1A「到期需复核」行——强制性国标超过 3 个月、
+# 推荐性/产品/地方标准超过 6 个月未复核即到期；天数口径取整改方案 P1 item 9 的 92／183）。
+# 判据为严格大于，故第 92 天当日仍在期、第 93 天转超期。到期由机器从核验记录表的
+# 「核验日期」列现算，**不读索引正文散文**（§二 末「核验周期说明」那句「上次核验日期：2026-06-17」
+# 不参与判定）；无「核验日期」记录者按账本纪律视为已超期，不作免检（整改方案 §6.2）。
+REVIEW_DAYS_MANDATORY = 92
+REVIEW_DAYS_OTHER = 183
+# 强制性国标档的归属判据：索引 §二 小节标题「第一层级：强制性国标（红线标准）」。
+MANDATORY_HEADING_MARK = "第一层级"
+
+
 def check_standards(text: str, report: Report):
     report.section("标准索引 — 状态合法性与核验时效")
 
@@ -439,22 +450,24 @@ def check_standards(text: str, report: Report):
 
     invalid_status_found = []   # (std_id, suspect_value, line_no)
     no_status_rows = []          # (std_id, line_no)
-    expired_review = []
+    ledger_rows = []             # (std_id, line_no, 是否强制性国标档) — 核验时效台账
     upcoming_impl = []           # 正常：未来实施
     overdue_status = []          # 异常：实施日期已过仍标"即将实施"
     premature_effective = []     # 异常：实施日期未到却标"现行有效"
     std_rows = []                # (std_id, line_no)
     today = datetime.now()
-    six_months_ago = today - timedelta(days=183)
 
     sep_line = re.compile(r"^\|[\s:\-|]+\|$")
     status_bases = ("现行有效", "即将实施", "过渡期", "已废止", "被替代",
                     "被部分替代", "被部分废止")
     in_main_table = False     # 当前是否处于主表（含"状态"列）数据区
+    in_l1_section = False     # 当前是否处于 §二「第一层级：强制性国标」小节（92 天档）
     std_names: Dict[str, str] = {}   # 编号 → 名称（主表名称列，供检查 5 复用）
     name_col: Optional[int] = None   # 当前主表的名称列号（按表头取值，非固定列）
     for idx in range(body_start, body_end):
         line = lines[idx].strip()
+        if line.startswith("## "):
+            in_l1_section = MANDATORY_HEADING_MARK in line
         if not line.startswith("|"):
             in_main_table = False
             continue
@@ -488,6 +501,7 @@ def check_standards(text: str, report: Report):
         std_id = cells[1].replace("**", "") if len(cells) > 1 else "?"
         line_no = idx + 1
         std_rows.append((std_id, line_no))
+        ledger_rows.append((std_id, line_no, in_l1_section))
         if name_col is not None and name_col < len(cells):
             std_names.setdefault(std_id, cells[name_col].replace("**", "").strip())
 
@@ -536,35 +550,58 @@ def check_standards(text: str, report: Report):
 
     report.info(f"检测到标准表格行数（§二～§六主表）：{len(std_rows)} 行")
 
-    # 核验日期只在"官方核验记录"区域检查
-    verify_section_start = None
-    verify_section_end = None
-    for i, line in enumerate(lines):
-        if "官方核验记录" in line and line.startswith("#"):
-            verify_section_start = i + 1
-        elif verify_section_start and line.startswith("## "):
-            verify_section_end = i
-            break
-    if verify_section_start and not verify_section_end:
-        verify_section_end = len(lines)
+    # 核验日期现读（整改方案 P1 item 9）：遍历全文凡表头判为 verify 的表，按**列名**取
+    # 「核验日期」。旧实现以 `#` 标题定位"官方核验记录"区域，而索引里该标题是粗体行
+    # （`**官方核验记录**（已核验标准）：`），锚点命中 0 处 → expired_review 恒为空 →
+    # 无条件打印"无超期未核验标准"，属恒真空跑守卫（到期实际由索引散文承载）。
+    verify_dates: Dict[str, str] = {}
+    for tbl in iter_md_tables(lines, 0, len(lines)):
+        if classify_index_table(tbl["header"]) != "verify":
+            continue
+        i_vid = find_col(tbl["header"], ID_COL_ALIASES, exact=True)
+        i_vdate = find_col(tbl["header"], ("核验日期",), exact=True)
+        if i_vid is None or i_vdate is None:
+            continue          # 核验状态分层表无日期列：不参与时效判定（其状态字面见 3h）
+        for _, cells in tbl["rows"]:
+            if i_vid >= len(cells) or i_vdate >= len(cells):
+                continue
+            m_date = re.search(r"\d{4}-\d{2}-\d{2}", cells[i_vdate])
+            if not m_date:
+                continue
+            # 并列单元（`GB 50016-2014／GB 50210-2018／…`）只按全角／切；
+            # 半角 / 属编号本体（GB/T、T/CECS），切了会得到 "T 19889.1-2026" 这类假键。
+            for one in cells[i_vid].split("／"):
+                sid = norm_std_id(one)
+                if not STD_ID_SHAPE.match(sid):
+                    continue      # 「其余强制性国标」等散文兜底单元不是编号
+                if sid not in verify_dates or m_date.group(0) > verify_dates[sid]:
+                    verify_dates[sid] = m_date.group(0)
 
-    if verify_section_start and verify_section_end:
-        verify_text = "\n".join(lines[verify_section_start:verify_section_end])
-        verify_std_pattern = re.compile(
-            r"^\|\s*(?:\d+\s*\|\s*)?"
-            r"((?:GB|JGJ|JC|JG|DB|T|RISN|HG|SJG|EN|ISO)[^|]*)"
-            r"\|\s*(\d{4}-\d{2}-\d{2})",
-            re.MULTILINE
-        )
-        for vm in verify_std_pattern.finditer(verify_text):
-            std_id = vm.group(1).strip()
-            review_date_str = vm.group(2)
-            try:
-                review_date = datetime.strptime(review_date_str, "%Y-%m-%d")
-                if review_date < six_months_ago:
-                    expired_review.append((std_id, review_date_str, 0))
-            except ValueError:
-                pass
+    # 台账分桶：无「核验日期」记录按账本纪律视为已超期，不作免检（整改方案 §6.2）
+    ledger: Dict[bool, Dict[str, list]] = {
+        True: {"在期": [], "超期": [], "无日期": []},
+        False: {"在期": [], "超期": [], "无日期": []},
+    }
+    ledger_no_id: List[Tuple[str, int]] = []
+    for raw_id, line_no, mandatory in ledger_rows:
+        sid = norm_std_id(raw_id)
+        if not STD_ID_SHAPE.match(sid):
+            ledger_no_id.append((raw_id, line_no))
+            continue
+        date_str = verify_dates.get(sid)
+        tier = REVIEW_DAYS_MANDATORY if mandatory else REVIEW_DAYS_OTHER
+        if date_str is None:
+            ledger[mandatory]["无日期"].append(sid)
+            continue
+        try:
+            age = (today - datetime.strptime(date_str, "%Y-%m-%d")).days
+        except ValueError:
+            ledger[mandatory]["无日期"].append(sid)
+            continue
+        if age > tier:
+            ledger[mandatory]["超期"].append((sid, date_str, age, tier))
+        else:
+            ledger[mandatory]["在期"].append((sid, date_str, age, tier))
 
     # 3e. 实际标准数 vs 声明数（精确解析后不应有差异，差异即 FAIL）
     actual_count = len(std_rows)
@@ -594,11 +631,42 @@ def check_standards(text: str, report: Report):
             f"L{line_no} {std_id}：实施日期 {impl_date} 未到，状态却为'现行有效'"
         )
 
-    if expired_review:
-        for std_id, date, line_no in expired_review:
-            report.warn(f"{std_id}：核验日期 {date} 已超 6 个月，建议复核")
-    else:
-        report.ok("无超期未核验标准（6 个月内）")
+    tier_label = {True: "强制性国标", False: "其余标准"}
+    for mandatory in (True, False):
+        bucket = ledger[mandatory]
+        tier = REVIEW_DAYS_MANDATORY if mandatory else REVIEW_DAYS_OTHER
+        total = sum(len(v) for v in bucket.values())
+        report.info(
+            f"核验时效台账·{tier_label[mandatory]}（{tier} 天档）：共 {total} 条 → "
+            f"在期 {len(bucket['在期'])}／已核验但超期 {len(bucket['超期'])}"
+            f"／无「核验日期」记录 {len(bucket['无日期'])}")
+        if bucket["无日期"]:
+            report.info(f"  无「核验日期」清单：{'、'.join(sorted(bucket['无日期']))}")
+        boundary = [sid for sid, _, age, t in bucket["在期"] if age == t]
+        if boundary:
+            report.info(
+                f"  档位边界（今日恰第 {tier} 天仍在期、次日转超期）：{'、'.join(sorted(boundary))}")
+    for mandatory in (True, False):
+        for sid, date_str, age, tier in ledger[mandatory]["超期"]:
+            report.warn(
+                f"{sid}：核验日期 {date_str} 距今 {age} 天，超{tier_label[mandatory]}"
+                f"核验周期（{tier} 天），须复核标准状态")
+    no_date_total = sum(len(ledger[m]["无日期"]) for m in (True, False))
+    if no_date_total:
+        report.warn(
+            f"无「核验日期」记录 {no_date_total} 条（强制性国标 "
+            f"{len(ledger[True]['无日期'])}／其余 {len(ledger[False]['无日期'])}）："
+            f"按账本纪律视为已超期、不作免检；出口二选一——补官方核验记录，"
+            f"或接受 SRE 降低确定性输出（整改方案 §6.2／P1 item 9-10，"
+            f"运行时侧降级见 sre_reasoner._verification_confirmed）")
+    if not any(ledger[m]["超期"] for m in (True, False)):
+        report.ok(
+            f"无「已核验但超期」标准（{tier_label[True]} {REVIEW_DAYS_MANDATORY} 天／"
+            f"{tier_label[False]} {REVIEW_DAYS_OTHER} 天，机器从「核验日期」列现算）")
+    if ledger_no_id:
+        report.info(
+            f"无编号条目 {len(ledger_no_id)} 处（指南类，官方无编号）不入编号台账："
+            f"行号 {[ln for _, ln in ledger_no_id]}")
 
     if upcoming_impl:
         for std_id, impl_date in upcoming_impl:

@@ -1,7 +1,7 @@
 """
 SRE Reasoner 回归测试集
 ========================
-版本：v1.7（2026-09-17，CG-20260917-004：新增断点8 判断层守卫 test_BP8_name_keyword_does_not_override_binding_support_role——L2/binding_support 标准名称含「测量/评价」角色仍恒 design_basis，订正第三方审阅 T-A1「名称差分会改角色」的被推翻推定）
+版本：v1.8（2026-09-17，CG-20260917-006：新增 TestVerificationLedger 八条守卫（P1 item 9/10）——核验时效台账与索引两侧独立现读交叉核对（含散文假键排除）、「核验状态」否决支为活代码的反证、无「核验日期」按已超期处理的账本纪律、分档阈值（L1 92／其余 183）严格大于与档位混用探针、未确认者降 inferred ＋ §1.1A 专属 degradation 证据、已确认者保持 deterministic 的对称面、降级不改适用标准集成员的全矩阵取证、零新字段零新枚举；51→59 例。上一版 v1.7 = 2026-09-17，CG-20260917-004：新增断点8 判断层守卫 test_BP8_name_keyword_does_not_override_binding_support_role——L2/binding_support 标准名称含「测量/评价」角色仍恒 design_basis，订正第三方审阅 T-A1「名称差分会改角色」的被推翻推定）
 运行：python sre_regression_test.py
 
 覆盖：M1 分类协议、M3 场景推理与 Step 1a 裁定、M4 适用性裁判、M6 降级、
@@ -20,7 +20,7 @@ import random
 import re
 import sys
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -310,6 +310,61 @@ def _main_table_truth() -> dict[str, str]:
             if std_no:
                 truth[std_no] = _cell(row, header, "状态")
     return truth
+
+
+def _verify_table_truth(require_both: bool = False) -> dict[str, dict[str, str | None]]:
+    """索引核验记录表的 编号→{核验日期, 核验状态} 真值，按列名取值（item 9/10 对照基准）。
+
+    刻意不复用 `sre_reasoner._classify_verify_table`／`_VERIFY_ID_SHAPE`：两侧同错即静默放行，
+    交叉核对才有力（同 CG-20260916-009 `INDEX_L1_IDS` 口径）。判据：
+      · 含编号列且含「核验日期」**或**「核验状态」列者即核验台账——状态主表两列皆无，天然互斥；
+        §1.1A 的核验状态枚举定义表无编号列，亦被排除（否则「已官方核验」会被当成编号读入）；
+      · `require_both=True` 只用于反证「或」语义是活代码（索引 §二 的核验状态分层表只有
+        「核验状态」无「核验日期」，收紧为"两列都要"会整表丢失状态）；
+      · 并列编号单元只按全角 `／` 切分，半角 `/` 属 `GB/T`、`DBJ/T` 编号本体；
+      · 首字符非 ASCII 或不含数字者剔除（「其余强制性国标」等散文兜底单元）。
+    """
+    truth: dict[str, dict[str, str | None]] = {}
+    for header, rows in _iter_tables(_index_text() or ""):
+        id_col = next((c for c in ("标准编号", "图集编号", "编号") if c in header), None)
+        if not id_col:
+            continue
+        has_date, has_state = "核验日期" in header, "核验状态" in header
+        if not ((has_date and has_state) if require_both else (has_date or has_state)):
+            continue
+        for row in rows:
+            for one in _cell(row, header, id_col).split("／"):
+                std_no = one.strip().replace("**", "").strip()
+                if not std_no or not std_no[0].isascii() or not any(c.isdigit() for c in std_no):
+                    continue
+                date = _cell(row, header, "核验日期").strip() or None
+                state = _cell(row, header, "核验状态").strip() or None
+                rec = truth.setdefault(std_no, {"核验日期": None, "核验状态": None})
+                if date and (rec["核验日期"] is None or date > rec["核验日期"]):
+                    rec["核验日期"] = date
+                if state and not rec["核验状态"]:
+                    rec["核验状态"] = state
+    return truth
+
+
+def _verify_tier(level: str) -> int:
+    """该层级的核验周期天数（取自运行时常量，其真值源为索引 §1.1A，本文件不复制散文数值）。"""
+    return sre_reasoner.REVIEW_DAYS_L1 if level == "L1" else sre_reasoner.REVIEW_DAYS_OTHER
+
+
+def _applicability_evidence(response: dict, std_no: str) -> list[dict]:
+    return [ev for ev in response["证据对象"]
+            if ev["证据类型"] == "applicability"
+            and ev["输入事实"].startswith(f"标准={std_no},")]
+
+
+def _verify_degradation_evidence(response: dict, std_no: str) -> list[dict]:
+    """核验时效专属降级证据。判据须同时锁 `规则来源` 含「§1.1A」与 `输入事实` 编号前缀，
+    否则会被「地方标准不适用」「时间状态未知」等无关 degradation 证据顶替而恒真
+    （CG-20260917-002 反向注入4 的同类教训）。"""
+    return [ev for ev in response["证据对象"]
+            if ev["证据类型"] == "degradation" and "§1.1A" in ev["规则来源"]
+            and ev["输入事实"].startswith(f"标准={std_no},")]
 
 
 def _applicable_ids(project_type: str, space_type: str, demands, location) -> set[str]:
@@ -1152,6 +1207,205 @@ class TestSREDeterminismBehavior(_SREDeterminismBase):
                         {e for e in expect - got if not e.startswith("（")})]
         self.assertEqual(missing, [],
                          f"全国基线或地方增量在该地点缺失：{missing[:6]}")
+
+
+class TestVerificationLedger(unittest.TestCase):
+    """核验时效台账现读与降级（CG-20260917-006／整改方案 P1 item 9-10）。
+
+    判据分层标注（沿用 CG-20260917-004 口径）：
+      · **机检层**——台账按列名现读的一致性、散文单元排除、无日期即超期、分档阈值边界，
+        全部可由门禁与本机复算，不含业务裁量；
+      · **判断层**——「条文级核验（S1／S1-）是否等同全标准确认」「41 条无核验日期的积压
+        走补核验还是走降级」属业务裁定，本组只按索引 §1.1A 的字面口径取守卫
+        （不以「已官方核验」开头即未确认），不为其新造枚举、不在测试里替业务改判。
+    期望值一律现读：台账取自索引核验记录表（`_verify_table_truth` 独立读，不复用被测代码），
+    阈值取自 `sre_reasoner.REVIEW_DAYS_*`（其真值源为 §1.1A，代码与本文件均不复制"3 个月/6 个月"散文）。
+    """
+
+    def _matrix(self):
+        for project_type, space_type, demands in SCENARIOS:
+            for location in LOCATIONS:
+                response = reason(project_type, space_type, location=location,
+                                  demands=demands, system="轻钢龙骨")
+                yield (project_type, space_type, location), response
+
+    def test_verify_ledger_matches_index_by_column_name(self):
+        """机检层：运行时台账与测试侧独立现读同集同值，且无散文假键。"""
+        truth = _verify_table_truth()
+        ledger = sre_reasoner.STANDARD_VERIFY
+        self.assertGreaterEqual(len(truth), 1, "索引核验记录表现读为空，交叉核对失去基准")
+        self.assertEqual(set(ledger), set(truth),
+                         f"台账键集与索引现读不一致：多 {sorted(set(ledger) - set(truth))[:5]}／"
+                         f"少 {sorted(set(truth) - set(ledger))[:5]}")
+        diff = [(k, ledger[k], truth[k]) for k in truth if ledger[k] != truth[k]]
+        self.assertEqual(diff, [], f"台账值与索引现读不等 {len(diff)} 处：{diff[:3]}")
+        prose = [k for k in ledger if re.search(r"[\u4e00-\u9fff]", k)]
+        self.assertEqual(prose, [],
+                         f"散文单元被当成编号读入台账（应按列名取值并剔除兜底单元）：{prose[:5]}")
+        self.assertNotIn("已官方核验", ledger,
+                         "§1.1A 核验状态枚举定义表被当成台账读入（该表无编号列，应被排除）")
+
+    def test_verify_state_column_only_table_is_load_bearing(self):
+        """机检层：「核验日期 或 核验状态」的或语义是活代码——收紧为"两列都要"会丢状态、产假确定性。
+
+        反证两面：① 索引 §二 核验状态分层表只有「核验状态」列，收紧即整表不入台账；
+        ② 数据面存在「日期在期但状态非已官方核验」的编号，其未确认结论完全由状态支承载
+        （删掉状态支即被当已确认放行）。若哪天索引把条文级核验升为全标准确认，本守卫因空跑转红，
+        那是提示改判据，不是允许删支。
+        """
+        truth = _verify_table_truth()
+        strict = _verify_table_truth(require_both=True)
+        lost = sorted(k for k in truth
+                      if truth[k]["核验状态"] and not strict.get(k, {}).get("核验状态"))
+        self.assertTrue(lost, "或语义空跑：无「仅靠核验状态列入账」的编号，收紧判据不会丢数据")
+        veto = []
+        for std_no, rec in sre_reasoner.STANDARD_VERIFY.items():
+            state, date = rec.get("核验状态"), rec.get("核验日期")
+            if not state or not date or state.startswith(sre_reasoner.CONFIRMED_VERIFY_PREFIX):
+                continue
+            level = classify_standard(std_no, [])["层级"]
+            age = (datetime.now() - datetime.strptime(date, "%Y-%m-%d")).days
+            if age <= _verify_tier(level):
+                veto.append(std_no)
+        self.assertTrue(veto, "状态否决支空跑：无「日期在期但状态非已官方核验」的编号")
+        for std_no in veto:
+            ok, why = sre_reasoner._verification_confirmed(
+                std_no, classify_standard(std_no, [])["层级"])
+            self.assertFalse(ok, f"{std_no} 日期在期但状态非「已官方核验」，应仍未确认")
+            self.assertIn("核验状态", why, f"{std_no} 未确认事由应指向核验状态，实测：{why}")
+
+    def test_missing_verify_date_is_expired_not_exempt(self):
+        """机检层（账本纪律）：无「核验日期」记录者按**已超期**处理，不得按"免检"放行。"""
+        main_ids = set(_main_table_truth())
+        no_record = sorted(main_ids - set(sre_reasoner.STANDARD_VERIFY))
+        self.assertTrue(no_record, "空跑：主表编号已全部有核验记录，无日期支不可达")
+        for std_no in no_record[:6]:
+            ok, why = sre_reasoner._verification_confirmed(
+                std_no, classify_standard(std_no, [])["层级"])
+            self.assertFalse(ok, f"{std_no} 索引无核验记录却按已确认放行（应视为已超期）")
+            self.assertIn("无「核验日期」", why, f"{std_no} 事由应明记账本纪律，实测：{why}")
+        for std_no, rec in sre_reasoner.STANDARD_VERIFY.items():
+            if rec.get("核验状态") and not rec.get("核验日期"):
+                ok, why = sre_reasoner._verification_confirmed(
+                    std_no, classify_standard(std_no, [])["层级"])
+                self.assertFalse(ok, f"{std_no} 有状态无日期，仍应按已超期处理：{why}")
+
+    def test_verify_threshold_is_tiered_and_strict(self):
+        """机检层：分档阈值（L1 92 天／其余 183 天）与"严格大于"边界，用合成编号注入取证。
+
+        后两组是档位混用的探针：单档阈值或两档互换都会在此转红。
+        """
+        fake = "GB/T 99999-2020"
+        self.assertNotIn(fake, sre_reasoner.STANDARD_VERIFY, "合成编号撞上真实台账，注入失效")
+        l1, other = sre_reasoner.REVIEW_DAYS_L1, sre_reasoner.REVIEW_DAYS_OTHER
+        self.assertLess(l1, other,
+                        "强制性国标核验周期应短于其余标准（索引 §1.1A：3 个月 vs 6 个月）")
+        saved = dict(sre_reasoner.STANDARD_VERIFY)
+        today = datetime.now()
+        cases = [
+            ("L1", l1, True), ("L1", l1 + 1, False),
+            ("L2", other, True), ("L2", other + 1, False),
+            ("L1", other, False), ("L2", l1 + 1, True),
+        ]
+        try:
+            for level, age, expect in cases:
+                date = (today - timedelta(days=age)).strftime("%Y-%m-%d")
+                sre_reasoner.STANDARD_VERIFY[fake] = {"核验日期": date, "核验状态": None}
+                ok, why = sre_reasoner._verification_confirmed(fake, level)
+                self.assertEqual(ok, expect,
+                                 f"{level} 档 age={age} 天应{'确认' if expect else '未确认'}，"
+                                 f"实测 {ok}（{why or '—'}）")
+        finally:
+            sre_reasoner.STANDARD_VERIFY.clear()
+            sre_reasoner.STANDARD_VERIFY.update(saved)
+
+    def test_unconfirmed_verification_degrades_to_inferred_with_m6_evidence(self):
+        """端到端：未确认者 applicability 证据降 inferred ＋ 一条 §1.1A 专属 degradation 证据。"""
+        seen, bad = 0, []
+        for (project_type, space_type, location), response in self._matrix():
+            for item in response["适用标准集"]:
+                std_no = item["标准编号"]
+                if sre_reasoner._verification_confirmed(std_no, item["层级"])[0]:
+                    continue
+                seen += 1
+                tag = f"{project_type}/{space_type}/{location} {std_no}"
+                apps = _applicability_evidence(response, std_no)
+                if not apps:
+                    bad.append(f"{tag} 无 applicability 证据")
+                elif apps[0]["置信度"] != "inferred":
+                    bad.append(f"{tag} 置信度仍为 {apps[0]['置信度']!r}，未随核验时效降级")
+                degs = _verify_degradation_evidence(response, std_no)
+                if not degs:
+                    bad.append(f"{tag} 缺 §1.1A 核验时效专属 degradation 证据")
+                elif "出口二选一" not in degs[0]["输出结论"]:
+                    bad.append(f"{tag} 降级证据未明文记账等价出口：{degs[0]['输出结论'][:40]}")
+        self.assertGreater(seen, 0, "空跑：矩阵内无未确认编号，降级断言无绑定力")
+        self.assertEqual(bad, [], f"核验时效降级未生效 {len(bad)} 处：{bad[:6]}")
+
+    def test_confirmed_verification_keeps_deterministic(self):
+        """对称面：已确认且无其他降级因由者仍为 deterministic——防"无条件降级"式假修。"""
+        seen, bad = 0, []
+        for (project_type, space_type, location), response in self._matrix():
+            for item in response["适用标准集"]:
+                std_no = item["标准编号"]
+                if not sre_reasoner._verification_confirmed(std_no, item["层级"])[0]:
+                    continue
+                if (item["地域适用性"] == "待确认"
+                        or item["时间状态"] == sre_reasoner.STATUS_UNKNOWN):
+                    continue  # 另有降级因由，不在本守卫判据面内
+                seen += 1
+                tag = f"{project_type}/{space_type}/{location} {std_no}"
+                apps = _applicability_evidence(response, std_no)
+                if not apps:
+                    bad.append(f"{tag} 无 applicability 证据")
+                elif apps[0]["置信度"] != "deterministic":
+                    bad.append(f"{tag} 已官方核验且在期，置信度应 deterministic，实测 {apps[0]['置信度']!r}")
+                if _verify_degradation_evidence(response, std_no):
+                    bad.append(f"{tag} 已确认却仍带核验时效降级证据")
+        self.assertGreater(seen, 0, "空跑：矩阵内无已确认编号，对称面断言无绑定力")
+        self.assertEqual(bad, [], f"已确认标准被误降 {len(bad)} 处：{bad[:6]}")
+
+    def test_verification_degradation_does_not_change_membership(self):
+        """全矩阵：核验降级只动确定性与证据，**不得改变适用标准集成员**（预审最小成功标准）。"""
+        baseline: dict[tuple, set[str]] = {}
+        for project_type, space_type in sre_reasoner.ACTIVATION_TABLE:
+            for location in LOCATIONS:
+                baseline[(project_type, space_type, location)] = _applicable_ids(
+                    project_type, space_type, [], location)
+        saved = sre_reasoner._verification_confirmed
+        diffs, total = [], 0
+        try:
+            sre_reasoner._verification_confirmed = lambda std_no, level: (True, "")
+            for key, ids in baseline.items():
+                total += len(ids)
+                now = _applicable_ids(key[0], key[1], [], key[2])
+                if now != ids:
+                    diffs.append((key, sorted(ids ^ now)))
+        finally:
+            sre_reasoner._verification_confirmed = saved
+        self.assertGreater(total, 0, "空跑：全矩阵未产出条目")
+        self.assertEqual(diffs, [], f"核验降级改变了适用标准集成员 {len(diffs)} 处：{diffs[:3]}")
+
+    def test_no_new_field_or_enum_for_verification(self):
+        """零新枚举／零新字段：降级只经既有 `置信度` 两值 + degradation 证据表达。
+
+        IC-10 items 为 `additionalProperties: false`，给 item 加核验字段即契约不兼容变更，
+        须升版另批（整改方案 P1 item 10 明令复用既有 STATUS_UNKNOWN 降级语义）。
+        """
+        for field in ("核验状态", "核验日期", "核验时效", "核验确认"):
+            self.assertFalse(_contract_declares(field),
+                             f"IC-10 契约出现核验专属字段 {field}：属契约不兼容变更，须升版另批")
+        checked, bad = 0, []
+        for _, response in self._matrix():
+            for item in response["适用标准集"]:
+                checked += 1
+                bad += [f"{item['标准编号']} item 含核验专属键 {k}" for k in item if "核验" in k]
+            for ev in response["证据对象"]:
+                if ev["证据类型"] in ("applicability", "degradation") \
+                        and ev["置信度"] not in ("deterministic", "inferred"):
+                    bad.append(f"{ev['证据ID']} 置信度 {ev['置信度']!r} 越既有两值域（新造枚举）")
+        self.assertGreater(checked, 0, "空跑：矩阵未产出条目")
+        self.assertEqual(bad, [], f"核验降级新造字段或枚举 {len(bad)} 处：{bad[:6]}")
 
 
 def _fingerprint(path: Path) -> dict:
