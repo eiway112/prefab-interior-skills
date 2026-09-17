@@ -137,6 +137,9 @@ class Report:
         print("=" * 70)
         print("  装配式装修技能合集 — 治理文件契约校验报告")
         print(f"  生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("  层别：本报告全部为【机检层】＝存在性/一致性（字段有无·枚举合法·哈希相等·日期到期）")
+        print("        【判断层】＝真伪抽样（场景级期望值断言·红线行为守恒）见 sre_regression_test.py")
+        print("  判读：机检零 ERROR ≠ 内容正确（整改方案 §6.3 门禁分层，CG-20260917-004）")
         print("=" * 70)
 
         for sec in self.sections:
@@ -968,19 +971,26 @@ def check_sre_static(base_dir: Path, runtime_dir: Path, report: Report,
             idx_name = idx_names.get(nk)
             if idx_name is None or idx_name == sre_name:
                 continue
-            role_div = (("测量" in sre_name, "评价" in sre_name)
-                        != ("测量" in idx_name, "评价" in idx_name))
-            conflicts.append((nk, sre_name, idx_name, role_div))
+            # 机检层只裁「关键词存在性差分」（测量/评价 在两源名称中出现与否不同），不裁其是否改角色。
+            # 名称仅在 sre_reasoner.py:697（非 L1 且非 L2/L3-binding_support 支）参与 verification_reference 判定；
+            # 当前 flagged 的 DB/DBJ 属 L2/binding_support，角色在 :695-696 即定为 design_basis、永不到达 :697，
+            # 反事实实测去掉名称「测量/评价」角色不变（断点8，CG-20260917-004）。真伪归判断层，机检层不作因果声称。
+            kw_div = (("测量" in sre_name, "评价" in sre_name)
+                      != ("测量" in idx_name, "评价" in idx_name))
+            conflicts.append((nk, sre_name, idx_name, kw_div))
         if conflicts:
-            n_role = sum(1 for c in conflicts if c[3])
+            n_kw = sum(1 for c in conflicts if c[3])
             signals.append({
                 "id": "T-A1", "cat": "DRIFT",
                 "ids": [c[0] for c in conflicts],
                 "msg": (f"SRE STANDARD_NAMES 与索引主表名称差分 {len(conflicts)} 处"
                         f"（判据=差分非空即报，计数随键匹配情况变动，非断言常量；"
-                        f"role_divergence {n_role} 处经 :506 改变 M4 角色与排序）"),
+                        f"其中『测量/评价』关键词差分 {n_kw} 处——机检层只报关键词存在性、不裁是否改角色："
+                        f"名称仅在 sre_reasoner.py:697 非 L1 且非 L2/L3-binding_support 支参与 verification_reference 判定，"
+                        f"当前 flagged 属 L2/binding_support→角色恒 design_basis，反事实实测名称差分不改角色"
+                        f"〔断点8 订正，CG-20260917-004〕）"),
                 "detail": [f"{c[0]}：SRE=「{c[1]}」/ 索引=「{c[2]}」"
-                           + ("［role_divergence］" if c[3] else "")
+                           + ("［关键词差分·实测不改角色］" if c[3] else "")
                            for c in conflicts],
             })
         else:

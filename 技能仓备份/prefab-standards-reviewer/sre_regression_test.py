@@ -1,7 +1,7 @@
 """
 SRE Reasoner 回归测试集
 ========================
-版本：v1.6（2026-09-17，CG-20260917-003：团体标准 T/ 层级断言 L4→L2、新增 DBJ+省码数字形态用例 test_dbj_province_code_form_matches）
+版本：v1.7（2026-09-17，CG-20260917-004：新增断点8 判断层守卫 test_BP8_name_keyword_does_not_override_binding_support_role——L2/binding_support 标准名称含「测量/评价」角色仍恒 design_basis，订正第三方审阅 T-A1「名称差分会改角色」的被推翻推定）
 运行：python sre_regression_test.py
 
 覆盖：M1 分类协议、M3 场景推理与 Step 1a 裁定、M4 适用性裁判、M6 降级、
@@ -722,7 +722,7 @@ class TestSRRedlines(unittest.TestCase):
 
 
 class TestP0SceneExpectations(unittest.TestCase):
-    """P0 断点 1-4 修复的场景级期望值断言（第三方审阅报告 §三 / §6.3）。
+    """P0 断点 1-6 + P1 断点8 修复的场景级期望值断言（第三方审阅报告 §三 / §6.3）。
 
     每条均为「给定输入 → 断言输出标准集/字段」，这是报告指出当前完全缺失的一类机检；
     并各带负向半条防过度修正。回退对应修复后本组用例须复红（反向注入自证）。
@@ -861,6 +861,42 @@ class TestP0SceneExpectations(unittest.TestCase):
                      if ev["证据类型"] == "degradation" and "外部协同" in ev["规则来源"]]
         self.assertTrue(collab_ev, "外部协同缺专属 degradation 降级证据（规则来源未含「外部协同」）")
         self.assertIn("waterproofing-expert", collab_ev[0]["输出结论"])
+
+    # ---- 断点8（P1·item11）：名称关键词不改 binding_support 角色 ----
+    def test_BP8_name_keyword_does_not_override_binding_support_role(self):
+        """断点8：L2/L3+binding_support 标准角色恒 design_basis，名称含「测量/评价」不改角色。
+
+        第三方审阅 T-A1 曾推定「名称差分会改角色」，反事实实测推翻（CG-20260917-004）：名称关键词
+        仅在 sre_reasoner.py:697（非 L1 且非 L2/L3-binding_support 支）参与 verification_reference 判定，
+        而 DB/DBJ 设计验收类属 L2/binding_support，在 :695-696 即定 design_basis、永不到达 :697。
+        正向对照：名称同样含「测量/评价」但非 L1、非 binding_support 者仍落 verification_reference，
+        证明名称分支为活代码、只是被 binding_support 支遮蔽——本守卫因此非恒真空跑（回退分支序即转红）。
+        """
+        # 遮蔽组：L2/binding_support + 名称含「评价」→ 角色恒 design_basis（不被名称改写）
+        for no in ("DB33/T 1168-2019", "DBJ/T 15-208-2020"):
+            c = classify_standard(no, [])
+            self.assertEqual(c["层级"], "L2", f"{no} 应为 L2（断点7 裁定）")
+            self.assertEqual(c["权限"], "binding_support", f"{no} 应为 binding_support")
+            self.assertIn("评价", sre_reasoner._standard_name(no),
+                          f"{no} 前置条件不成立：名称须含「评价」才能检验是否被改写")
+            role = sre_reasoner._apply_applicability([c], None, [])[0]["角色"]
+            self.assertEqual(role, "design_basis",
+                             f"{no} 名称含「评价」但角色应恒 design_basis（binding_support 支遮蔽 :697 名称支）")
+        # 正向对照：名称含测量/评价但未被 L1/binding_support 遮蔽 → verification_reference（名称支为活代码）
+        control = []
+        for k, v in sre_reasoner.STANDARD_NAMES.items():
+            if "测量" not in v and "评价" not in v:
+                continue
+            c = classify_standard(k, [])
+            if c["层级"] != "L1" and c["权限"] != "binding_support":
+                control.append((k, c))
+            if len(control) >= 3:
+                break
+        self.assertTrue(control, "断点8 对照空跑：无「名称含测量/评价且未被遮蔽」的标准，守卫失去证伪力")
+        for no, c in control:
+            role = sre_reasoner._apply_applicability([c], None, [])[0]["角色"]
+            self.assertEqual(role, "verification_reference",
+                             f"{no} 对照：名称含测量/评价且未被遮蔽 → 应 verification_reference（:697 活代码）")
 
 
 class _SREDeterminismBase(unittest.TestCase):
