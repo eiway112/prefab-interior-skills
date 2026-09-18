@@ -931,7 +931,9 @@ class TestP0SceneExpectations(unittest.TestCase):
         # 遮蔽组：L2/binding_support + 名称含「评价」→ 角色恒 design_basis（不被名称改写）
         # 第二成员由 DBJ/T 15-208-2020 换为 DBJ/T 13-428-2023（CG-20260917-008）：前者名称修正为
         # 「建筑室内装配式轻质隔墙技术规程」已不含「评价」，不再满足遮蔽组前置；后者名称含「评价」且 L2/binding_support。
-        for no in ("DB33/T 1168-2019", "DBJ/T 13-428-2023"):
+        # 第一成员由 DB33/T 1168-2019 换为 DB33/T 1259-2021（CG-20260918-001）：前者名称修正为
+        # 「装配式内装工程施工质量验收规范（浙江）」已不含「评价」；后者实测 L2/binding_support、名含「评价」。
+        for no in ("DB33/T 1259-2021", "DBJ/T 13-428-2023"):
             c = classify_standard(no, [])
             self.assertEqual(c["层级"], "L2", f"{no} 应为 L2（断点7 裁定）")
             self.assertEqual(c["权限"], "binding_support", f"{no} 应为 binding_support")
