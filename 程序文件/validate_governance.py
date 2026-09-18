@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 装配式装修技能合集 — 治理文件契约校验脚本
-validate_governance.py v1.8.0
+validate_governance.py v1.9.0
 
-校验六项一致性与完整性：
+校验七项一致性与完整性：
   1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表，统计表按表头动态解析）
   2. interface-contracts.md — IC-02/IC-03/IC-05/IC-06/IC-07/IC-08/IC-09/IC-10/IC-11/IC-12/IC-13/IC-14 JSON Schema 必填字段完整性
   3. standards-index.md     — 标准状态枚举合法性（实际落检）+ 时间状态双向检查
@@ -28,6 +28,20 @@ validate_governance.py v1.8.0
                               且被跳过的 (文件@层) 组合逐条列出，不只报总数
                               比对集成员另与 sync_skill_backup.py 的 ROOT_FILES ∪ SHARED_FILES
                               做双源交叉校验（AST 提取，不 import），漏配即 FAIL
+  7. 遗留存活性台账（PENDING-TTL 本仓化，CG-20260918-005）
+                              — 读 change-governance.md §十一 台账表，把「登记即永久免检」
+                              改为到期由治具求值（与检查 3 的核验时效同构）
+                              FAIL 档（同机字面、无外部真值依赖，故首轮即 FAIL）：台账表/必需列
+                              缺失、编号非法或重复、状态出三值枚举、日期不可解析、待处置行缺到期日、
+                              登记日期晚于到期日、已闭合/已裁定不做行缺处置依据、来源与处置列引用的
+                              CG 编号不在 §九 变更日志内（键闭合）
+                              WARN/INFO 档：到期日早于今天 → 聚合一条 WARN＋逐条 INFO 披露
+                              （到期不等于失效、不等于必须关闭，只触发「须重新裁定：处置/续期/改判不做」，
+                              沿 CG-20260917-009「不因单纯到期增加失败」口径）；30 天内到期 → INFO 预警；
+                              待处置行 TTL 超 §11.1 上限 180 天 → WARN（续期须写明理由）
+                              覆盖面限制：只做「台账 → §九」方向键闭合，不反查 CG 行散文里声明的遗留
+                              （散文字面无稳定形态，正则会产假信号），故「新遗留漏登记」仍靠人工，
+                              与 §11.3 第 3 条同口径显式披露
 
 v1.1 变更（2026-08-06，CG-20260806-008）：
   - 修复 §十一/十二 统计表硬编码 6 技能导致 WS 加入后误判合计（改为按表头动态解析）
@@ -80,6 +94,20 @@ v1.8.0 变更（2026-09-18，CG-20260918-002）：
   - 反向注入自证：--runtime-dir 临时副本注入 1 处名称值 → T-A1 FAIL＋exit 1；检查 6 的
     层路径取模块常量、不受 --runtime-dir 影响，注入态保持绿（两案互不掩盖）
   - 其余信号（T-A2—T-A5）维持首轮 WARN，升档时点各自依 §6.3.3 前置，不随本批扩面
+
+v1.9.0 变更（2026-09-18，CG-20260918-005）：
+  - 新增检查 7「遗留存活性台账」：读 change-governance.md §十一 的 PL-nnn 台账表，
+    使遗留事项具备到期日与机算求值（动因＝梳理报告 §四.1／裁定 3：此前遗留由散文承担、
+    无到期日无机算，属「登记即永久免检」；CG-20260917-009 已在核验日期面确立
+    「到期由治具求值，不由散文自报」，本批把同一原则落到遗留面）
+  - 分档：结构性违法（表/列缺失、编号非法或重复、状态出枚举、日期不可解析、待处置缺到期日、
+    登记晚于到期、闭合无依据、CG 键不闭合）首轮即 FAIL 档并计 fail_count——同机字面比对、
+    无外部真值依赖，与检查 6 同理；单纯到期只 WARN＋INFO 披露，不计 fail_count
+  - 状态枚举取三值闭集（待处置/已闭合/已裁定不做），TTL 口径取 §11.1（常规 90 天／
+    事件驱动 180 天／限期明写），常量 LEDGER_TTL_DEFAULT／LEDGER_TTL_EVENT 与散文同源同值
+  - 专项测试 程序文件/pending_ledger_test.py（第六门禁）：clean 态零 FAIL＋到期 WARN 不计失败、
+    八类结构违法逐类注入自证、TTL 边界（到期日＝今天不超期、次日超期）、键闭合双向、
+    续期超上限 WARN；负向注入用合成文本直调 check_pending_ledger，不落盘、不改治理件
 
 用法：
   python validate_governance.py
@@ -1491,6 +1519,267 @@ def check_cross_layer(base_dir: Path, report: Report):
         report.fail("(A)(B) 零比对项且非降级态 —— 声明表或层路径已失效，本检查不得判绿")
 
 
+# ── 检查 7：遗留存活性台账（PENDING-TTL 本仓化，CG-20260918-005）──
+LEDGER_TTL_DEFAULT = 90        # §11.1 常规：登记日期 + 90 天
+LEDGER_TTL_EVENT = 180         # §11.1 事件驱动：登记日期 + 180 天（口径上限）
+LEDGER_SOON_DAYS = 30          # 到期预警窗口
+LEDGER_ID_SHAPE = re.compile(r"^PL-\d{3}$")
+LEDGER_STATUS_ENUM = ("待处置", "已闭合", "已裁定不做")
+LEDGER_CLOSED_STATES = ("已闭合", "已裁定不做")
+LEDGER_BLANK = {"", "—", "–", "-", "－", "无", "N/A", "n/a"}
+LEDGER_DATE_SHAPE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+LEDGER_COLS = (
+    ("编号", ("编号",)),
+    ("事项", ("事项",)),
+    ("来源登记", ("来源",)),
+    ("登记日期", ("登记日期",)),
+    ("到期日", ("到期日", "到期")),
+    ("状态", ("状态",)),
+    ("处置批次／依据", ("处置", "依据")),
+)
+CG_ID_SHAPE = re.compile(r"CG-\d{8}-\d{3}")
+
+
+def ledger_blank(raw: str) -> bool:
+    return (raw or "").strip() in LEDGER_BLANK
+
+
+def ledger_date(raw: str):
+    """可解析则返回 datetime，空值与非法格式一律返回 None（调用方按是否 blank 区分两种）。"""
+    s = (raw or "").strip()
+    if not LEDGER_DATE_SHAPE.match(s):
+        return None
+    try:
+        return datetime.strptime(s, "%Y-%m-%d")
+    except ValueError:
+        return None
+
+
+def collect_cg_log_ids(lines: List[str]) -> set:
+    """§九 变更日志出现过的全部 CG 编号 —— 检查 7 键闭合的真值源（不取手抄集合）。
+
+    不用 iter_md_tables：§九 存在跨物理行断行的历史行（实测 :317—:318），表头感知解析
+    在断点处把其后各行判为「无表头块」而整块不产表，断点之后的 CG 编号全部不可见
+    （实测只读到 72 个、止于 CG-20260916-008）。此处按「行首第一列含 CG 编号」逐行取，
+    对断行免疫；断行本身作为缺陷登记于台账 PL-016，不在本检查内静默修复。
+    """
+    lo, hi = find_section(lines, r"^九、变更日志")
+    ids = set()
+    if lo is None:
+        return ids
+    for idx in range(lo, min(hi, len(lines))):
+        raw = lines[idx].strip()
+        if not raw.startswith("|"):
+            continue
+        first = raw.strip("|").split("|")[0]
+        ids.update(CG_ID_SHAPE.findall(first))
+    return ids
+
+
+def check_pending_ledger(text: str, report: Report):
+    lines = text.splitlines()
+    report.section("遗留存活性台账 — 结构合法性与到期披露（检查 7，FAIL 档）")
+
+    lo, hi = find_section(lines, r"^十一、遗留存活性台账")
+    if lo is None:
+        report.fail("未找到 §十一「遗留存活性台账」章节 —— 遗留事项失去到期机算面")
+        return
+
+    ledger = None
+    for tbl in iter_md_tables(lines, lo, hi):
+        if (find_col(tbl["header"], ("编号",)) is not None
+                and find_col(tbl["header"], ("到期日", "到期")) is not None):
+            ledger = tbl
+            break
+    if ledger is None:
+        report.fail("§十一 内未找到台账表（须含「编号」与「到期日」两列；表头感知解析，不猜列号）")
+        return
+
+    cols: Dict[str, int] = {}
+    missing: List[str] = []
+    for name, aliases in LEDGER_COLS:
+        i = find_col(ledger["header"], aliases)
+        if i is None:
+            missing.append(name)
+        else:
+            cols[name] = i
+    if missing:
+        report.fail(f"台账表缺必需列 {'、'.join(missing)}（实读表头：{'|'.join(ledger['header'])}）")
+        return
+
+    cg_ids = collect_cg_log_ids(lines)
+    if not cg_ids:
+        report.fail("§九 变更日志未解析出任何 CG 编号 —— 键闭合失去真值源，本检查不得判绿")
+        return
+
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    shape_bad: List[Tuple[int, str]] = []
+    dup_ids: List[str] = []
+    status_bad: List[Tuple[int, str, str]] = []
+    date_bad: List[Tuple[int, str, str, str]] = []
+    pending_no_due: List[Tuple[int, str]] = []
+    order_bad: List[Tuple[int, str, str, str]] = []
+    closed_no_basis: List[Tuple[int, str, str]] = []
+    dangling: List[Tuple[int, str, str, str]] = []
+    src_empty: List[Tuple[int, str]] = []
+    colcount_bad: List[Tuple[int, int]] = []
+    overdue: List[Tuple[str, str, int]] = []
+    soon: List[Tuple[str, str, int]] = []
+    over_ttl: List[Tuple[str, int]] = []
+    seen: set = set()
+    n_pending = n_closed = n_refused = 0
+
+    for line_no, cells in ledger["rows"]:
+        if len(cells) != len(ledger["header"]):
+            colcount_bad.append((line_no, len(cells)))
+
+        def cell(name: str, _cells=cells) -> str:
+            i = cols[name]
+            return _cells[i].strip() if i < len(_cells) else ""
+
+        pid = cell("编号")
+        if not LEDGER_ID_SHAPE.match(pid):
+            shape_bad.append((line_no, pid))
+        elif pid in seen:
+            dup_ids.append(pid)
+        else:
+            seen.add(pid)
+
+        status = cell("状态")
+        if status not in LEDGER_STATUS_ENUM:
+            status_bad.append((line_no, pid, status))
+        elif status == "待处置":
+            n_pending += 1
+        elif status == "已闭合":
+            n_closed += 1
+        else:
+            n_refused += 1
+
+        reg_raw, due_raw = cell("登记日期"), cell("到期日")
+        reg = ledger_date(reg_raw)
+        if reg is None:
+            date_bad.append((line_no, pid, "登记日期", reg_raw))
+        if ledger_blank(due_raw):
+            due = None
+            if status == "待处置":
+                pending_no_due.append((line_no, pid))
+        else:
+            due = ledger_date(due_raw)
+            if due is None:
+                date_bad.append((line_no, pid, "到期日", due_raw))
+        if reg is not None and due is not None and due < reg:
+            order_bad.append((line_no, pid, reg_raw, due_raw))
+
+        basis = cell("处置批次／依据")
+        if status in LEDGER_CLOSED_STATES and ledger_blank(basis):
+            closed_no_basis.append((line_no, pid, status))
+
+        for col_name in ("来源登记", "处置批次／依据"):
+            raw = cell(col_name)
+            if col_name == "来源登记" and ledger_blank(raw):
+                src_empty.append((line_no, pid))
+            for cid in CG_ID_SHAPE.findall(raw):
+                if cid not in cg_ids:
+                    dangling.append((line_no, pid, col_name, cid))
+
+        if status == "待处置" and due is not None:
+            left = (due - today).days
+            if left < 0:
+                overdue.append((pid, due_raw, -left))
+            elif left <= LEDGER_SOON_DAYS:
+                soon.append((pid, due_raw, left))
+            if reg is not None and (due - reg).days > LEDGER_TTL_EVENT:
+                over_ttl.append((pid, (due - reg).days))
+
+    report.ok(f"台账表就位：{len(ledger['rows'])} 行 × {len(ledger['header'])} 列，"
+              f"必需 {len(LEDGER_COLS)} 列齐备（编号／事项／来源登记／登记日期／到期日／状态／处置依据）")
+    report.ok(f"状态分布：待处置 {n_pending} ／ 已闭合 {n_closed} ／ 已裁定不做 {n_refused}"
+              f"（三值闭集 {'/'.join(LEDGER_STATUS_ENUM)}）")
+
+    if colcount_bad:
+        for ln, n in colcount_bad:
+            report.fail(f"L{ln} 行列数 {n} ≠ 表头列数 {len(ledger['header'])}")
+    else:
+        report.ok(f"行列数与表头列数逐行一致（{len(ledger['rows'])} 行）")
+
+    if shape_bad:
+        for ln, pid in shape_bad:
+            report.fail(f"L{ln} 编号 '{pid}' 不合 PL-nnn 形制（台账编号须跨批唯一且可机读）")
+    else:
+        report.ok(f"编号形制全部合法（PL-nnn，{len(seen)} 个）")
+    if dup_ids:
+        report.fail(f"编号重复 {len(dup_ids)} 处：{'、'.join(dup_ids)}")
+    else:
+        report.ok("编号零重复")
+
+    if status_bad:
+        for ln, pid, st in status_bad:
+            report.fail(f"L{ln} {pid}：状态 '{st}' 不在三值枚举内")
+    else:
+        report.ok("状态值全部落在 §11.1 三值枚举内")
+
+    if date_bad:
+        for ln, pid, col_name, raw in date_bad:
+            report.fail(f"L{ln} {pid}：{col_name} '{raw}' 不可解析（须 YYYY-MM-DD，"
+                        f"空值只允许 '—' 且仅限已闭合／已裁定不做行的到期日）")
+    else:
+        report.ok("登记日期与到期日字面全部可解析")
+    if pending_no_due:
+        for ln, pid in pending_no_due:
+            report.fail(f"L{ln} {pid}：状态为待处置但到期日为空 —— 失去 TTL 约束即回到"
+                        f"「登记即永久免检」")
+    else:
+        report.ok(f"待处置行到期日全部非空（{n_pending} 行）")
+    if order_bad:
+        for ln, pid, reg_raw, due_raw in order_bad:
+            report.fail(f"L{ln} {pid}：登记日期 {reg_raw} 晚于到期日 {due_raw}")
+    else:
+        report.ok("日期链方向合法（登记日期 ≤ 到期日）")
+
+    if closed_no_basis:
+        for ln, pid, st in closed_no_basis:
+            report.fail(f"L{ln} {pid}：状态 '{st}' 但处置批次／依据为空 —— 无依据的终态不采信")
+    else:
+        report.ok(f"已闭合／已裁定不做行依据全部非空（{n_closed + n_refused} 行）")
+
+    if src_empty:
+        for ln, pid in src_empty:
+            report.fail(f"L{ln} {pid}：来源登记为空 —— 遗留事项失去可回溯登记来源，"
+                        f"无法判断其是否已被后续批次处置")
+    else:
+        report.ok(f"来源登记列全部非空（{len(ledger['rows'])} 行）")
+
+    if dangling:
+        for ln, pid, col_name, cid in dangling:
+            report.fail(f"L{ln} {pid}：{col_name} 引用的 '{cid}' 不在 §九 变更日志内"
+                        f"（键闭合，真值源＝§九 实读 {len(cg_ids)} 个 CG 编号）")
+    else:
+        report.ok(f"来源／处置列引用的 CG 编号全部落在 §九 变更日志内"
+                  f"（键闭合，真值源实读 {len(cg_ids)} 个）")
+
+    if overdue:
+        report.warn(f"待处置且已超到期日 {len(overdue)} 项 —— 触发 §11.1「须重新裁定」义务"
+                    f"（三择一：处置／续期并写明理由／改判不做）；到期不等于失效，不计 fail_count")
+        for pid, due_raw, days in overdue:
+            report.info(f"  超期 {pid}：到期日 {due_raw}，已过 {days} 天")
+    else:
+        report.ok(f"待处置项零超期（{n_pending} 项，判据＝到期日 ≥ 今天）")
+    for pid, due_raw, left in soon:
+        report.info(f"  预警 {pid}：{left} 天内到期（{due_raw}），窗口 {LEDGER_SOON_DAYS} 天")
+    if over_ttl:
+        report.warn(f"待处置行 TTL 超 §11.1 上限 {LEDGER_TTL_EVENT} 天共 {len(over_ttl)} 项："
+                    + "、".join(f"{pid}（{d} 天）" for pid, d in over_ttl)
+                    + " —— 续期合法但须在处置批次／依据列写明续期理由")
+    else:
+        report.ok(f"待处置行 TTL 均未超口径上限（常规 {LEDGER_TTL_DEFAULT} 天／"
+                  f"事件驱动 {LEDGER_TTL_EVENT} 天／限期明写）")
+
+    report.info("覆盖面限制（§11.3）：只做「台账 → §九」方向键闭合，不反查 CG 行散文声明的遗留"
+                "（散文字面无稳定形态，正则会产假信号），故「新遗留漏登记进台账」仍靠人工")
+    report.info("口径：到期由治具求值、不由散文自报（CG-20260917-009 同构）；"
+                "到期只披露不否定既有登记，单纯到期不增加 fail_count")
+
+
 # ── 主流程 ────────────────────────────────────────────────
 def main():
     # Windows 终端 UTF-8 兼容
@@ -1563,6 +1852,15 @@ def main():
 
     # 检查 6：治理文件跨层一致性（FAIL 档，计入 fail_count）
     check_cross_layer(base_dir, report)
+
+    # 检查 7：遗留存活性台账（PENDING-TTL 本仓化，FAIL 档，计入 fail_count）
+    cg_path = base_dir / "change-governance.md"
+    cg_text = read_file(cg_path, "变更治理规则")
+    if cg_text:
+        check_pending_ledger(cg_text, report)
+    else:
+        report.section("遗留存活性台账 — 结构合法性与到期披露（检查 7，FAIL 档）")
+        report.fail("文件不存在，跳过")
 
     # 输出报告
     fail_count = report.print_report()
