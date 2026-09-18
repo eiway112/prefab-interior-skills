@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 装配式装修技能合集 — 治理文件契约校验脚本
-validate_governance.py v1.7.0
+validate_governance.py v1.8.0
 
 校验六项一致性与完整性：
   1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表，统计表按表头动态解析）
@@ -13,7 +13,9 @@ validate_governance.py v1.7.0
                               与注册表本体动态统计值比对，不一致即 FAIL
   5. SRE 静态体检 T-A1—T-A5  — 运行时 sre_reasoner.py 硬编码字面量（AST 提取，不 import）
                               与 standards-index.md 双源一致性 + 索引本体自洽 + 锚定集守卫
-                              首轮一律 WARN（不计 fail_count），不打破 exit code 基线
+                              首轮一律 WARN（不计 fail_count），不打破 exit code 基线；
+                              T-A1 自 v1.8.0 起升 FAIL 档（计 fail_count）——§6.3.3 ③(b)
+                              前置（①②③ 全落地归零，CG-20260918-001）已满足，见 CG-20260918-002
                               判据见《文档/SRE确定性体检设计方案_v1.0.md》§3.1
   6. 跨层一致性比对          — 三层模型（L1 开发源 / 运行时根 SOT / shared 镜像 / 技能仓备份）
                               两条独立断言：(A) L1 → 该件声明的全部下游副本字节全等
@@ -69,6 +71,15 @@ v1.6.0 变更（2026-09-16，CG-20260916-010）：
   - 检查 6 的层路径取模块常量（三层模型为固定结构），不受 --runtime-dir 影响；
     该选项只重定位检查 5 的 sre_reasoner.py 数据源
   - 档位：同机字面哈希比对、无外部真值依赖，故落地即 FAIL 档（不计入首轮 WARN 组）
+
+v1.8.0 变更（2026-09-18，CG-20260918-002）：
+  - T-A1 名称双源差分由 WARN 升 FAIL 档（计 fail_count）：设计方案 §6.3.3 ③(b) 的
+    升档前置「①②全落地归零」已随 CG-20260918-001 的 13 处名称差分清零满足（门禁实测
+    转「零冲突」OK），本批另线完成代码级半步；clean 态读数不变（该路径本即 report.ok），
+    仅差分非空时阻断 exit code
+  - 反向注入自证：--runtime-dir 临时副本注入 1 处名称值 → T-A1 FAIL＋exit 1；检查 6 的
+    层路径取模块常量、不受 --runtime-dir 影响，注入态保持绿（两案互不掩盖）
+  - 其余信号（T-A2—T-A5）维持首轮 WARN，升档时点各自依 §6.3.3 前置，不随本批扩面
 
 用法：
   python validate_governance.py
@@ -983,8 +994,8 @@ def std_id_refs(obj: Any) -> List[str]:
 def check_sre_static(base_dir: Path, runtime_dir: Path, report: Report,
                      si_text: Optional[str], std_rows: List[Tuple[str, int]],
                      std_names: Dict[str, str]):
-    """T-A1—T-A5 静态体检。首轮一律 WARN（不计 fail_count），修复不等观察期。"""
-    report.section("SRE 静态体检 — T-A1—T-A5（首轮 WARN，不打破 exit code 基线）")
+    """T-A1—T-A5 静态体检。T-A1 自 v1.8.0 起 FAIL 档（CG-20260918-002）；其余首轮一律 WARN（不计 fail_count），修复不等观察期。"""
+    report.section("SRE 静态体检 — T-A1—T-A5（T-A1 自 v1.8.0 起 FAIL 档；其余首轮 WARN）")
 
     if not si_text:
         report.warn("standards-index.md 不可达，T-A1—T-A5 整体降级跳过")
@@ -1305,7 +1316,12 @@ def check_sre_static(base_dir: Path, runtime_dir: Path, report: Report,
             anchored.append(sig["id"])
         else:
             tag = "｜anchor=false"
-        report.warn(f"{sig['id']} [{sig['cat']}] {sig['msg']}{tag}")
+        # v1.8.0（CG-20260918-002）：T-A1 升档——§6.3.3 ③(b) 前置已满足（CG-20260918-001 归零），
+        # 名称差分非空即 FAIL 并计 fail_count；其余信号仍首轮 WARN，升档时点各自依其前置。
+        if sig["id"] == "T-A1":
+            report.fail(f"{sig['id']} [{sig['cat']}] {sig['msg']}{tag}")
+        else:
+            report.warn(f"{sig['id']} [{sig['cat']}] {sig['msg']}{tag}")
         for i, d in enumerate(sig["detail"], 1):
             report.info(f"{sig['id']}·{i}/{len(sig['detail'])} {d}")
 
@@ -1542,7 +1558,7 @@ def main():
     # 检查 4：跨文件计数漂移反查
     check_cross_file_drift(base_dir, report, si_text, rl_text, ic_text, std_actual)
 
-    # 检查 5：SRE 静态体检 T-A1—T-A5（首轮一律 WARN，不计 fail_count）
+    # 检查 5：SRE 静态体检 T-A1—T-A5（T-A1 自 v1.8.0 起 FAIL 档；其余首轮 WARN）
     check_sre_static(base_dir, runtime_dir, report, si_text, std_rows, std_names)
 
     # 检查 6：治理文件跨层一致性（FAIL 档，计入 fail_count）
