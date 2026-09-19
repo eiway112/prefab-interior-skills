@@ -26,11 +26,18 @@ class TestVerificationMaintenance(unittest.TestCase):
         self.assertEqual(count, 1, "必须唯一命中核验日期行，不能改主表或空跑")
         return changed
 
+    def latest_verify_date(self):
+        # 核验记录表的「核验日期」恒为第三个单元（序号|标准编号|核验日期|…）；主表同位置是名称，
+        # 故该形制只命中核验记录表。钟点取「数据里最新的核验日期」而非硬编码日，否则任何比它新的
+        # 补录行都会在该钟点被判为未来日期，把本用例的全局 WARN 集比对变成对索引最新日期的隐式耦合。
+        dates = re.findall(r"(?m)^\|\s*\d+\s*\|\s*[^|]*\|\s*(\d{4}-\d{2}-\d{2})\s*\|", self.text)
+        self.assertTrue(dates, "索引须含核验记录表的「核验日期」列，否则本用例无被测面")
+        return max(datetime.strptime(d, "%Y-%m-%d") for d in dates)
+
     def test_expiry_is_info_with_stable_warning_set(self):
-        date = "2026-06-17"
+        boundary = self.latest_verify_date()
+        date = (boundary - timedelta(days=governance.REVIEW_DAYS_MANDATORY)).strftime("%Y-%m-%d")
         text = self.with_date(self.text, "GB 55037-2022", date)
-        boundary = datetime.strptime(date, "%Y-%m-%d") + timedelta(
-            days=governance.REVIEW_DAYS_MANDATORY)
         before = self.report_at(boundary, text)
         after = self.report_at(boundary + timedelta(days=1), text)
         self.assertFalse(any("GB 55037-2022：复查提醒" in msg for _, msg in before))
