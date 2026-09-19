@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 装配式装修技能合集 — 治理文件契约校验脚本
-validate_governance.py v1.9.0
+validate_governance.py v1.10.0
 
 校验七项一致性与完整性：
   1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表，统计表按表头动态解析）
@@ -18,9 +18,12 @@ validate_governance.py v1.9.0
                               前置（①②③ 全落地归零，CG-20260918-001）已满足，见 CG-20260918-002
                               判据见《文档/SRE确定性体检设计方案_v1.0.md》§3.1
   6. 跨层一致性比对          — 三层模型（L1 开发源 / 运行时根 SOT / shared 镜像 / 技能仓备份）
-                              两条独立断言：(A) L1 → 该件声明的全部下游副本字节全等
-                              （抓跨批落后），(B) 运行时层 ↔ 技能仓备份同层全等
-                              （抓 sync_skill_backup.py 漏跑或半跑）
+                              三条独立断言，一条红不掩盖另一条：
+                              (A) L1 → 该件声明的全部下游副本字节全等（抓跨批落后）
+                              (B) 运行时层 ↔ 技能仓备份同层全等（抓 sync_skill_backup.py 漏跑或半跑）
+                              (C) git 可见副本 ↔ `git cat-file HEAD:<path>` 前像的行尾形态一致
+                                  （抓跨层同漂移＝A/B 的「互等」在同一批被同一脚本整体写坏时
+                                  仍报绿的盲区，PL-020／CG-20260918-010 实测动因；自 v1.10.0）
                               比对集按文件逐个声明分层归属，不用目录 glob，故 *_pre* 回退件
                               天然不入比对；基准取本次实读字节，不读 同步说明.md 的哈希清单
                               （那是被测同步工具自身的产物，作基准属自指）
@@ -109,6 +112,26 @@ v1.9.0 变更（2026-09-18，CG-20260918-005）：
     八类结构违法逐类注入自证、TTL 边界（到期日＝今天不超期、次日超期）、键闭合双向、
     续期超上限 WARN；负向注入用合成文本直调 check_pending_ledger，不落盘、不改治理件
 
+v1.10.0 变更（2026-09-19，CG-20260919-001，承接 PL-020）：
+  - 检查 6 增列第三条独立断言 (C)「副本与 HEAD 前像行尾形态一致」：对 git 可见的副本
+    （L1 与 `技能仓备份/` 两层）取 `git cat-file HEAD:<repo相对路径>` 的前像字节，与工作区
+    实读字节各算行尾形态（无行尾分隔符／纯 LF／纯 CRLF／仅 CR 无 LF／混合行尾）后比对，
+    形态不同即 FAIL 计 fail_count
+  - 动因（PL-020，CG-20260918-010 线内复核发现）：(A)(B) 都是「跨层互等」，三层被同一脚本
+    同时写坏时互等仍成立、检查 6 报 [OK]。实测一次 `Path.write_text` 把 change-governance.md
+    三层整体由 LF 翻成 CRLF，检查 6 全绿，唯一暴露点是 `git diff --stat` 报 831/831 整文件
+    伪差异（真实改动仅 11/4）。本断言为该判据取得机算承担者，真值源＝HEAD 前像（仓内固定面）
+  - 口径：只比**形态**不比字节数与内容——真实内容编辑（行数变、行尾不变）不报红；行尾形态
+    订正（历史行字节须另批裁定，如 PL-016／PL-019）会如实报红，须与所属批改判同批入库
+  - 分档：与 (A)(B) 同为字面比对，但真值源在 git 对象库（非纯同机文件），故按状态区分——
+    目录不在工作树内／该路径 HEAD 无对象（新增未提交件）→ 只披露不判红；HEAD 有对象而取回
+    失败（git 不可达、非提交仓库）→ 聚合一条 WARN 不静默，且涉该路径的项本轮不判
+  - 不覆盖清单见 change-governance.md §11.3 第 6 条（运行时层无 git 面，(C) 对其只经 (A)(B)
+    传递成立；坏形态一旦提交入库，HEAD 即新基准，本断言只守未提交态）
+  - 专项测试 程序文件/cross_layer_eol_test.py：纯函数 eol_form 五类判定逐形态反向注入
+    （LF→CRLF／单行混入 CRLF／末行换行丢失／内容编辑不误报）、HEAD 无对象、git 不可达降级、
+    真实仓 clean 态零 FAIL；负向注入走合成字节直调，不落盘、不改治理件
+
 用法：
   python validate_governance.py
   python validate_governance.py --dir <项目根目录>
@@ -124,6 +147,7 @@ import re
 import json
 import sys
 import os
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
@@ -1407,13 +1431,121 @@ def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+# ── 检查 6 (C)：副本 ↔ HEAD 前像的行尾形态 ────────────────
+EOL_FORMS = ("无行尾分隔符", "纯 LF", "纯 CRLF", "仅 CR 无 LF", "混合行尾")
+
+
+def eol_form(data: bytes) -> str:
+    """字节流的行尾形态（五类）。不数内容、不归一，故与文件长度和正文改动解耦。"""
+    crlf = data.count(b"\r\n")
+    lone_cr = data.count(b"\r") - crlf
+    lone_lf = data.count(b"\n") - crlf
+    if not crlf and not lone_cr and not lone_lf:
+        return "无行尾分隔符"    # 空文件或单行且无行尾符：LF 与 CRLF 在此不可分，单列不假装判定
+    if lone_cr:
+        return "仅 CR 无 LF" if not (crlf or lone_lf) else "混合行尾"
+    if crlf and lone_lf:
+        return "混合行尾"
+    if not data.endswith(b"\n"):
+        return "混合行尾"        # 末行缺换行 → 与"每行皆规范收尾"分属不同形态
+    return "纯 CRLF" if crlf else "纯 LF"
+
+
+def git_toplevel(cwd: Path) -> Optional[Path]:
+    try:
+        r = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                           cwd=str(cwd), capture_output=True, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    out = r.stdout.decode("utf-8", "replace").strip()
+    return Path(out) if out else None
+
+
+def git_head_blob(repo_root: Path, rel: str) -> Tuple[Optional[bytes], str]:
+    """取 HEAD 前像字节。返回 (blob|None, 状态)：ok / no_head / git_unavailable。"""
+    def run(*args):
+        try:
+            return subprocess.run(["git", *args], cwd=str(repo_root),
+                                  capture_output=True, timeout=20)
+        except (OSError, subprocess.SubprocessError):
+            return None
+
+    probe = run("cat-file", "-e", f"HEAD:{rel}")
+    if probe is None:
+        return None, "git_unavailable"
+    if probe.returncode != 0:
+        err = (probe.stderr or b"").lower()
+        # git 对「HEAD 可解析而该路径无对象」报两种字面：新建未提交件报
+        # "does not exist in 'HEAD'"，磁盘已有而未入库报 "exists on disk, but not in 'HEAD'"；
+        # 其余失败（HEAD 本身不可解析＝无提交的仓库、git 缺失等）属不可达，不静默放过
+        if b"head" in err and (b"does not exist" in err or b"but not in" in err):
+            return None, "no_head"
+        return None, "git_unavailable"
+    got = run("cat-file", "blob", f"HEAD:{rel}")
+    if got is None or got.returncode != 0:
+        return None, "git_unavailable"
+    return got.stdout, "ok"
+
+
+def check_head_eol_form(files: Dict[str, Path], report: Report) -> int:
+    """(C) 断言。files 为 {展示名: 仓内文件路径}；返回实际判定项数。
+
+    纯判定委托 eol_form，本函数只做取数与分档，故负向注入在测试件里合成字节直调
+    eol_form 即可复红，无须写真实治理件（沿检查 7「合成注入不落盘」口径）。
+    """
+    c_checked = 0
+    no_head: List[str] = []
+    unreachable: List[str] = []
+    for label, path in sorted(files.items()):
+        if not path.is_file():
+            continue                          # 缺件已由 (A)/(B) 的取数步 FAIL，不重复计
+        top = git_toplevel(path.parent)
+        if top is None:
+            unreachable.append(label)
+            continue
+        try:
+            rel = path.resolve().relative_to(top).as_posix()
+        except ValueError:
+            unreachable.append(f"{label}（不在 {top} 内）")
+            continue
+        blob, status = git_head_blob(top, rel)
+        if status == "no_head":
+            no_head.append(label)
+            continue
+        if status != "ok":
+            unreachable.append(label)
+            continue
+        wt_form = eol_form(path.read_bytes())
+        head_form = eol_form(blob)
+        c_checked += 1
+        if wt_form == head_form:
+            report.ok(f"(C) {label}：行尾形态与 HEAD 前像一致（{wt_form}）")
+        else:
+            report.fail(f"(C) {label}：工作区行尾形态 {wt_form} ≠ HEAD 前像 {head_form}"
+                        f"（{rel}）→ 整文件行尾被改写，git diff 会报全文件伪差异；"
+                        f"修复＝按 HEAD 前像行尾重写该副本（二进制写，勿用 write_text）")
+    if no_head:
+        report.info(f"(C) HEAD 无该路径对象，本项不判 {len(no_head)} 处：{'、'.join(no_head)}"
+                    f"（新增未提交件属正常态，其首次入库即确立行尾基准）")
+    if unreachable:
+        report.warn(f"(C) 无法取得 HEAD 前像，本项不判 {len(unreachable)} 处："
+                    f"{'、'.join(unreachable)}（git 不可达或目录不在工作树内——"
+                    f"「与 HEAD 行尾一致」这一面此刻无真值源，不静默放过）")
+    return c_checked
+
+
 def check_cross_layer(base_dir: Path, report: Report):
-    """三层模型的字节一致性。两条断言各自独立，故一条红不掩盖另一条。
+    """三层模型的字节一致性。三条断言各自独立，故一条红不掩盖另一条。
 
     (A) L1 → 该件声明的全部下游副本：抓 CG-20260916-006 那类跨批落后。
     (B) 运行时层 ↔ 技能仓备份同层：抓 sync_skill_backup.py 漏跑或半跑。
+    (C) git 可见副本 ↔ HEAD 前像的行尾形态：抓 PL-020 那类跨层同漂移——(A)(B) 只断言互等，
+        三层被同一脚本整体写坏时互等仍成立；(C) 引入仓外真值源（HEAD 对象）故能独立报红。
     """
-    report.section("治理文件跨层一致性 — (A) L1→下游副本 ／ (B) 运行时↔技能仓备份")
+    report.section("治理文件跨层一致性 — (A) L1→下游副本 ／ (B) 运行时↔技能仓备份"
+                   " ／ (C) 副本↔HEAD 前像行尾形态")
 
     layer_dir = {"L1": base_dir, "RT_ROOT": RUNTIME_SKILLS, "RT_SHARED": RUNTIME_SHARED_DIR,
                  "REPO_ROOT": REPO_BACKUP_DIR, "REPO_SHARED": REPO_BACKUP_SHARED_DIR}
@@ -1502,10 +1634,19 @@ def check_cross_layer(base_dir: Path, report: Report):
                 report.fail(f"(B) {name}：{rt} {h_rt[:16]} ≠ {repo} {h_repo[:16]}"
                             f" → sync_skill_backup.py 漏跑或半跑")
 
+    # (C) 只判 git 可见的两层（L1 与仓内镜像）；运行时层无 HEAD 面，其形态经 (A)/(B) 的
+    # 字节全等传递，故 (C) 报绿的前提是三条断言同时绿——单看 (C) 的 OK 数不含运行时层。
+    git_visible: Dict[str, Path] = {}
+    for name, layers, _note in CROSS_LAYER_SET:
+        for layer in ("L1", "REPO_ROOT", "REPO_SHARED"):
+            if layer in layers:
+                git_visible[f"{name}@{layer}"] = layer_dir[layer] / name
+    c_checked = check_head_eol_form(git_visible, report)
+
     if skipped:
         report.warn(f"降级不判项 {len(skipped)} 处：{'、'.join(skipped)}"
                     f"（运行时不可达所致，非该层与 L1 一致）")
-    report.info(f"(A) 比对 {a_checked} 项 ／ (B) 比对 {b_checked} 项；"
+    report.info(f"(A) 比对 {a_checked} 项 ／ (B) 比对 {b_checked} 项 ／ (C) 比对 {c_checked} 项；"
                 f"比对集逐文件声明（{len(CROSS_LAYER_SET)} 件），不 glob 故回退件不入")
     report.info("覆盖面边界：本检查只覆盖上表声明的治理件；技能目录内各件"
                 "（SKILL.md／reference.md／examples.md 等）与机器本地产物"
@@ -1513,10 +1654,17 @@ def check_cross_layer(base_dir: Path, report: Report):
     report.info("哈希口径：sha256 取原始字节、不做 eol／编码归一。跨机若 core.autocrlf=true "
                 "会使 `技能仓备份/` 层转 CRLF 而产假红（本机复算：git config core.autocrlf=false，"
                 "治理件 CR 字节 0，唯 platform-adapter-reference.md 四层同为 CRLF=26 且同层互等）")
+    report.info("(C) 不覆盖面：①运行时两层不在任何 git 仓内 → 无 HEAD 前像可比，其行尾形态"
+                "只经 (A)/(B) 的字节全等传递成立，(A)(B) 同时降级时 (C) 对该层无断言；"
+                "②真值源是 HEAD 而非规范值 → 坏形态一旦被提交，HEAD 即成新基准、本断言转绿，"
+                "故它只守「未提交态的漂移」，已入库形态须由提交前跑门禁把关；"
+                "③只比形态不比字节，故钉不住行尾「应为 LF」这类绝对规范；空文件与「单行无行尾符」"
+                "归同一形态（此时 LF 与 CRLF 物理不可分，判据不假装能分）——"
+                "详见 change-governance.md §11.3 第 6 条")
     report.info(f"层路径：L1={base_dir} ／ 运行时={RUNTIME_SKILLS} ／ 仓内镜像={REPO_BACKUP_DIR}"
                 f"（本检查取模块常量，不受 --runtime-dir 影响）")
-    if not unreachable and a_checked + b_checked == 0:
-        report.fail("(A)(B) 零比对项且非降级态 —— 声明表或层路径已失效，本检查不得判绿")
+    if not unreachable and a_checked + b_checked + c_checked == 0:
+        report.fail("(A)(B)(C) 零比对项且非降级态 —— 声明表或层路径已失效，本检查不得判绿")
 
 
 # ── 检查 7：遗留存活性台账（PENDING-TTL 本仓化，CG-20260918-005）──
