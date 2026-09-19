@@ -245,6 +245,29 @@ class TestKeyClosureRobustness(unittest.TestCase):
         self.assertTrue(any("CG-19990101-009" in m for m in r["fail"]), r["fail"])
 
 
+class TestEscapeAwareParsing(unittest.TestCase):
+    """PL-021／CG-20260919-005：md_cells 转义感知。
+    登记纪律要求单元格内裸竖线写成 '\\|'，转义感知后不得虚增列数；
+    未转义的裸 '|' 仍须虚增判「行列数」FAIL——证守卫非恒真（修净后须仍能失败）。"""
+
+    def test_md_cells_keeps_escaped_pipe_in_cell(self):
+        cells = V.md_cells("| PL-001 | a\\|b | s | 2026-09-18 | 2026-12-18 | 待处置 | 常规 TTL |")
+        self.assertEqual(len(cells), 7, cells)
+        self.assertEqual(cells[1], "a|b", cells)
+
+    def test_escaped_pipe_cell_not_column_mismatch(self):
+        # 事项单元内含转义竖线：应解析为 7 列，触发不了「行列数」FAIL
+        r = run(doc(row(item="禁全文 str.replace\\|按批引用")))
+        self.assertEqual(r["fail_count"], 0, r["fail"])
+        self.assertFalse(any("行列数" in m for m in r["fail"]), r["fail"])
+
+    def test_unescaped_bare_pipe_still_fails(self):
+        # 控制例：单元内出现未转义裸 '|' → 虚增一列 → 检查 7 判「行列数」不符
+        r = run(doc(row(item="禁全文 str.replace|按批引用")))
+        self.assertGreater(r["fail_count"], 0, r["ok"])
+        self.assertTrue(any("行列数" in m for m in r["fail"]), r["fail"])
+
+
 class TestConstantConsistency(unittest.TestCase):
     def test_ttl_constants_match_section_11_1(self):
         """常量与 §11.1 散文同源同值——散文口径改了而常量没改即复红。"""

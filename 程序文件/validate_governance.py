@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 装配式装修技能合集 — 治理文件契约校验脚本
-validate_governance.py v1.10.0
+validate_governance.py v1.11.0
 
 校验七项一致性与完整性：
   1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表，统计表按表头动态解析）
@@ -131,6 +131,17 @@ v1.10.0 变更（2026-09-19，CG-20260919-001，承接 PL-020）：
   - 专项测试 程序文件/cross_layer_eol_test.py：纯函数 eol_form 五类判定逐形态反向注入
     （LF→CRLF／单行混入 CRLF／末行换行丢失／内容编辑不误报）、HEAD 无对象、git 不可达降级、
     真实仓 clean 态零 FAIL；负向注入走合成字节直调，不落盘、不改治理件
+
+v1.11.0 变更（2026-09-19，CG-20260919-005，承接 PL-021）：
+  - md_cells 由「按裸 '|' 切格」改为转义感知：单元格内的 '\\|' 不再被误判为分隔符，
+    还原为字面 '|'。动因＝登记纪律要求表格单元格内的裸竖线写成转义形 '\\|'，而旧切法
+    不认转义，使含 '\\|' 的行虚增一列（检查 7 会判「行列数 8 ≠ 表头列数 7」并连带错位）
+  - clean 态 no-op：被 iter_md_tables 消费的各表（§11.2 台账、索引 §三/§二 主表等）其解析区
+    现均无 '\\|'，通过数不漂；§九 与索引 §八 的转义竖线不经列数机算（前者按首列逐行取数，
+    后者表头无编号/核验列）
+  - 首尾分隔符各裁一个空壳格，与旧 strip('|') 在真实表行上等价，且保留「首格确为空」的行
+  - 反向注入自证：程序文件/pending_ledger_test.py 合成含 '\\|' 的台账单元，断言解析为
+    表头列数且该格值含字面 '|'（未转义感知则虚增一列判 FAIL，证守卫非恒真）
 
 用法：
   python validate_governance.py
@@ -878,9 +889,43 @@ VERSION_KEY_RE = re.compile(r"[-—]\d{4}$")
 CJK_RUN_RE = re.compile(r"^([一-鿿]+)")
 
 
+def _split_row_unescaped(row: str) -> List[str]:
+    """按未转义的 '|' 切分一行；'\\|' 视作单元格内的字面竖线（前置反斜杠数为奇数即被转义）。
+    返回结果含首尾分隔符产生的空壳格，由 md_cells 各裁一个。"""
+    cells: List[str] = []
+    buf: List[str] = []
+    i, n = 0, len(row)
+    while i < n:
+        ch = row[i]
+        if ch == '|':
+            nb = 0
+            j = len(buf) - 1
+            while j >= 0 and buf[j] == '\\':
+                nb += 1
+                j -= 1
+            if nb % 2 == 0:
+                cells.append(''.join(buf))
+                buf = []
+                i += 1
+                continue
+        buf.append(ch)
+        i += 1
+    cells.append(''.join(buf))
+    return cells
+
+
 def md_cells(line: str) -> List[str]:
-    return [c.strip().replace("**", "").strip()
-            for c in line.strip().strip("|").split("|")]
+    # v1.11.0（CG-20260919-005，承接 PL-021）：转义感知切格——登记纪律要求单元格内
+    # 的裸竖线写成 '\\|'，旧实现按裸 '|' 切分会把 '\\|' 误判为分隔符、使该行列数虚增。
+    # clean 态 no-op（被各检查消费的表其解析区均无 '\\|'），仅当单元含转义竖线时行为变。
+    raw = line.strip()
+    cells = _split_row_unescaped(raw)
+    if cells and cells[0].strip() == "":
+        cells = cells[1:]
+    if cells and cells[-1].strip() == "":
+        cells = cells[:-1]
+    return [c.strip().replace("**", "").replace("\\|", "|").strip()
+            for c in cells]
 
 
 def iter_md_tables(lines: List[str], lo: int, hi: int) -> List[Dict[str, Any]]:

@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 技能仓备份同步脚本
-sync_skill_backup.py v1.3（2026-09-02）
+sync_skill_backup.py v1.4（2026-09-19，CG-20260919-004／PL-011）
+  v1.4：源范围收集（walk_files exclude_artifacts=True）加跳 .pyc／__pycache__，
+        使本地 import 生成的缓存不再被带进镜像；目标侧扫描仍不跳，历史遗留的
+        孤儿 .pyc 会被镜像清理删除（自愈）。「跑前手工删两层缓存」步骤由此机算收口。
 
 用途：将 skills 仓（~/.qoder/skills）中装配式装修合集相关的运行时技能
 与治理文件镜像备份到项目仓 技能仓备份/ 目录，随项目仓推送获得异地副本，
@@ -99,8 +102,9 @@ def sha256(path: Path) -> str:
 def walk_files(root: Path, exclude_artifacts: bool = True):
     """返回 root 下全部文件的相对路径字典。
     始终跳过 _pre_* 备份与清单自身；exclude_artifacts=True 时另跳过
-    隐藏文件与 .bak（用于源范围收集）；目标侧扫描传 False，
-    以便镜像清理能发现并删除多余的产物文件。"""
+    隐藏文件、.bak 与 .pyc／__pycache__（用于源范围收集，PL-011）；
+    目标侧扫描传 False，以便镜像清理能发现并删除多余的产物文件——
+    含历史遗留的 .pyc（源侧不再采集，故目标侧的孤儿 .pyc 会被移除，自愈）。"""
     out = {}
     if not root.exists():
         return out
@@ -109,7 +113,9 @@ def walk_files(root: Path, exclude_artifacts: bool = True):
             continue
         if "_pre_" in p.name or p.name == MANIFEST_NAME:
             continue
-        if exclude_artifacts and (p.name.startswith(".") or p.name.endswith(".bak")):
+        if exclude_artifacts and (p.name.startswith(".") or p.name.endswith(".bak")
+                                  or p.name.endswith(".pyc")
+                                  or "__pycache__" in p.relative_to(root).parts):
             continue
         out[p.relative_to(root).as_posix()] = p
     return out
