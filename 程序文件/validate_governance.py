@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 装配式装修技能合集 — 治理文件契约校验脚本
-validate_governance.py v1.12.0
+validate_governance.py v1.13.0
 
-校验八项一致性与完整性：
+校验九项一致性与完整性：
   1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表，统计表按表头动态解析）
   2. interface-contracts.md — IC-02/IC-03/IC-05/IC-06/IC-07/IC-08/IC-09/IC-10/IC-11/IC-12/IC-13/IC-14 JSON Schema 必填字段完整性
   3. standards-index.md     — 标准状态枚举合法性（实际落检）+ 时间状态双向检查
@@ -55,6 +55,17 @@ validate_governance.py v1.12.0
                               多值／区间声明串全额展开（F8），豁免 E1—E6 全取结构判据（不建白名单）
                               分档：同机字面比对、无外部真值依赖，clean 态 DRIFT 实测 0，首轮即 FAIL 档
                               不覆盖面（§11.3 第 7 条）：无锚不判／锚集内错配／L1 策划稿／索引自身散文
+  9. 技能件跨层内容一致性（承接 PL-010 覆盖面缺口，本批 CG-20260920-005 落地）
+                              — 把「技能目录内各件运行时 ↔ 技能仓备份镜像的字节全等」纳入机算，
+                              填补检查 6 (B) 只声明 7 件治理文件、技能件跨层一致仅靠 sync 人工步骤的盲区
+                              比对集＝SKILL_DIRS（AST 现读，与 sync_skill_backup 双向互查）下运行时 ∪
+                              镜像两层的技能件，减去 gitignored 件（`git check-ignore` 结构判据，
+                              故 sre_regression_report.json／*_pre*／*.bak／__pycache__ 天然不入，不建白名单）
+                              断言：逐件 sha256(原始字节) 比运行时 ↔ 镜像，漂移或单层缺失即 FAIL 计
+                              fail_count；运行时目录不可达 → 降级 WARN 不判红（同检查 5/6 口径）；
+                              git 不可达 → 排除面无法判定，本检查降级 WARN 不判（gitignore 是排除面真值源）
+                              与检查 8 的关系：检查 8 从镜像层取数，本检查机算运行时↔镜像字节全等，
+                              使镜像层取数获得机算背书的运行时真值代理（消解 CG-20260920-004 OBS-2）
 
 v1.1 变更（2026-08-06，CG-20260806-008）：
   - 修复 §十一/十二 统计表硬编码 6 技能导致 WS 加入后误判合计（改为按表头动态解析）
@@ -167,6 +178,27 @@ v1.12.0 变更（2026-09-20，CG-20260920-004，承接 PL-029／设计方案 CG-
   - 专项测试 程序文件/index_ref_consistency_test.py（第八门禁）：三载体逐类负向注入＋四真值表前置
     破坏＋D1 漏配／越界＋控制例 C1—C6（证豁免规则与多值展开非恒真）；合成数据面内存内直调，
     不落盘、不改治理件与技能件
+
+v1.13.0 变更（2026-09-20，CG-20260920-005，承接 PL-010 覆盖面缺口／CG-20260920-004 OBS-2）：
+  - 新增检查 9「技能件跨层内容一致性」：把「技能目录内各件 运行时 ↔ 技能仓备份镜像 字节全等」
+    纳入机算，闭合 PL-010 所述「检查 6 覆盖面仅 7 件治理文件、技能件不在面上」的覆盖面缺口
+  - 比对集：SKILL_DIRS（AST 现读 sync_skill_backup.py，与检查 8 的 D1 同源）下运行时 ∪ 镜像两层技能件，
+    减去 gitignored 件（`git check-ignore --stdin` 结构判据）；SKILL_DIRS 声明与镜像目录集合双向互查
+    （漏配／越界 FAIL），保证「脚本管、门禁漏」不静默放过
+  - 排除面＝机器本地产物的结构性判据（非白名单）：sre_regression_report.json、*_pre*、*.bak、
+    __pycache__／*.pyc、隐藏件均被 .gitignore 收录故天然不入；若纳入即产当下假红（镜像层 gitignored
+    副本不进新克隆、report.json 每轮复跑被重写）
+  - 断言与分档：逐件 sha256(原始字节)、不做 eol／编码归一（同检查 6 哈希口径），漂移或单层缺失即
+    FAIL 计 fail_count；运行时目录不可达 → 涉及项降级 WARN 且逐条列出被跳过件（同检查 5/6）；
+    git 不可达或排除面无法判定 → 本检查整体降级一条 WARN 不判红；跨机 core.autocrlf=true 会把镜像层
+    转 CRLF 而产假红（本机复算 autocrlf=false，沿检查 6 同一披露）
+  - clean 态实测（本机）：SKILL_DIRS 内运行时 ∪ 镜像 120 件，gitignored 58 件、纳入判据 62 件，
+    字节漂移 0／单层缺失 0／镜像孤儿 0（数字随 _pre 累积浮动，回归判据＝失败 0＋exit 0，不钉固定值）
+  - 与检查 8 关系：检查 8 取数面＝镜像层，本检查机算运行时↔镜像字节全等后，镜像层读数的运行时保真
+    由「人工 sync 步骤」升为「门禁断言」，消解 CG-20260920-004 复核 OBS-2；不改变检查 6 的 7 件声明表
+  - 专项测试 程序文件/skill_cross_layer_test.py（第九门禁）：真实仓 clean 态不变量断言（漂移 0／
+    单层缺失 0）＋三态负向注入（字节漂移／单层缺失／gitignored 件须被排除不判）＋SKILL_DIRS 漏配越界
+    ＋git 不可达降级；排除面经 ignored_override 注入、比对内核内存内直调，不落盘、不改治理件与技能件
 
 用法：
   python validate_governance.py
@@ -2322,9 +2354,144 @@ def check_index_ref_consistency(base_dir, si_text, report, skill_md_files=None,
     return res
 
 
+# ── 检查 9：技能件跨层内容一致性（PL-010 覆盖面缺口，CG-20260920-005）──
+def git_ignored(repo_root: Path, rel_paths: List[str]) -> Optional[set]:
+    """返回 rel_paths（相对 repo_root 的正斜杠路径）中被 git 忽略的子集。
+
+    None ＝ git 不可达或命令异常（调用方据此降级 WARN，不静默判绿）。
+    rc 0＝有忽略项、rc 1＝无忽略项（两者均正常），rc>1＝错误。
+    git check-ignore --stdin 原样回显被忽略的输入行，故无需解析状态码逐行对应。
+    """
+    if not rel_paths:
+        return set()
+    try:
+        r = subprocess.run(["git", "check-ignore", "--stdin"], cwd=str(repo_root),
+                           input="\n".join(rel_paths).encode("utf-8"),
+                           capture_output=True, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode > 1:
+        return None
+    return {x.strip().replace("\\", "/")
+            for x in r.stdout.decode("utf-8", "replace").splitlines() if x.strip()}
+
+
+def _walk_layer_files(root: Path, skill_dirs: List[str]) -> Dict[str, Path]:
+    """枚举 root 下各 SKILL_DIR 的全部文件 → {rel: Path}，rel＝"<技能目录>/<相对路径>"。
+    不做任何排除（排除面由调用方按 gitignore 结构判据统一裁），故孤儿/新增皆可见。"""
+    out: Dict[str, Path] = {}
+    for d in skill_dirs:
+        base = root / d
+        if not base.is_dir():
+            continue
+        for p in base.rglob("*"):
+            if p.is_file():
+                out[f"{d}/{p.relative_to(base).as_posix()}"] = p
+    return out
+
+
+def check_skill_cross_layer(base_dir: Path, report: Report, *,
+                            runtime_skills_dir: Optional[Path] = None,
+                            backup_dir: Optional[Path] = None,
+                            ignored_override=None, sync_text_override=None,
+                            git_probe=git_ignored):
+    """检查 9。技能目录内各件 运行时 ↔ 技能仓备份镜像 的字节全等（排除 gitignored 件）。
+
+    runtime_skills_dir／backup_dir／ignored_override／sync_text_override／git_probe 供专项测试注入
+    （内存内或临时目录直调，不落治理件与运行时技能件）。ignored_override 为 None 时经 git check-ignore
+    现算排除面；为集合时直接采用（测试据此避开对临时目录建 git 仓）。
+    """
+    report.section("技能件跨层内容一致性 — 运行时 ↔ 技能仓备份镜像 字节全等（检查 9，FAIL 档）")
+    runtime_skills = runtime_skills_dir or RUNTIME_SKILLS
+    backup = backup_dir or REPO_BACKUP_DIR
+
+    if not runtime_skills.is_dir():
+        report.warn(f"运行时技能目录不可达：{runtime_skills} → 本检查不判，只降级不判红"
+                    f"（检查 5/6 同口径，非各件跨层一致）")
+        return
+    if not backup.is_dir():
+        report.fail(f"技能仓备份镜像目录不存在：{backup} → 声明固定面缺失，无法比对")
+        return
+
+    # 比对集：AST 现读 sync_skill_backup.py 的 SKILL_DIRS（与检查 8 D1 同源，不 import）
+    sync_path = SCRIPT_DIR / "sync_skill_backup.py"
+    sync_text = (sync_text_override if sync_text_override is not None
+                 else (read_file(sync_path, "sync_skill_backup") or ""))
+    skill_dirs = extract_py_literals(sync_text, ["SKILL_DIRS"]).get("SKILL_DIRS") or [] if sync_text else []
+    if not skill_dirs:
+        report.warn(f"未能从 {sync_path.name} AST 现读 SKILL_DIRS → 本检查不判（不静默放过）")
+        return
+
+    # 目录集合双向互查：脚本管、门禁漏不静默放过（同检查 6 的声明表↔管辖范围互查口径）
+    missing = [d for d in skill_dirs if not (backup / d).is_dir()]
+    extra_dirs = sorted(x.name for x in backup.iterdir()
+                        if x.is_dir() and x.name not in set(skill_dirs) | {"shared"})
+    if missing:
+        report.fail(f"D 漏配：SKILL_DIRS 声明而 `技能仓备份/` 无镜像目录，其跨层漂移不经门禁 → {missing}")
+    if extra_dirs:
+        report.fail(f"D 越界：`技能仓备份/` 存在但不属 SKILL_DIRS 的技能目录 → {extra_dirs}")
+    if not missing and not extra_dirs:
+        report.ok(f"D 比对集自洽：AST 现读 {len(skill_dirs)} 个技能目录，"
+                  f"镜像目录集合与声明集合双向互查无漏配／越界")
+
+    # 两层枚举 + 排除面（gitignored 结构判据，非白名单）
+    rt_files = _walk_layer_files(runtime_skills, skill_dirs)
+    bk_files = _walk_layer_files(backup, skill_dirs)
+    allrels = sorted(set(rt_files) | set(bk_files))
+
+    if ignored_override is not None:
+        ignored = set(ignored_override)
+    else:
+        repo_root = git_toplevel(backup)
+        if repo_root is None:
+            report.warn(f"镜像目录不在任何 git 工作树内（{backup}）→ 排除面（gitignored）无真值源，本检查不判")
+            return
+        try:
+            prefix = (backup.resolve().relative_to(repo_root)).as_posix()
+        except ValueError:
+            report.warn(f"镜像目录不在 git 工作树根下（{backup} vs {repo_root}）→ 排除面无真值源，本检查不判")
+            return
+        ig = git_probe(repo_root, [f"{prefix}/{r}" for r in allrels])
+        if ig is None:
+            report.warn("git 不可达（git check-ignore 失败）→ 排除面无法判定，本检查降级不判红，"
+                        "不以「未排除机本地件」的裸比对产假信号（gitignore 是排除面真值源）")
+            return
+        ignored = {x[len(prefix) + 1:] if x.startswith(prefix + "/") else x for x in ig}
+
+    judged = [r for r in allrels if r not in ignored]
+    drift: List[str] = []
+    oneside: List[Tuple[str, str]] = []
+    for r in judged:
+        a, b = rt_files.get(r), bk_files.get(r)
+        if a is None:
+            oneside.append((r, "运行时缺此件（镜像独有）"))
+        elif b is None:
+            oneside.append((r, "镜像缺此件（运行时独有）→ sync_skill_backup.py 漏跑"))
+        elif sha256_file(a) != sha256_file(b):
+            drift.append(r)
+    for r in drift:
+        report.fail(f"跨层漂移 {r}：运行时 ↔ 技能仓备份 字节不一致"
+                    f"→ 重跑 `python -B 程序文件/sync_skill_backup.py` 带平")
+    for r, why in oneside:
+        report.fail(f"单层缺失 {r}：{why}（非 gitignored，属真内容件的跨层缺失）")
+    if judged and not drift and not oneside:
+        report.ok(f"运行时 ↔ 技能仓备份 纳入判据 {len(judged)} 件字节全等，漂移 0／单层缺失 0")
+
+    report.info(f"比对集枚举：运行时 ∪ 镜像共 {len(allrels)} 件，其中 gitignored（排除面）{len(allrels) - len(judged)} 件"
+                f"、纳入判据 {len(judged)} 件（sre_regression_report.json／*_pre*／*.bak／__pycache__ 天然不入）")
+    report.info("覆盖面边界：本检查只判 SKILL_DIRS 内技能件的运行时↔镜像字节全等；"
+                "7 件治理文件的跨层一致仍由检查 6 承担（两者并集＝sync_skill_backup 管辖面）；"
+                "机器本地产物经 gitignore 结构判据显式排除，不建文件白名单")
+    report.info("哈希口径：sha256 取原始字节、不做 eol／编码归一（同检查 6）。跨机 core.autocrlf=true "
+                "会把镜像层转 CRLF 而产假红（本机复算 core.autocrlf=false）")
+    report.info("与检查 8 关系：检查 8 取数面＝镜像层，本检查机算运行时↔镜像字节全等后，"
+                "镜像层读数的运行时保真由人工 sync 步骤升为门禁断言（消解 CG-20260920-004 OBS-2）")
+    if not missing and not extra_dirs and judged == []:
+        report.fail("纳入判据 0 件且非降级态 —— 声明表或层路径已失效，本检查不得判绿")
 
 
 # ── 主流程 ────────────────────────────────────────────────
+
 def main():
     # Windows 终端 UTF-8 兼容
     if sys.platform == "win32":
@@ -2408,6 +2575,9 @@ def main():
 
     # 检查 8：技能侧索引序号引用一致性（序号↔编号互指，FAIL 档，计入 fail_count）
     check_index_ref_consistency(base_dir, si_text, report)
+
+    # 检查 9：技能件跨层内容一致性（运行时 ↔ 技能仓备份镜像 字节全等，FAIL 档，计入 fail_count）
+    check_skill_cross_layer(base_dir, report)
 
     # 输出报告
     fail_count = report.print_report()
