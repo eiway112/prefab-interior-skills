@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 装配式装修技能合集 — 治理文件契约校验脚本
-validate_governance.py v1.11.0
+validate_governance.py v1.12.0
 
-校验七项一致性与完整性：
+校验八项一致性与完整性：
   1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表，统计表按表头动态解析）
   2. interface-contracts.md — IC-02/IC-03/IC-05/IC-06/IC-07/IC-08/IC-09/IC-10/IC-11/IC-12/IC-13/IC-14 JSON Schema 必填字段完整性
   3. standards-index.md     — 标准状态枚举合法性（实际落检）+ 时间状态双向检查
@@ -45,6 +45,16 @@ validate_governance.py v1.11.0
                               覆盖面限制：只做「台账 → §九」方向键闭合，不反查 CG 行散文里声明的遗留
                               （散文字面无稳定形态，正则会产假信号），故「新遗留漏登记」仍靠人工，
                               与 §11.3 第 3 条同口径显式披露
+  8. 技能侧索引序号引用一致性（设计方案 CG-20260920-003 交付，本批 CG-20260920-004 落地）
+                              — 判「技能件对 standards-index.md 序号／编号的引用是否互指吻合」，
+                              把 PL-028 靠人工复算的序号面取得机算承担者
+                              真值源＝索引 L1 主表（7 张，序号↔编号，按列名定位、禁固定列号）；
+                              声明面＝15 个技能目录活 .md（SKILL_DIRS AST 现读，排除索引自身＝F7）；
+                              三载体：① 散文形（序号 N，含表行内）② 表列形（索引序号列数值单元）
+                              ③ 内联形（索引#N）；判据＝成员判据（声明值∈锚窗口编号的序号集），
+                              多值／区间声明串全额展开（F8），豁免 E1—E6 全取结构判据（不建白名单）
+                              分档：同机字面比对、无外部真值依赖，clean 态 DRIFT 实测 0，首轮即 FAIL 档
+                              不覆盖面（§11.3 第 7 条）：无锚不判／锚集内错配／L1 策划稿／索引自身散文
 
 v1.1 变更（2026-08-06，CG-20260806-008）：
   - 修复 §十一/十二 统计表硬编码 6 技能导致 WS 加入后误判合计（改为按表头动态解析）
@@ -142,6 +152,21 @@ v1.11.0 变更（2026-09-19，CG-20260919-005，承接 PL-021）：
   - 首尾分隔符各裁一个空壳格，与旧 strip('|') 在真实表行上等价，且保留「首格确为空」的行
   - 反向注入自证：程序文件/pending_ledger_test.py 合成含 '\\|' 的台账单元，断言解析为
     表头列数且该格值含字面 '|'（未转义感知则虚增一列判 FAIL，证守卫非恒真）
+
+v1.12.0 变更（2026-09-20，CG-20260920-004，承接 PL-029／设计方案 CG-20260920-003）：
+  - 新增检查 8「技能侧索引序号引用一致性」：为「技能件对 standards-index.md 序号／编号的引用互指」
+    这一判据取得机算承担者，把 PL-028 靠人工复算的序号面变成常设门禁（动因＝PL-010 覆盖面缺口的
+    索引引用子面，设计方案 §9 步骤二）
+  - 落点：真值表＝build_index_truth 从索引 L1 现读（7 主表 seq↔code，按列名定位、禁固定列号，
+    哨兵不进锚词典＝E5）；声明面＝collect_skill_md_files 沿 SKILL_DIRS（AST 现读）镜像目录收集活 .md；
+    三载体求值＝scan_carriers（成员判据 §4.1、多值声明串全额展开 §3.2、豁免 E1—E6 全结构判据）
+  - clean 态实测：47 件活 .md、判定单元 97（① 38／② 35／③ 24）、DRIFT 0、NO-ANCHOR 10 值／4 位置、
+    EXEMPT E3 4＋E2 11＋E6 1（与设计方案 §2.3／§7.1 逐条吻合，本机探测件复算）
+  - 分档：同机字面比对、无外部真值依赖，落地即 FAIL 档计 fail_count；真值表不可判（A1—A4 任一红）
+    时跳过下游比对，不产一屏假红
+  - 专项测试 程序文件/index_ref_consistency_test.py（第八门禁）：三载体逐类负向注入＋四真值表前置
+    破坏＋D1 漏配／越界＋控制例 C1—C6（证豁免规则与多值展开非恒真）；合成数据面内存内直调，
+    不落盘、不改治理件与技能件
 
 用法：
   python validate_governance.py
@@ -1974,6 +1999,331 @@ def check_pending_ledger(text: str, report: Report):
                 "到期只披露不否定既有登记，单纯到期不增加 fail_count")
 
 
+# ── 检查 8：技能侧索引序号引用一致性 ──────────────────────
+# 判据内核见《文档/技能侧索引序号引用一致性守卫设计方案_v1.0.md》§3—§5。
+# 只判「序号↔编号是否互指」，不判名称逐字（PL-022/023/024）、不判时效（检查 3）、
+# 不判跨层字节（检查 6）；首轮即 FAIL 档（同机字面、无外部真值依赖）。
+def _index_norm(s: str) -> str:
+    s = (s or "").replace("—", "-").replace("／", "/").upper()
+    return re.sub(r"\s+", "", s)
+
+
+def build_index_truth(si_text: str) -> Dict[str, Any]:
+    """从 standards-index.md（L1）现读主表真值表与派生表，不硬编码行号。"""
+    SENT = "官方无编号"
+    lines = (si_text or "").splitlines()
+    tables = iter_md_tables(lines, 0, len(lines))
+    main_tables, derived_tables = [], []
+    for t in tables:
+        hdr = t["header"]
+        joined = "|".join(hdr)
+        seqcol = find_col(hdr, ["序号"])
+        codecol = find_col(hdr, ["标准编号", "图集编号"])
+        namecol = find_col(hdr, ["标准名称", "图集名称"])
+        if seqcol is None or codecol is None:
+            continue
+        # 主表／核验派生表：序号为首列；锚定表（§10.2）序号非首列但含「锚定ID」，归派生
+        if seqcol != 0 and "锚定ID" not in joined:
+            continue
+        if namecol is not None:
+            main_tables.append((t, seqcol, codecol))
+        else:
+            derived_tables.append((t, seqcol, codecol))
+
+    seq2code: Dict[int, str] = {}
+    code2seq: Dict[str, List[int]] = {}
+    dup_seq = []
+    for t, sc, cc in main_tables:
+        for n, row in t["rows"]:
+            if sc >= len(row) or cc >= len(row):
+                continue
+            seq_txt = row[sc]
+            if not re.fullmatch(r"\d+", seq_txt):
+                continue
+            s = int(seq_txt)
+            code = row[cc]
+            if s in seq2code and _index_norm(seq2code[s]) != _index_norm(code):
+                dup_seq.append((s, seq2code[s], code))
+            seq2code[s] = code
+            k = _index_norm(code)
+            code2seq.setdefault(k, [])
+            if s not in code2seq[k]:
+                code2seq[k].append(s)
+
+    # A4 非单射例外＝显式无编号哨兵；E5 哨兵不进锚词典
+    non_single = {k: ss for k, ss in code2seq.items() if len(ss) > 1}
+    sentinel_keys = {k for k in code2seq if SENT in k}
+    anchor_code2seq = {k: v for k, v in code2seq.items() if k not in sentinel_keys}
+    anchor_keys = sorted(anchor_code2seq, key=len, reverse=True)
+
+    def codes(window: str) -> List[str]:
+        """归一化窗口内按索引 69 编号做降序最长匹配（F6：不用通用编号正则）。"""
+        nw = _index_norm(window)
+        found = []
+        for k in anchor_keys:
+            if k and k in nw:
+                found.append(k)
+                nw = nw.replace(k, "\u0000")
+        return found
+
+    return {
+        "main_tables": main_tables, "derived_tables": derived_tables,
+        "seq2code": seq2code, "code2seq": anchor_code2seq,
+        "all_code2seq": code2seq, "non_single": non_single,
+        "sentinel_keys": sentinel_keys, "dup_seq": dup_seq, "codes": codes,
+        "SENT": SENT,
+    }
+
+
+# 声明串 → 判定值展开（F8 正面口径）与三类载体正则
+_IDX_LIST_SEP = r"[/、，,]|及|和|或"
+_IDX_RANGE_SEP = r"[-－~～]|至|到"
+_IDX_SEPS = "(?:%s|%s)" % (_IDX_LIST_SEP, _IDX_RANGE_SEP)
+_IDX_TAIL = r"(?P<first>\d+)(?P<rest>(?:\s*%s\s*\d+)*)" % _IDX_SEPS
+_IDX_PROSE = re.compile(r"(?<!原)(索引\s*序号|序号)\s*" + _IDX_TAIL)
+_IDX_INLINE = re.compile(r"索引\s*#\s*" + _IDX_TAIL)
+_IDX_E2 = re.compile(r"原\s*序号\s*\d+")
+_IDX_E3 = re.compile(r"(?:表|附录|图)\s*[\d.]+[^\d]{0,12}$|第\s*[\d.]+\s*条\s*$")
+
+
+def _idx_expand(first: str, rest: str) -> Tuple[List[str], Optional[str]]:
+    """声明串 → 判定值列表。区间分隔符仅在「升序且跨度≤60」时展开，否则整串不拆判 EXEMPT-E6。"""
+    out = [first]
+    prev = int(first)
+    for sep, nxt in re.findall(r"(%s)\s*(\d+)" % _IDX_SEPS, rest):
+        if re.fullmatch(_IDX_RANGE_SEP, sep.strip()):
+            a, b = prev, int(nxt)
+            if not (a < b <= a + 60):
+                return [], "E6"
+            out += [str(x) for x in range(a + 1, b + 1)]
+        else:
+            out.append(nxt)
+        prev = int(nxt)
+    return out, None
+
+
+def collect_skill_md_files(skill_dirs: List[str]) -> Dict[str, Any]:
+    """声明面：SKILL_DIRS 各目录下、沿 sync_skill_backup.walk_files 同源口径收集的活 .md。
+    返回 {"present": 存在镜像的目录, "missing": 声明而无镜像目录, "files": [(相对路径, Path)]}。"""
+    present, missing, files = [], [], []
+    for d in skill_dirs:
+        sub = REPO_BACKUP_DIR / d
+        if not sub.exists():
+            missing.append(d)
+            continue
+        present.append(d)
+        for p in sorted(sub.rglob("*.md")):
+            rel = p.relative_to(REPO_BACKUP_DIR).as_posix()
+            name = p.name
+            if "_pre" in name or name.startswith(".") or name.endswith(".bak") \
+               or name.endswith(".pyc") or "__pycache__" in p.relative_to(sub).parts:
+                continue
+            files.append((rel, p))
+    backup_dirs = sorted(x.name for x in REPO_BACKUP_DIR.iterdir()
+                         if x.is_dir() and x.name not in ("shared",)) \
+        if REPO_BACKUP_DIR.exists() else []
+    extra_dirs = [d for d in backup_dirs if d not in set(skill_dirs)]
+    return {"present": present, "missing": missing, "files": files, "extra_dirs": extra_dirs}
+
+
+def scan_carriers(truth: Dict[str, Any], files: List[Tuple[str, Path]]) -> Dict[str, Any]:
+    """三类载体逐判定单元求值，返回 units/DRIFT/NO-ANCHOR/EXEMPT。"""
+    code2seq = truth["code2seq"]
+    codes = truth["codes"]
+    units = {"①": 0, "②": 0, "③": 0}
+    drifts, noanchor, e3, e6 = [], [], [], []
+    e2 = 0
+
+    def judge(vals, anchors, rel, n, carrier):
+        if not vals:
+            return
+        if not anchors:
+            for v in vals:
+                units[carrier] += 1
+                noanchor.append((rel, n, carrier, v))
+            return
+        seqs = set(sum((code2seq.get(a, []) for a in anchors), []))
+        for v in vals:
+            units[carrier] += 1
+            if int(v) not in seqs:
+                drifts.append((rel, n, carrier, v, sorted(seqs)))
+
+    for rel, p in files:
+        try:
+            flines = p.read_text(encoding="utf-8").splitlines()
+        except (UnicodeDecodeError, OSError):
+            continue
+        handled2 = set()
+        for t in iter_md_tables(flines, 0, len(flines)):
+            hdr = t["header"]
+            ci = find_col(hdr, ["索引序号"])
+            if ci is None:
+                continue
+            for n, row in t["rows"]:
+                if ci >= len(row):
+                    continue
+                nums = re.findall(r"\d+", row[ci])
+                if not nums:
+                    continue
+                handled2.add(n)
+                anchor = " ".join(row[i] for i in range(len(row)) if i != ci)
+                judge(nums, codes(anchor), rel, n, "②")
+        for idx, ln in enumerate(flines):
+            n = idx + 1
+            is_table = ln.strip().startswith("|")
+            e2 += len(_IDX_E2.findall(ln))
+            if n in handled2:
+                continue
+            for m in _IDX_INLINE.finditer(ln):
+                vals, ex = _idx_expand(m.group("first"), m.group("rest"))
+                if ex:
+                    e6.append((rel, n)); continue
+                pre = ln[:m.start()]
+                anchor = pre + " " + ln[m.end():m.end() + 220]
+                if _IDX_E3.search(pre[-28:]):
+                    e3.append((rel, n)); continue
+                judge(vals, codes(anchor), rel, n, "③")
+            for m in _IDX_PROSE.finditer(ln):
+                carrier = "①"  # 表行内散文（①′）与行外散文同归载体①（§3.2「载体归 ①」）
+                vals, ex = _idx_expand(m.group("first"), m.group("rest"))
+                if ex:
+                    e6.append((rel, n)); continue
+                pre = ln[:m.start()]
+                anchor = pre
+                if is_table:
+                    anchor = pre + " " + " ".join(md_cells(ln))
+                if _IDX_E3.search(pre[-28:]):
+                    e3.append((rel, n)); continue
+                judge(vals, codes(anchor), rel, n, carrier)
+    return {"units": units, "drifts": drifts, "noanchor": noanchor,
+            "e3": e3, "e6": e6, "e2": e2}
+
+
+def check_index_ref_consistency(base_dir, si_text, report, skill_md_files=None,
+                                truth_override=None, sync_text_override=None):
+    """检查 8。skill_md_files／truth_override／sync_text_override 供专项测试注入合成数据面（不落盘）。"""
+    report.section("技能侧索引序号引用一致性 — 序号↔编号互指（检查 8，FAIL 档）")
+
+    truth = truth_override or build_index_truth(si_text)
+    seq2code, code2seq = truth["seq2code"], truth["code2seq"]
+    main_tables = truth["main_tables"]
+
+    # ── 组 A：真值表可判性前置（任一不成立即 FAIL 并跳过下游比对）──
+    a_fail = False
+    if len(main_tables) > 0:
+        report.ok(f"A1 主表可判 {len(main_tables)} 张，表头三条件（序号×编号×名称）全部命中")
+    else:
+        report.fail("A1 无主表可判（索引主表表头三条件未命中，真值表不可构建）")
+        a_fail = True
+
+    if truth["dup_seq"]:
+        report.fail("A2 序号列存在重号且指向不同编号："
+                    + "、".join(f"{s}（{a}≠{b}）" for s, a, b in truth["dup_seq"]))
+        a_fail = True
+    else:
+        report.ok(f"A2 序号列全为纯数字、无重号（{len(seq2code)} 个序号）")
+
+    seqs = sorted(seq2code)
+    if seqs and seqs == list(range(1, max(seqs) + 1)):
+        report.ok(f"A3 序号集合 1–{max(seqs)} 连续、无空号")
+    else:
+        report.fail(f"A3 序号集合非 1–max 连续（实读 {len(seqs)} 个，存在空号或异常）")
+        a_fail = True
+
+    bad_multi = {k: v for k, v in truth["non_single"].items() if truth["SENT"] not in k}
+    if bad_multi:
+        report.fail("A4 编号→序号非单射且非显式无编号哨兵："
+                    + "、".join(f"{k}→{v}" for k, v in bad_multi.items()))
+        a_fail = True
+    else:
+        report.ok(f"A4 编号→序号单射，唯一例外＝{len(truth['sentinel_keys'])} 个无编号哨兵"
+                  f"（{truth['SENT']}，不进锚词典）")
+
+    if a_fail:
+        report.info("真值表不可判，已跳过 B0／B／D 下游比对（避免用坏真值表产出一屏假红）")
+        return
+
+    # ── 组 B0：索引派生表序号×编号 ↔ 主表键一致 ──
+    b0_mismatch, b0_rows = [], 0
+    for t, sc, cc in truth["derived_tables"]:
+        for n, row in t["rows"]:
+            if sc >= len(row) or cc >= len(row):
+                continue
+            seq_txt = row[sc]
+            if not re.fullmatch(r"\d+", seq_txt):
+                continue  # E4 聚合区间行首列非纯数字 → 不参与
+            code = row[cc]
+            if truth["SENT"] in code:
+                continue
+            s = int(seq_txt)
+            b0_rows += 1
+            if s not in seq2code or _index_norm(seq2code[s]) != _index_norm(code):
+                b0_mismatch.append((n, seq_txt, code, seq2code.get(s)))
+    if b0_mismatch:
+        for n, seq_txt, code, cur in b0_mismatch:
+            report.fail(f"B0 L{n}：派生表序号 {seq_txt}×编号「{code}」与主表"
+                        f"（主表该序号现值「{cur}」或无此序号）不一致")
+    else:
+        report.ok(f"B0 索引派生表（核验记录表／锚定表）序号×编号与主表键一致"
+                  f"（比对 {b0_rows} 行，聚合区间行经 E4 剔除）")
+
+    # ── 组 D1：取数面自洽（AST 现读 SKILL_DIRS，双向互查）──
+    sync_path = SCRIPT_DIR / "sync_skill_backup.py"
+    sync_text = sync_text_override if sync_text_override is not None \
+        else (read_file(sync_path, "sync_skill_backup") or "")
+    lits = extract_py_literals(sync_text, ["SKILL_DIRS"])
+    skill_dirs = lits.get("SKILL_DIRS") or []
+    if skill_md_files is None:
+        coll = collect_skill_md_files(skill_dirs)
+        files = coll["files"]
+        missing, extra = coll["missing"], coll["extra_dirs"]
+    else:
+        files = skill_md_files
+        missing, extra = [], []
+    if missing:
+        report.fail(f"D1 漏配：SKILL_DIRS 声明而 `技能仓备份/` 无镜像目录，守卫将静默漏扫 → {missing}")
+    if extra:
+        report.fail(f"D1 越界：`技能仓备份/` 存在但不属 SKILL_DIRS 的技能目录 → {extra}")
+    if not missing and not extra:
+        report.ok(f"D1 取数面自洽：AST 现读 {len(skill_dirs)} 个技能目录，"
+                  f"镜像目录集合与声明集合双向互查无漏配／越界，扫描活 .md {len(files)} 件")
+
+    # ── 组 B：三载体逐判定单元比对 ──
+    res = scan_carriers(truth, files)
+    units = res["units"]
+    per_carrier = {
+        "①": ("① 散文形（含表行内 ①′）", "①"),
+        "②": ("② 表列形（索引序号列数值单元）", "②"),
+        "③": ("③ 内联形（索引#N）", "③"),
+    }
+    for key in ("①", "②", "③"):
+        label = per_carrier[key][0]
+        drift_k = [d for d in res["drifts"] if d[2] == key]
+        na_k = [x for x in res["noanchor"] if x[2] == key]
+        total_k = units[key]
+        if drift_k:
+            report.fail(f"{label}：{total_k} 判定单元中真漂 {len(drift_k)} 处")
+        else:
+            report.ok(f"{label}：{total_k} 判定单元真漂 0（无锚不判 {len(na_k)}）")
+
+    if res["drifts"]:
+        for rel, n, carrier, v, seqs in res["drifts"]:
+            report.info(f"  DRIFT {rel}:{n}（载体{carrier}）声明序号 {v} 不在锚序号集 {seqs} 内")
+    na = res["noanchor"]
+    if na:
+        positions = sorted({(f, l) for f, l, _, _ in na})
+        for rel, n, carrier, v in na:
+            report.info(f"  无锚不判 {rel}:{n}（载体{carrier}）值 {v}＝窗口内索引词典零命中（E1／E5）")
+        report.info(f"  NO-ANCHOR 聚合：{len(na)} 个判定值／{len(positions)} 个位置")
+    report.info(f"  EXEMPT：E3 标准内部表行号 {len(res['e3'])}＋E2 原序号注记 {res['e2']}"
+                f"＋E6 条目号连写 {len(res['e6'])}（均为结构判据免判，不计判定单元、不建白名单）")
+    report.info("覆盖面限制（§6）：无锚不判／锚集内错配（成员判据固有代价）／L1 策划稿／"
+                "索引自身散文均不判；序号单调性不作判据；PL-010 不因此闭合")
+    return res
+
+
+
+
 # ── 主流程 ────────────────────────────────────────────────
 def main():
     # Windows 终端 UTF-8 兼容
@@ -2055,6 +2405,9 @@ def main():
     else:
         report.section("遗留存活性台账 — 结构合法性与到期披露（检查 7，FAIL 档）")
         report.fail("文件不存在，跳过")
+
+    # 检查 8：技能侧索引序号引用一致性（序号↔编号互指，FAIL 档，计入 fail_count）
+    check_index_ref_consistency(base_dir, si_text, report)
 
     # 输出报告
     fail_count = report.print_report()
