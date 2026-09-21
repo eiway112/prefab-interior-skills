@@ -8,6 +8,8 @@ pending_ledger_test.py — 检查 7「遗留存活性台账」专项测试（第
   - 每一类结构违法都必须能被注入并复红（「修净后的守卫须仍能失败」），
     负向注入用合成文本直调 check_pending_ledger，不落盘、不改任何治理件
   - 键闭合真值源须对 §九 跨物理行断行免疫（PL-016 守卫）
+  - 「§九 双口径取数一致」（自 v1.14.0，PL-036／CG-20260921-005）：表块内空行与跨物理行断行
+    各注入复红，表块外空行为控制例复绿——证守卫判的是口径相等而非「不得有空行」
   - 另含一条对本仓真实 change-governance.md 的 clean 态断言（到期只 WARN 故不随时间转红）
 
 用法：python -B 程序文件/pending_ledger_test.py
@@ -217,7 +219,12 @@ class TestStructuralFailInjection(unittest.TestCase):
 
 class TestKeyClosureRobustness(unittest.TestCase):
     def test_wrapped_history_row_does_not_hide_later_ids(self):
-        """PL-016 守卫：§九 断行不得使其后的 CG 编号对键闭合不可见。"""
+        """PL-016 守卫：§九 断行不得使其后的 CG 编号对键闭合不可见。
+
+        v1.14.0 起该断行本身另由「§九 双口径取数一致」判红（见
+        TestDualCaliberConsistency.test_wrapped_row_turns_dual_caliber_red），
+        键闭合取数仍走逐行口径故不随之漏行——两条各自成立。
+        """
         wrapped = ("| 变更编号 | 日期 | 级别 | 变更内容 | 影响范围 | 状态 |\n"
                    "|---|---|---|---|---|---|\n"
                    "| CG-20260916-008 | 2026-09-16 | B | 长内容开头 |\n"
@@ -228,7 +235,8 @@ class TestKeyClosureRobustness(unittest.TestCase):
         self.assertIn("CG-20260918-005", ids)
         self.assertIn("CG-20260916-008", ids)
         r = run(doc(row(), cg_rows=wrapped))
-        self.assertEqual(r["fail_count"], 0, r["fail"])
+        self.assertEqual([m for m in r["fail"] if "双口径" not in m], [], r["fail"])
+        self.assertFalse(any("不在 §九" in m for m in r["fail"]), r["fail"])
 
     def test_bold_id_cell_still_parsed(self):
         bold = ("| 变更编号 | 日期 | 级别 |\n|---|---|---|\n"
@@ -243,6 +251,50 @@ class TestKeyClosureRobustness(unittest.TestCase):
         r = run(text)
         self.assertGreater(r["fail_count"], 0)
         self.assertTrue(any("CG-19990101-009" in m for m in r["fail"]), r["fail"])
+
+
+class TestDualCaliberConsistency(unittest.TestCase):
+    """PL-036／CG-20260921-005：检查 7 的「§九 双口径取数一致」断言。
+
+    键闭合取逐行口径（collect_cg_log_ids），表级消费方走 iter_md_tables；两口径集合
+    一旦不等即说明 §九 表块内起了断块件（跨物理行断行或空行），表级消费方静默漏行。
+    判的是两口径相等，不判「§九 内不得有空行」这一绝对规范——故表块外空行为控制例。
+    """
+
+    def test_clean_table_both_calibers_match(self):
+        r = run(doc(row()))
+        self.assertEqual(r["fail_count"], 0, r["fail"])
+        self.assertTrue(any("双口径取数一致" in m for m in r["ok"]), r["ok"])
+
+    def test_blank_line_inside_table_block_turns_dual_caliber_red(self):
+        """PL-036 本体：§九 表块内一个空行 → 其后各行的 CG 编号对表级口径不可见。"""
+        split = ("| 变更编号 | 日期 | 级别 | 变更内容 | 影响范围 | 状态 |\n"
+                 "|---|---|---|---|---|---|\n"
+                 "| CG-20260919-011 | 2026-09-19 | B | 空行前的行 | x | 已实施 |\n"
+                 "\n"
+                 "| CG-20260920-001 | 2026-09-20 | B | 空行之后的行 | x | 已实施 |\n")
+        lines = doc(row(), cg_rows=split).splitlines()
+        self.assertEqual(len(V.collect_cg_log_ids(lines)), 2)
+        r = run(doc(row(), cg_rows=split))
+        self.assertTrue(any("双口径取数不一致" in m and "CG-20260920-001" in m
+                            for m in r["fail"]), r["fail"])
+
+    def test_wrapped_row_turns_dual_caliber_red(self):
+        """同族失效第一形态（PL-016）：跨物理行断行同样复红。"""
+        wrapped = ("| 变更编号 | 日期 | 级别 | 变更内容 | 影响范围 | 状态 |\n"
+                   "|---|---|---|---|---|---|\n"
+                   "| CG-20260916-008 | 2026-09-16 | B | 长内容开头 |\n"
+                   "断行续文（历史行跨物理行） |\n"
+                   "| CG-20260918-005 | 2026-09-18 | B | 断点之后的行 | x | 已实施 |\n")
+        r = run(doc(row(), cg_rows=wrapped))
+        self.assertTrue(any("双口径取数不一致" in m for m in r["fail"]), r["fail"])
+
+    def test_blank_line_outside_table_block_not_judged(self):
+        """控制例：表块之外的空行／散文属正常排版，本断言不得判红（证非绝对规范守卫）。"""
+        text = doc(row()).replace("## 十、其他", "\n表块外还有一段说明文字。\n\n## 十、其他")
+        r = run(text)
+        self.assertEqual(r["fail_count"], 0, r["fail"])
+        self.assertTrue(any("双口径取数一致" in m for m in r["ok"]), r["ok"])
 
 
 class TestEscapeAwareParsing(unittest.TestCase):

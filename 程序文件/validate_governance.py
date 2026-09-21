@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 装配式装修技能合集 — 治理文件契约校验脚本
-validate_governance.py v1.13.0
+validate_governance.py v1.14.0
 
 校验九项一致性与完整性：
   1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表，统计表按表头动态解析）
@@ -37,7 +37,8 @@ validate_governance.py v1.13.0
                               FAIL 档（同机字面、无外部真值依赖，故首轮即 FAIL）：台账表/必需列
                               缺失、编号非法或重复、状态出三值枚举、日期不可解析、待处置行缺到期日、
                               登记日期晚于到期日、已闭合/已裁定不做行缺处置依据、来源与处置列引用的
-                              CG 编号不在 §九 变更日志内（键闭合）
+                              CG 编号不在 §九 变更日志内（键闭合）；§九 逐行取数与表级取数的
+                              CG 编号集合不等（双口径一致，自 v1.14.0／PL-036）
                               WARN/INFO 档：到期日早于今天 → 聚合一条 WARN＋逐条 INFO 披露
                               （到期不等于失效、不等于必须关闭，只触发「须重新裁定：处置/续期/改判不做」，
                               沿 CG-20260917-009「不因单纯到期增加失败」口径）；30 天内到期 → INFO 预警；
@@ -199,6 +200,21 @@ v1.13.0 变更（2026-09-20，CG-20260920-005，承接 PL-010 覆盖面缺口／
   - 专项测试 程序文件/skill_cross_layer_test.py（第九门禁）：真实仓 clean 态不变量断言（漂移 0／
     单层缺失 0）＋三态负向注入（字节漂移／单层缺失／gitignored 件须被排除不判）＋SKILL_DIRS 漏配越界
     ＋git 不可达降级；排除面经 ignored_override 注入、比对内核内存内直调，不落盘、不改治理件与技能件
+
+v1.14.0 变更（2026-09-21，CG-20260921-005，承接 PL-036）：
+  - 检查 7 增一条断言「§九 双口径取数一致」：键闭合取数（collect_cg_log_ids，逐行首列）与
+    iter_md_tables 表级取数的 CG 编号集合须相等，不等即 FAIL 计 fail_count 并逐侧披露计数与差额
+  - 动因（PL-036，CG-20260921-004 线内复核发现）：§九 表块内第 387 行一个空行使 iter_md_tables
+    在其处把其后 11 条近期 CG 行整块判为「无表头块」丢弃，表级可见 104 vs 逐行 115。同族失效
+    四天内复发两次（PL-016 跨物理行断行随 CG-20260919-002 修，CG-20260920-001 又引入空行断块），
+    而九门禁无一条机算两口径一致——「逐行口径免疫」只保护本检查自身，不保护任何未来表级消费方
+  - 口径：本断言判的是**两口径集合相等**，不判「§九 内不得有空行」这一绝对规范（表块外的空行
+    属正常排版、§十一 台账表与其前后空行均不判）；差额非空即红，与键闭合同为同机字面比对、
+    无外部真值依赖，故落地即 FAIL 档
+  - clean 态实测：两口径均为 115 个 CG 编号（订正前 104／115），本断言产 1 条 [OK]，
+    通过数 236→237 全额归因本条，非检测口径放松
+  - 专项测试 程序文件/pending_ledger_test.py（第六门禁）：合成文本在表块内插空行 → 本断言复红
+    且逐行口径仍见全量（证两口径确有差异）、控制例（无空行）复绿、跨物理行断行同法复红
 
 用法：
   python validate_governance.py
@@ -1813,6 +1829,8 @@ def collect_cg_log_ids(lines: List[str]) -> set:
     （实测只读到 72 个、止于 CG-20260916-008）。该断行已由 CG-20260919-002 订正（表级可见 72 → 94），
     本处仍按「行首第一列含 CG 编号」逐行取——对任何再起的断行免疫，属免疫性设计而非历史包袱；
     免疫守卫见 pending_ledger_test.py 的 test_wrapped_history_row_does_not_hide_later_ids（合成文本，不依赖真实文件）。
+    逐行口径的免疫性不等于「表级口径也安全」：自 v1.14.0 起本检查同段另机算两口径集合相等，
+    断块件（跨物理行断行／表块内空行）复红，见 PL-036／CG-20260921-005。
     """
     lo, hi = find_section(lines, r"^九、变更日志")
     ids = set()
@@ -1862,6 +1880,27 @@ def check_pending_ledger(text: str, report: Report):
     if not cg_ids:
         report.fail("§九 变更日志未解析出任何 CG 编号 —— 键闭合失去真值源，本检查不得判绿")
         return
+
+    # 双口径一致（自 v1.14.0，PL-036／CG-20260921-005）：键闭合取逐行口径，而任何未来的
+    # 表级消费方走 iter_md_tables；两口径一旦不等即说明 §九 表块内起了断块件（断行或空行），
+    # 表级消费方将静默漏行。本断言把该失效模式从「靠人工发现」升为机算。
+    lo9, hi9 = find_section(lines, r"^九、变更日志")
+    tbl_ids = set()
+    for tbl in iter_md_tables(lines, lo9, hi9):
+        for _, cells in tbl["rows"]:
+            if cells:
+                tbl_ids.update(CG_ID_SHAPE.findall(cells[0]))
+    if tbl_ids != cg_ids:
+        only_line = sorted(cg_ids - tbl_ids)
+        only_tbl = sorted(tbl_ids - cg_ids)
+        report.fail(f"§九 双口径取数不一致：逐行 {len(cg_ids)} 个／表级 {len(tbl_ids)} 个 —— "
+                    f"表级解析在表块内断块处把其后各行判为「无表头块」整块丢弃，任何以 iter_md_tables "
+                    f"消费 §九 的检查会静默漏行（逐行独有 {len(only_line)}：{'、'.join(only_line[:5])}"
+                    f"{'…' if len(only_line) > 5 else ''}；表级独有 {len(only_tbl)}："
+                    f"{'、'.join(only_tbl[:5])}{'…' if len(only_tbl) > 5 else ''}）"
+                    f"—— 查 §九 表块内的空行与跨物理行断行")
+    else:
+        report.ok(f"§九 双口径取数一致（逐行 ＝ 表级 ＝ {len(cg_ids)} 个 CG 编号）")
 
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     shape_bad: List[Tuple[int, str]] = []
