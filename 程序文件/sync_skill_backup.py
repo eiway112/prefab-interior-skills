@@ -2,7 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 技能仓备份同步脚本
-sync_skill_backup.py v1.4（2026-09-19，CG-20260919-004／PL-011）
+sync_skill_backup.py v1.5（2026-09-21，CG-20260921-004／PL-035）
+  v1.5：留痕件跳过判据由字面 `"_pre_"` 改为命名文法 `_pre_?<8 位日期>`
+        （并扩至路径任一段）。原判据对本机实际形态 `_pre<日期>CG<序号>`
+        （pre 后无下划线）命中 0，50 件运行时留痕件被当内容件带进镜像，
+        同步范围由 72 虚高为 122。
   v1.4：源范围收集（walk_files exclude_artifacts=True）加跳 .pyc／__pycache__，
         使本地 import 生成的缓存不再被带进镜像；目标侧扫描仍不跳，历史遗留的
         孤儿 .pyc 会被镜像清理删除（自愈）。「跑前手工删两层缓存」步骤由此机算收口。
@@ -17,12 +21,13 @@ sync_skill_backup.py v1.4（2026-09-19，CG-20260919-004／PL-011）
      prefab-governance-sync、scanned-standard-clause-verify +
      acoustic-calculation-engine
   2. skills 根治理文件：standards-index.md、platform-adapter-reference.md
-  3. shared/ 治理镜像 7 文件（不含 *_pre_* 历史备份）
+  3. shared/ 治理镜像 7 文件（不含 CG 留痕备份件）
      change-governance / glossary / interface-contracts /
      platform-adapter-reference / redlines-registry / standards-index /
      standards-reasoning-rules（2026-08-08 首发运行时，CG-20260808-025）
 
-不备份：系统安装的通用技能（lark/docx/pdf 等）、_pre_* 备份文件。
+不备份：系统安装的通用技能（lark/docx/pdf 等）、CG 留痕备份件
+（命名文法 `_pre_?<日期>CG<序号>`，见 TRACE_ARTIFACT_RE）。
 SRE 的 L1 开发源在项目仓 _专题_技能合集策划/（由项目仓自身承载），
 其 shared/ 运行时镜像为运行时发布产物，纳入本脚本备份范围。
 
@@ -43,6 +48,7 @@ SRE 的 L1 开发源在项目仓 _专题_技能合集策划/（由项目仓自�
 
 import sys
 import io
+import re
 import shutil
 import hashlib
 from datetime import datetime
@@ -88,6 +94,13 @@ SHARED_FILES = [
 ]
 
 MANIFEST_NAME = "同步说明.md"
+# 清单头部自述的版本号；原先把版本字面写死在写盘模板里，与本文件头部版本脱钩
+SCRIPT_VERSION = "1.5"
+
+# CG 留痕件的实际命名文法：`_pre<日期>` 或旧式 `_pre_<日期>`（如
+# `SKILL.md_pre20260813CG037`、`standards-index.md_pre_20260806`）。
+# 原判据只有字面 `"_pre_"`，对无尾下划线的实际形态命中 0（PL-035）。
+TRACE_ARTIFACT_RE = re.compile(r"_pre_?\d{8}")
 
 
 # ── 工具 ─────────────────────────────────────────────────
@@ -101,21 +114,27 @@ def sha256(path: Path) -> str:
 
 def walk_files(root: Path, exclude_artifacts: bool = True):
     """返回 root 下全部文件的相对路径字典。
-    始终跳过 _pre_* 备份与清单自身；exclude_artifacts=True 时另跳过
+    始终跳过 CG 留痕备份件与清单自身；exclude_artifacts=True 时另跳过
     隐藏文件、.bak 与 .pyc／__pycache__（用于源范围收集，PL-011）；
     目标侧扫描传 False，以便镜像清理能发现并删除多余的产物文件——
-    含历史遗留的 .pyc（源侧不再采集，故目标侧的孤儿 .pyc 会被移除，自愈）。"""
+    含历史遗留的 .pyc（源侧不再采集，故目标侧的孤儿 .pyc 会被移除，自愈）。
+
+    留痕判据取路径任一段（故 `_pre<日期>CG<序号>/` 目录形态亦入排除面），
+    源侧与目标侧共用本分支：镜像层既有留痕件因此两侧皆不可见，既不被
+    带平也不被判为孤儿删除，属预期的驻留现状（清理须另批裁定）。"""
     out = {}
     if not root.exists():
         return out
     for p in sorted(root.rglob("*")):
         if not p.is_file():
             continue
-        if "_pre_" in p.name or p.name == MANIFEST_NAME:
+        parts = p.relative_to(root).parts
+        if (any("_pre_" in seg or TRACE_ARTIFACT_RE.search(seg) for seg in parts)
+                or p.name == MANIFEST_NAME):
             continue
         if exclude_artifacts and (p.name.startswith(".") or p.name.endswith(".bak")
                                   or p.name.endswith(".pyc")
-                                  or "__pycache__" in p.relative_to(root).parts):
+                                  or "__pycache__" in parts):
             continue
         out[p.relative_to(root).as_posix()] = p
     return out
@@ -202,7 +221,7 @@ def sync(check_only: bool) -> int:
         lines = [
             "# 技能仓备份 — 同步说明",
             "",
-            f"> 最后同步：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}（sync_skill_backup.py v1.3）",
+            f"> 最后同步：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}（sync_skill_backup.py v{SCRIPT_VERSION}）",
             "> 源目录：`~/.qoder/skills`（Qoder 运行时技能目录）",
             "> 备份目的：运行时技能文件本体（SKILL/reference/examples）仅存于 skills 仓本地，",
             "> 本目录随项目仓推送提供异地副本。恢复时将各目录复制回 skills 仓对应位置即可。",
@@ -211,7 +230,7 @@ def sync(check_only: bool) -> int:
             "> ② 每月至少一次 `--check` 核对漂移；③ 同步后随项目仓提交推送。",
             ">",
             "> 范围说明：仅含合集相关 15 个技能目录 + 根治理文件 + shared 治理 7 文件；",
-            "> 不含系统通用技能（lark/docx/pdf 等）与 `*_pre_*` 历史备份；",
+            "> 不含系统通用技能（lark/docx/pdf 等）与 CG 留痕备份件（`_pre_?<日期>CG<序号>`）；",
             "> ACE 已于 2026-08-07 发布运行时并纳入备份（项目仓 _专题_ACE开发/ 转为开发归档）；",
             "> SRE 于 2026-08-08 首发运行时（shared 镜像，CG-20260808-025），运行时镜像纳入备份；",
             "> 其 L1 开发源在项目仓 _专题_技能合集策划/，由项目仓自身承载。",
