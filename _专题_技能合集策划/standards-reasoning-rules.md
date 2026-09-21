@@ -1,6 +1,6 @@
 # 装配式装修技能合集 — 标准推理引擎规则
 
-> **文件定位**：合集级共享资源，定义标准推理引擎（SRE）的分类协议、锚定集、场景推理链和适用性裁判规则。路径：`shared/standards-reasoning-rules.md`。部署状态（2026-08-08 发布，CG-20260808-025）：L1 开发源 = 项目仓 `_专题_技能合集策划/standards-reasoning-rules.md`，运行时只读镜像 = `~/.qoderwork/skills/shared/standards-reasoning-rules.md`；镜像内容修订须经 change-governance.md 流程定级审批，由 L1 修改后字节级同步。
+> **文件定位**：合集级共享资源，定义标准推理引擎（SRE）的分类协议、锚定集、场景推理链和适用性裁判规则。路径：`shared/standards-reasoning-rules.md`。部署状态（2026-08-08 发布，CG-20260808-025）：L1 开发源 = 项目仓 `_专题_技能合集策划/standards-reasoning-rules.md`，运行时只读镜像 = `~/.qoder/skills/shared/standards-reasoning-rules.md`；镜像内容修订须经 change-governance.md 流程定级审批，由 L1 修改后字节级同步。
 >
 > **版本**：v1.2.6（2026-09-17，CG-20260917-009：复查到期与标准效力解耦；§五 M6 分离依据不足降级与到期提醒，运行时 v1.7；IC-10 v1.9.0 不变）
 >
