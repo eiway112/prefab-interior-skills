@@ -212,9 +212,11 @@ YYYY-MM-DD
 
 ### 结论判定规则
 
-- **pass**：所有 finding 均为 pass 或 warning，无跨部品 critical/major 冲突
-- **conditional-pass**：存在 warning 或 minor 冲突，但无 fail 项；需方案者补充说明或微调
-- **fail**：存在任何 fail 项或 critical 冲突；方案必须整改后重新提交
+- **pass**：所有 finding 均为 pass 或 warning，且不存在任何跨部品冲突
+- **conditional-pass**：存在 warning 项，或存在按下方严重性映射判为 conditional-pass 的冲突（minor／major），但无 fail 项；需方案者补充说明或微调
+- **fail**：存在任何 fail 项或映射为 fail 的冲突（critical）；方案必须整改后重新提交
+
+> 严重性→结论的映射由下方"冲突严重性分级"单源给出，本节不另行列举严重性名称与结论的对应关系；两处一旦出现分歧，以该分级表为准并即时订正本节。
 
 ### 跨部品冲突检查
 
@@ -225,7 +227,7 @@ YYYY-MM-DD
 - **管线穿越**：机电管线穿越隔墙/吊顶/楼地面时，开孔尺寸和封堵做法是否满足隔声和耐火要求
 - **工序冲突**：相邻部品的安装顺序是否导致无法施工或破坏已完工序
 
-冲突严重性分级：
+冲突严重性分级（严重性 → 结论的唯一映射源，上方"结论判定规则"按本表取值）：
 - **critical**：违反强制性规范或导致无法施工 → fail
 - **major**：影响使用功能或耐久性 → conditional-pass
 - **minor**：优化建议，不影响安全和功能 → pass + warning
