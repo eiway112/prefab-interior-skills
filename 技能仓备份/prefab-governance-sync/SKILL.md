@@ -14,7 +14,7 @@ version: 1.1.2
 
 | 层 | 路径 | 角色 |
 |---|---|---|
-| L1 开发源 | `D:\Qoder-Files\装配式装修技能开发\_专题_技能合集策划\` | 治理文件开发源；各 `_专题_*` 目录存子技能策划稿 |
+| L1 开发源 | 项目仓根目录下的 `_专题_技能合集策划\`（本仓 `_专题_技能合集策划/`） | 治理文件开发源；各 `_专题_*` 目录存子技能策划稿 |
 | L2 运行时 SOT | `~/.qoder/skills/` | standards-index.md（根 SOT，头部含 SOT 声明+镜像说明）+ 各 prefab-*/skill-qa-tester 技能目录 |
 | L3 只读镜像 | `~/.qoder/skills/shared/` | change-governance、data-classification（2026-09-22 数据分类迁移批新增）、glossary、interface-contracts、platform-adapter-reference、redlines-registry、standards-index、standards-reasoning-rules（头部为 shared 路径定位措辞） |
 
@@ -67,7 +67,7 @@ version: 1.1.2
 
 ## git 提交与推送
 
-- 提交在项目仓 `D:\Qoder-Files\装配式装修技能开发` 执行，信息格式参照既有提交（CG 编号 + 内容摘要 + 同步验证结论）。
+- 提交在项目仓根目录（本仓）执行，信息格式参照既有提交（CG 编号 + 内容摘要 + 同步验证结论）。
 - 推送：`GIT_TERMINAL_PROMPT=0 git -c credential.helper= -c credential.helper=manager push`（读 Windows 凭据管理器）。
 - **GitHub 连接 reset 连败 2 次即停**，本地提交安全，改日再推，不得无限重试。
 

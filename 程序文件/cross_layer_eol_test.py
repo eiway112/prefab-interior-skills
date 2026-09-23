@@ -16,7 +16,7 @@ cross_layer_eol_test.py — 检查 6 (C)「副本 ↔ HEAD 前像行尾形态」
             → (C) 独立报红；clean 仓零 FAIL；单副本漂移只报该副本；不可达降级为 WARN 不静默
   真实面    本仓声明表的 git 可见副本 clean 态零 FAIL；判据用真实 HEAD blob 注入体仍能失败
 
-临时仓落点：`D:/Qoder-Files/_tmp-scripts/`（工作区外的临时面）——落本仓内会成嵌套 git 仓，
+临时仓落点：与本仓同级的 `_tmp-scripts/`（工作区外，落点由本件自身位置推导）——落本仓内会成嵌套 git 仓，
 落 C 盘违反临时文件纪律；清理须先解 .git 对象的只读位，否则 Windows 下 rmtree 报 WinError 5。
 
 用法：python -B 程序文件/cross_layer_eol_test.py
@@ -39,7 +39,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 import validate_governance as V  # noqa: E402
 
 REPO_ROOT = SCRIPT_DIR.parent
-SCRATCH_ROOT = Path("D:/Qoder-Files/_tmp-scripts/cross_layer_eol_scratch")
+SCRATCH_ROOT = REPO_ROOT.parent / "_tmp-scripts" / "cross_layer_eol_scratch"
 SCRATCH_ROOT.mkdir(parents=True, exist_ok=True)
 
 LF_TEXT = b"line one\nline two\nline three\n"

@@ -9,7 +9,7 @@ skill_cross_layer_test.py — 检查 9「技能件跨层内容一致性」专项
     ＋内存内 ignored_override 直调 check_skill_cross_layer，不落治理件、不改运行时技能件、不对临时面建 git 仓
   - 控制例 C1—C5 证排除面（gitignore 结构判据）、双向互查、降级分支、空跑守卫均非恒真
 
-临时层落点：`D:/Qoder-Files/_tmp-scripts/skill_cross_layer_scratch/`（工作区外，落 C 盘违反临时文件纪律；
+临时层落点：与本仓同级的 `_tmp-scripts/skill_cross_layer_scratch/`（工作区外，落 C 盘违反临时文件纪律；
 落本仓内会被 sync 当新增件带进镜像）。
 
 用法：python -B 程序文件/skill_cross_layer_test.py
@@ -28,7 +28,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 import validate_governance as V  # noqa: E402
 
-SCRATCH_ROOT = Path("D:/Qoder-Files/_tmp-scripts/skill_cross_layer_scratch")
+SCRATCH_ROOT = SCRIPT_DIR.parents[1] / "_tmp-scripts" / "skill_cross_layer_scratch"
 SCRATCH_ROOT.mkdir(parents=True, exist_ok=True)
 
 SKILL_DIRS_2 = "SKILL_DIRS = ['skill-a', 'skill-b']"
