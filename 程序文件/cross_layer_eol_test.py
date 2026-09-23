@@ -14,7 +14,7 @@ cross_layer_eol_test.py — 检查 6 (C)「副本 ↔ HEAD 前像行尾形态」
   取数层    HEAD 前像实读、HEAD 无对象、git 不可达三态互不混淆
   集成层    临时 git 仓复现 PL-020 事故形态：各副本字节全等（(A)(B) 必绿）而集体偏离 HEAD
             → (C) 独立报红；clean 仓零 FAIL；单副本漂移只报该副本；不可达降级为 WARN 不静默
-  真实面    本仓 15 个 git 可见副本 clean 态零 FAIL；判据用真实 HEAD blob 注入体仍能失败
+  真实面    本仓声明表的 git 可见副本 clean 态零 FAIL；判据用真实 HEAD blob 注入体仍能失败
 
 临时仓落点：`D:/Qoder-Files/_tmp-scripts/`（工作区外的临时面）——落本仓内会成嵌套 git 仓，
 落 C 盘违反临时文件纪律；清理须先解 .git 对象的只读位，否则 Windows 下 rmtree 报 WinError 5。
@@ -272,16 +272,30 @@ class RealRepoCleanState(unittest.TestCase):
         return out
 
     def test_shape_matches_declaration(self):
-        """7 件声明表 → 6 件有 L1 ＋ 7 件在 REPO_SHARED ＋ 2 件在 REPO_ROOT ＝ 15。"""
-        self.assertEqual(len(self.declared_git_visible()), 15)
+        """8 件声明表 → 7 件有 L1 ＋ 8 件在 REPO_SHARED ＋ 2 件在 REPO_ROOT ＝ 17。
+
+        改判前为 7 件／15 项；CG-20260923-001 把 `data-classification.md` 纳入
+        `SHARED_FILES`（检查 6 与 sync 范围双向互查会强制两面同步扩容），故本形制数
+        随覆盖面 +2。本断言是覆盖面变更的变更检测器，不是恒真。
+        """
+        self.assertEqual(len(self.declared_git_visible()), 17)
 
     def test_real_repo_head_eol_form_is_clean(self):
+        """clean 态：零 FAIL、零 WARN，且每个声明副本要么被判定、要么按「新增未提交」逐处披露。
+
+        判定项数不钉固定值：`check_head_eol_form` 把 HEAD 无对象者（新增未提交件）排除在
+        判定之外，故该数随本批件是否已入库而浮动（本批判定时 15、commit 后 17）。不判定的
+        唯一合法出口是 INFO 披露，故本断言仍守「副本静默脱离判定」这一失效形态。
+        """
         files = self.declared_git_visible()
         missing = [str(p) for p in files.values() if not p.is_file()]
         self.assertEqual(missing, [], "声明表副本缺失会让 (C) 静默少判")
-        checked, fails, warns, _ = run_report(files)
-        self.assertEqual(checked, 15)
+        checked, fails, warns, infos = run_report(files)
         self.assertEqual((fails, warns), ([], []))
+        disclosed = {label for label in files
+                     if any("HEAD 无该路径对象" in m and label in m for m in infos)}
+        self.assertEqual(checked, len(files) - len(disclosed))
+        self.assertGreater(checked, 0, "全部副本都不判定即属空跑，clean 态断言须仍有真实判定项")
 
     def test_judge_still_fails_on_real_head_blob(self):
         """防恒真：以真实 HEAD 前像为注入体，同法取数、同字面比对。"""

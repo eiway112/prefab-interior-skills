@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 装配式装修技能合集 — 治理文件契约校验脚本
-validate_governance.py v1.14.0
+validate_governance.py v1.15.0
 
-校验九项一致性与完整性：
+校验十项一致性与完整性：
   1. redlines-registry.md  — 红线计数一致性（声明 vs 实际 vs 统计表，统计表按表头动态解析）
   2. interface-contracts.md — IC-02/IC-03/IC-05/IC-06/IC-07/IC-08/IC-09/IC-10/IC-11/IC-12/IC-13/IC-14 JSON Schema 必填字段完整性
   3. standards-index.md     — 标准状态枚举合法性（实际落检）+ 时间状态双向检查
@@ -58,7 +58,8 @@ validate_governance.py v1.14.0
                               不覆盖面（§11.3 第 7 条）：无锚不判／锚集内错配／L1 策划稿／索引自身散文
   9. 技能件跨层内容一致性（承接 PL-010 覆盖面缺口，本批 CG-20260920-005 落地）
                               — 把「技能目录内各件运行时 ↔ 技能仓备份镜像的字节全等」纳入机算，
-                              填补检查 6 (B) 只声明 7 件治理文件、技能件跨层一致仅靠 sync 人工步骤的盲区
+                              填补检查 6 (B) 只声明治理文件（设立时 7 件，CG-20260923-001 起 8 件）、
+                              技能件跨层一致仅靠 sync 人工步骤的盲区
                               比对集＝SKILL_DIRS（AST 现读，与 sync_skill_backup 双向互查）下运行时 ∪
                               镜像两层的技能件，减去 gitignored 件（`git check-ignore` 结构判据，
                               故 sre_regression_report.json／*_pre*／*.bak／__pycache__ 天然不入，不建白名单）
@@ -67,6 +68,25 @@ validate_governance.py v1.14.0
                               git 不可达 → 排除面无法判定，本检查降级 WARN 不判（gitignore 是排除面真值源）
                               与检查 8 的关系：检查 8 从镜像层取数，本检查机算运行时↔镜像字节全等，
                               使镜像层取数获得机算背书的运行时真值代理（消解 CG-20260920-004 OBS-2）
+ 10. 数据分类与来源一致性      — 判「同步范围内每条量化断言是否已按 `shared/data-classification.md` §一
+                              分类登记、且来源／置信度字面与所属类别的合格判据不矛盾」
+                              判定单元＝Markdown 块；单元 id 绑「文件路径＋块形态＋所属小节／表头上下文
+                              ＋本单元引用到的引用式链接定义＋单元正文」五项哈希，故追加一行不牵连他行、
+                              改一行只重开该行；登记记录须以 Unicode 偏移连续覆盖单元全文（缺口即 FAIL）
+                              FAIL 档（同机字面、无外部真值依赖）：UNREVIEWED（未登记，含「未判定亦 FAIL」，
+                              不以散文豁免）／STALE_REVIEW／STALE_BASELINE／DOUBLE_REGISTRATION／
+                              SEGMENT_COVERAGE／SEGMENT_SCHEMA／BASELINE_SCHEMA／REVIEW_SCHEMA／
+                              BC_SOURCE_LABEL／BC_CONFIDENCE_LABEL（B／C 类来源或置信度列只给渠道标签、
+                              标准编号即与 §一 判据不匹配）／UNBOUND_CONFIDENCE／AMBIGUOUS_CONFIDENCE／
+                              EMPTY／ENCODING／PARSE
+                              WARN 档：A_VERIFY_DATE——A 类登记缺核验日期，沿检查 3 语义只 WARN、
+                              不填推定日期、不视作标准失效
+                              冻结存量棘轮：baseline 段按内容哈希把未迁移行登记为「待迁移存量」，
+                              既不算合规也不报错，但任一字节变化即失配并回到必判定态；须由 PL 台账引用
+                              扫描面豁免只取结构判据：AST 现读 sync 脚本「整体覆写镜像根」的自产件名
+                              （现测 同步说明.md），脚本停写即失效，无文件白名单
+                              不覆盖面：本检查只证明覆盖、来源字面与日期结构，不证明分类判断正确、
+                              多源真实、数值复算或工程合规
 
 v1.1 变更（2026-08-06，CG-20260806-008）：
   - 修复 §十一/十二 统计表硬编码 6 技能导致 WS 加入后误判合计（改为按表头动态解析）
@@ -216,10 +236,34 @@ v1.14.0 变更（2026-09-21，CG-20260921-005，承接 PL-036）：
   - 专项测试 程序文件/pending_ledger_test.py（第六门禁）：合成文本在表块内插空行 → 本断言复红
     且逐行口径仍见全量（证两口径确有差异）、控制例（无空行）复绿、跨物理行断行同法复红
 
+v1.15.0 变更（2026-09-23，CG-20260923-001）：
+  - 新增检查 10「数据分类与来源一致性」：把 `shared/data-classification.md` §一 的四类量判据上机，
+    枚举同步范围内全部 Markdown 的量化断言并强制逐条登记分类，未判定即 FAIL（含「未判定亦 FAIL」，
+    不以散文豁免），B／C 类来源／置信度字面只给渠道标签或标准编号即 FAIL
+  - 单元 id 哈希配方批内改过两轮：首版绑整件 sha256，实测会把治理登记面每追加一行造成的全件单元
+    （change-governance 333 条、redlines-registry 585 条）打成重审、发布批将凭空产出约 550 条红，
+    故改绑单元自身并并入其引用到的链接定义；两轮重算各换 12,334 个键且 records／baseline 条数零变
+  - 冻结存量棘轮（`baseline` 段）＋`PL-nnn` 台账引用（缺引用／日期不可解析即 BASELINE_SCHEMA FAIL）：
+    未迁移行按内容哈希挂「待迁移存量」，任一字节变化即失配回必判定态；新增内容仍必须分类
+  - 扫描面豁免取产生侧结构判据 `sync_self_produced_names`（AST 现读「整体覆写镜像根」的自产件名），
+    零文件白名单；本批实测唯一命中 `同步说明.md`（80 条判定单元）
+  - 专项测试 程序文件/data_class_consistency_test.py（第十门禁）：70 tests，含冻结存量 11 例、
+    窄口径来源词表反向注入、单元身份粒度 4 例（追加不牵连／改一行只重开该行／改标题重开其下单元／
+    同名跨小节为不同单元）、自产件豁免 4 例（含「同形态内容换个名字即必判定」与「去掉写盘语句豁免即失效」
+    两条控制例）
+  - 通过数 214→215（候选面口径，＋1 条 [OK]）；真实仓带平后终态 241／失败 0／警告 3（237→241 的
+    4 条差额＝检查 10 新增 1 条 ＋ `data-classification.md` 入 `SHARED_FILES` 使检查 6 各多 1 条，
+    均为覆盖面扩容而非口径放松）；硬判据仍取「失败 0＋exit 0」
+  - 同批 `SHARED_FILES` 7→8 件（`sync_skill_backup.py` v1.6），检查 6 声明表随之纳管
+    `data-classification.md`；`cross_layer_eol_test.py` 的 git 可见副本形制数 15→17，
+    其 clean 态判定项数由钉值改为「要么被判定、要么逐处披露为 HEAD 无对象」的状态判据
+
 用法：
   python validate_governance.py
   python validate_governance.py --dir <项目根目录>
   python validate_governance.py --runtime-dir <运行时技能目录>
+  python validate_governance.py --data-root <检查10扫描根> --data-review <数据分类复核清单.json>
+  python validate_governance.py --data-class-only [--data-json]   # 只跑检查 10（可出 JSON）
   python validate_governance.py --verbose
 
 依赖：Python 3.8+（仅标准库）
@@ -1525,6 +1569,9 @@ CROSS_LAYER_SET = [
     ("change-governance.md",
      ("L1", "RT_SHARED", "REPO_SHARED"),
      ""),
+    ("data-classification.md",
+     ("L1", "RT_SHARED", "REPO_SHARED"),
+     "CG-20260923-001 发布：四类断言定义与合格判据的单源件（检查 10 的判据来源）"),
     ("glossary.md",
      ("L1", "RT_SHARED", "REPO_SHARED"),
      ""),
@@ -2519,7 +2566,7 @@ def check_skill_cross_layer(base_dir: Path, report: Report, *,
     report.info(f"比对集枚举：运行时 ∪ 镜像共 {len(allrels)} 件，其中 gitignored（排除面）{len(allrels) - len(judged)} 件"
                 f"、纳入判据 {len(judged)} 件（sre_regression_report.json／*_pre*／*.bak／__pycache__ 天然不入）")
     report.info("覆盖面边界：本检查只判 SKILL_DIRS 内技能件的运行时↔镜像字节全等；"
-                "7 件治理文件的跨层一致仍由检查 6 承担（两者并集＝sync_skill_backup 管辖面）；"
+                "声明表治理文件（现 8 件）的跨层一致仍由检查 6 承担（两者并集＝sync_skill_backup 管辖面）；"
                 "机器本地产物经 gitignore 结构判据显式排除，不建文件白名单")
     report.info("哈希口径：sha256 取原始字节、不做 eol／编码归一（同检查 6）。跨机 core.autocrlf=true "
                 "会把镜像层转 CRLF 而产假红（本机复算 core.autocrlf=false）")
@@ -2527,6 +2574,561 @@ def check_skill_cross_layer(base_dir: Path, report: Report, *,
                 "镜像层读数的运行时保真由人工 sync 步骤升为门禁断言（消解 CG-20260920-004 OBS-2）")
     if not missing and not extra_dirs and judged == []:
         report.fail("纳入判据 0 件且非降级态 —— 声明表或层路径已失效，本检查不得判绿")
+
+
+DATA_SOURCE_HEADER = re.compile(r"来源|数据源|依据标准|标准来源")
+DATA_PROVENANCE_HEADER = re.compile(r"标准编号|图集编号|检测标准|适用标准|引用标准|依据|出处|引自|摘自")
+DATA_NOT_SOURCE_HEADER = re.compile(r"方法|检测依据|试验依据|测试依据|影响标准|验收|合格|标准要求|控制")
+DATA_CONFIDENCE_HEADER = re.compile(r"置信度|可信度|可信等级|可信级别|来源等级|证据等级|S\s*等级", re.I)
+DATA_LABEL_RE = re.compile(r"(?<![A-Za-z0-9])S1(?!\d)", re.I)
+DATA_STANDARD_RE = re.compile(
+    r"(?<![A-Za-z])(?:GBZ|GB|JGJ|JG|JC|HG|HJ|DL|QB|LY|NY|YY|SJ|JT|SL|CJJ|"
+    r"DBJ?\d*|SJG|EN|ISO|IEC|ASTM(?:\s*[A-Z])?|BS|DIN|JIS|RISN)(?:\s*[/／-]\s*[A-Z]+)?"
+    r"\s*[- ]?\s*\d+(?:\.\d+)*(?:\s*[-—]\s*\d{4})?"
+    r"|(?<![A-Za-z0-9])T\s*[/／]\s*[A-Z]+\s*\d+|(?<![A-Za-z0-9])\d{2}[A-Z]\d{3}(?!\d)", re.I)
+
+
+def data_markdown_parser():
+    from markdown_it import MarkdownIt
+    from markdown_it.rules_block.table import table
+
+    def located_table(state, start, end, silent):
+        before = len(state.tokens)
+        accepted = table(state, start, end, silent)
+        if accepted and not silent:
+            for token in state.tokens[before:]:
+                if token.type == 'tr_open':
+                    line = token.map[0]
+                    offset = state.bMarks[line] + state.tShift[line]
+                    token.meta['source_column'] = offset - state.src.rfind('\n', 0, offset) - 1
+        return accepted
+
+    parser = MarkdownIt('commonmark').enable('table')
+    parser.block.ruler.at('table', located_table)
+    return parser
+
+
+def data_visible_text(text, references=None):
+    import unicodedata
+
+    def visible(tokens):
+        parts = []
+        for token in tokens:
+            if token.children:
+                parts.append(visible(token.children))
+            elif token.type in ('text', 'code_inline'):
+                parts.append(token.content)
+            elif token.type in ('softbreak', 'hardbreak') or token.type == 'html_inline' and re.match(r'<br\b', token.content, re.I):
+                parts.append(' ')
+        return ''.join(parts)
+
+    tokens = data_markdown_parser().parseInline(text, {'references': references or {}})
+    return unicodedata.normalize('NFKC', visible(tokens)).strip()
+
+
+def data_source_text(unit, span):
+    import unicodedata
+    from markdown_it.rules_inline.backticks import backtick
+
+    start, end = span
+    raw = unit['text'][start:end]
+    if unit['kind'] == 'code':
+        return unicodedata.normalize('NFKC', raw).strip()
+    if 'inline_code_ranges' not in unit:
+        ranges = []
+        parser = data_markdown_parser()
+
+        def located_code(state, silent):
+            begin, before = state.pos, len(state.tokens)
+            accepted = backtick(state, silent)
+            if accepted and not silent and state.src == unit['text'] and len(state.tokens) > before and state.tokens[-1].type == 'code_inline':
+                ranges.append({'start': begin, 'end': state.pos, 'marker': len(state.tokens[-1].markup)})
+            return accepted
+
+        parser.inline.ruler.at('backticks', located_code)
+        parser.inline.parse(unit['text'], parser, {'references': unit['reference_definitions']}, [])
+        unit['inline_code_ranges'] = ranges
+    for code in unit['inline_code_ranges']:
+        if start >= code['start'] + code['marker'] and end <= code['end'] - code['marker']:
+            return unicodedata.normalize('NFKC', raw).strip()
+        if start < code['end'] and end > code['start'] and not (start <= code['start'] and end >= code['end']):
+            raise ValueError('来源片段跨越行内代码边界；须引用完整代码片段或其中连续字面内容')
+    return data_visible_text(raw, unit['reference_definitions'])
+
+
+def data_table_cells(raw):
+    cuts = []
+    for index, char in enumerate(raw):
+        if char != '|':
+            continue
+        if index == 0 or raw[index - 1] != '\\':
+            cuts.append(index)
+    bounds = [-1] + cuts + [len(raw)]
+    cells = []
+    for left, right in zip(bounds, bounds[1:]):
+        start, end = left + 1, right
+        while start < end and raw[start].isspace():
+            start += 1
+        while end > start and raw[end - 1].isspace():
+            end -= 1
+        cells.append({'start': start, 'end': end, 'text': raw[start:end]})
+    if cuts and not raw[:cuts[0]].strip():
+        cells.pop(0)
+    if cuts and not raw[cuts[-1] + 1:].strip():
+        cells.pop()
+    return cells
+
+
+def data_content_units(path, content):
+    text = content.decode('utf-8-sig')
+    lines = re.findall(r'[^\r\n]*(?:\r\n|\r|\n|$)', text)
+    if lines and lines[-1] == '':
+        lines.pop()
+    env = {}
+    tokens = data_markdown_parser().parse(text, env)
+    units, excluded, errors = [], [], []
+    events, separators = {}, {}
+    heading, header = [], []
+    occurrences = {}
+    in_table, in_header = False, False
+
+    for index, token in enumerate(tokens):
+        if token.type == 'table_open':
+            in_table, header = True, []
+        elif token.type == 'table_close':
+            in_table = False
+        elif token.type == 'thead_open':
+            in_header = True
+        elif token.type == 'thead_close':
+            in_header = False
+        elif token.type == 'heading_open':
+            heading = heading[:int(token.tag[1:]) - 1] + [tokens[index + 1].content]
+        if token.map is None:
+            continue
+        start, end = token.map
+        if token.type == 'hr':
+            for line in range(start, end):
+                separators[line] = 'Markdown分隔线'
+            continue
+        if in_table and token.type != 'tr_open':
+            continue
+        kind = {'heading_open': 'heading', 'paragraph_open': 'paragraph',
+                'fence': 'code', 'code_block': 'code', 'html_block': 'html',
+                'tr_open': 'table_header' if in_header else 'table_row'}.get(token.type)
+        if kind is None:
+            continue
+        sources, confidence, column = [], [], None
+        if token.type == 'tr_open':
+            cell_tokens = []
+            for child in tokens[index + 1:]:
+                if child.type == 'tr_close':
+                    break
+                if child.type == 'inline':
+                    cell_tokens.append(child)
+            if in_header:
+                header = [data_visible_text(cell.content, env.get('references')) for cell in cell_tokens]
+                separators[end] = 'Markdown表格分隔行'
+            else:
+                raw = lines[start].rstrip('\r\n')
+                column = token.meta['source_column']
+                cells = data_table_cells(raw[column:])
+                for col, cell in zip(header, cells):
+                    located = {'start': cell['start'] + column, 'end': cell['end'] + column,
+                               'text': cell['text'], 'header': col}
+                    if DATA_CONFIDENCE_HEADER.search(col):
+                        confidence.append(located)
+                    elif (DATA_SOURCE_HEADER.search(col) or DATA_PROVENANCE_HEADER.search(col)) \
+                            and not DATA_NOT_SOURCE_HEADER.search(col):
+                        sources.append(located)
+        context = {'heading': list(heading), 'header': list(header) if in_table else [],
+                   'column': column}
+        events[start] = (end, kind, sources, confidence, context)
+
+    i = 0
+    while i < len(lines):
+        if i in separators:
+            excluded.append({'line': i + 1, 'reason': separators[i]})
+            i += 1
+            continue
+        if i not in events and not lines[i].strip():
+            excluded.append({'line': i + 1, 'reason': '空白行'})
+            i += 1
+            continue
+        end, kind, sources, confidence, context = events.get(
+            i, (i + 1, 'raw', [], [], {'unparsed': True}))
+        if any(line in events or line in separators for line in range(i + 1, end)):
+            errors.append({'line': i + 1, 'reason': '解析器块范围重叠，不能静默丢弃原文'})
+        body = ''.join(lines[i:end])
+        refs = env.get('references') or {}
+        # 单元身份只绑到「本单元用到的东西」：整件指纹会让登记面每追加一行就把全件打成重审，
+        # 而引用式链接的真值在定义行（通常位于件末），故把本单元实际用到的定义并入指纹。
+        used_refs = {k: v for k, v in refs.items()
+                     if ('[%s]' % k).lower() in body.lower()}
+        payload = json.dumps([path, kind, context, used_refs, body], ensure_ascii=False, sort_keys=True)
+        fingerprint = hashlib.sha256(payload.encode('utf-8')).hexdigest()
+        occurrences[fingerprint] = occurrences.get(fingerprint, 0) + 1
+        units.append({'id': f'{path}#{fingerprint}:{occurrences[fingerprint]}',
+                      'path': path, 'line': i + 1, 'end_line': end,
+                      'kind': kind, 'text': body, 'context': context,
+                      'source_cells': sources, 'confidence_cells': confidence,
+                      'reference_definitions': env.get('references', {})})
+        i = end
+    return {'units': units, 'excluded_lines': excluded, 'errors': errors}
+
+
+def sync_self_produced_names(tree, declared):
+    """AST 现读同步脚本「整体覆写到镜像根」的自产件名，连同与治理声明重叠的冲突名。
+
+    这类件每次同步由脚本重写，人工写入的内容不可能存续，故不属复核面。判据取产生侧
+    声明而非文件名白名单：脚本改名或停止写盘，豁免即自动失效；脚本新写一个自产件，
+    豁免自动跟随。与 `ROOT_FILES`／`SHARED_FILES`／`SKILL_DIRS` 重叠的名字不豁免而报冲突。
+    """
+    consts = {}
+    for node in tree.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        for target in node.targets:
+            if isinstance(target, ast.Name) and isinstance(node.value, ast.Constant) \
+                    and isinstance(node.value.value, str):
+                consts[target.id] = node.value.value
+    names, collisions = set(), set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if isinstance(func, ast.Attribute) and func.attr in ('write_text', 'write_bytes'):
+            target = func.value
+        elif isinstance(func, ast.Name) and func.id == 'open' and node.args:
+            mode = node.args[1].value if len(node.args) > 1 and isinstance(node.args[1], ast.Constant) else ''
+            if not (isinstance(mode, str) and 'w' in mode):
+                continue
+            target = node.args[0]
+        else:
+            continue
+        if isinstance(target, ast.BinOp) and isinstance(target.op, ast.Div) \
+                and isinstance(target.left, ast.Name) and isinstance(target.right, ast.Name) \
+                and target.right.id in consts:
+            name = consts[target.right.id]
+            if not name:
+                continue
+            (collisions if name in declared else names).add(name)
+    return {n for n in names if not re.search(r'[/\\:]', n)}, collisions
+
+
+def collect_data_class_inventory(root, sync_path):
+    tree = ast.parse(sync_path.read_text(encoding='utf-8-sig'))
+    declarations = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id in {'SKILL_DIRS', 'ROOT_FILES', 'SHARED_FILES'}:
+                    try:
+                        declarations[target.id] = ast.literal_eval(node.value)
+                    except (TypeError, ValueError) as error:
+                        raise ValueError(f'同步声明不是可解析的字面量：{target.id}') from error
+    expected = {'SKILL_DIRS', 'ROOT_FILES', 'SHARED_FILES'}
+    if set(declarations) != expected or any(not isinstance(v, list) or not v for v in declarations.values()):
+        raise ValueError('同步声明集不完整')
+    for values in declarations.values():
+        if any(not isinstance(value, str) or not value or value in ('.', '..') or re.search(r'[/\\\\:\x00]', value) for value in values):
+            raise ValueError('同步声明必须为合法的单段相对名称')
+        if len(values) != len(set(values)):
+            raise ValueError('同步声明存在重复名称')
+    if not root.is_dir() or root.is_symlink() or (hasattr(root, 'is_junction') and root.is_junction()):
+        raise ValueError('扫描根缺失或为链接')
+    files, excluded, problems = {}, [], []
+    trace = re.compile(r'_pre_?\d{8}')
+    declared = set(declarations['SKILL_DIRS']) | set(declarations['ROOT_FILES']) | set(declarations['SHARED_FILES'])
+    self_produced, collisions = sync_self_produced_names(tree, declared)
+    for name in sorted(collisions):
+        problems.append(f'同步脚本整体覆写的自产件名与治理声明重叠：{name}（该文件既是被声明的治理载体又是脚本输出，须先解耦再复核）')
+
+    def scan_error(error):
+        problems.append(f'目录读取失败，扫描不完整：{error.filename}：{error}')
+
+    def walk(directory):
+        for current, dirs, names in os.walk(directory, followlinks=False, onerror=scan_error):
+            for name in list(dirs):
+                path = Path(current) / name
+                if path.is_symlink() or (hasattr(path, 'is_junction') and path.is_junction()):
+                    problems.append(f'禁止穿透链接目录：{path.relative_to(root)}')
+                    dirs.remove(name)
+                elif name == '__pycache__' or '_pre_' in name or trace.search(name):
+                    excluded.append({'path': path.relative_to(root).as_posix(), 'reason': '缓存或历史留痕目录'})
+                    dirs.remove(name)
+            for name in sorted(names):
+                path = Path(current) / name
+                rel = path.relative_to(root).as_posix()
+                if path.is_symlink():
+                    problems.append(f'禁止穿透链接文件：{rel}')
+                elif name.endswith(('.bak', '.pyc')) or '_pre_' in name or trace.search(name):
+                    excluded.append({'path': rel, 'reason': '缓存或历史留痕文件'})
+                elif path.suffix.lower() != '.md':
+                    excluded.append({'path': rel, 'reason': '非Markdown；本检查不解释程序或二进制数据'})
+                else:
+                    files[rel] = path.read_bytes()
+
+    for directory in declarations['SKILL_DIRS']:
+        path = root / directory
+        if not path.is_dir() or path.is_symlink() or (hasattr(path, 'is_junction') and path.is_junction()):
+            problems.append(f'声明技能缺失或为链接：{directory}')
+        else:
+            walk(path)
+    for name in declarations['ROOT_FILES']:
+        path = root / name
+        if not path.is_file() or path.is_symlink():
+            problems.append(f'根治理文件缺失或为链接：{name}')
+        else:
+            files[name] = path.read_bytes()
+    shared = root / 'shared'
+    if shared.is_symlink() or (hasattr(shared, 'is_junction') and shared.is_junction()):
+        problems.append('shared为链接，禁止穿透')
+    else:
+        for name in declarations['SHARED_FILES']:
+            path = shared / name
+            if not path.is_file() or path.is_symlink():
+                problems.append(f'shared治理文件缺失或为链接：{name}')
+        if shared.is_dir():
+            walk(shared)
+    for path in sorted(root.iterdir()):
+        if path.is_file() and path.suffix.lower() == '.md':
+            if path.is_symlink():
+                problems.append(f'根文件为链接：{path.name}')
+            elif path.name in self_produced:
+                excluded.append({'path': path.name, 'generated_by_sync': True,
+                                 'reason': '同步脚本自产件（产生侧 AST 声明的整体覆写目标），人工内容无法存续'})
+            else:
+                files[path.name] = path.read_bytes()
+    actual_dirs = {p.name for p in root.iterdir() if p.is_dir()}
+    for extra in sorted(actual_dirs - set(declarations['SKILL_DIRS']) - {'shared'}):
+        problems.append(f'镜像存在未声明目录：{extra}')
+    return files, excluded, problems
+
+
+def check_data_class_consistency(files, review, report, excluded=None):
+    report.section('数据分类与来源一致性（检查 10，未判定亦 FAIL）')
+    result = {'files': [], 'units': [], 'excluded': [], 'findings': [], 'counts': {}}
+
+    def finding(level, code, unit, detail):
+        item = {'level': level, 'code': code, 'path': unit.get('path', ''),
+                'line': unit.get('line', 0), 'id': unit.get('id', ''), 'detail': detail}
+        result['findings'].append(item)
+        getattr(report, {'FAIL': 'fail', 'WARN': 'warn', 'INFO': 'info'}[level])(
+            f"{item['path']}:{item['line']} [{code}] {detail}")
+
+    records, baseline = {}, {}
+    if not isinstance(review, dict) or not {'version', 'records'} <= set(review) \
+            or set(review) - {'version', 'records', 'baseline'} \
+            or review['version'] not in (1, 2) or not isinstance(review['records'], dict) \
+            or (review['version'] == 2 and not isinstance(review.get('baseline'), dict)):
+        finding('FAIL', 'REVIEW_SCHEMA', {}, '复核清单须为 version=1（records）或 version=2（records＋baseline）映射，不接受隐式豁免')
+        records = {}
+    else:
+        records = review['records']
+        baseline = review.get('baseline') or {}
+        for uid, entry in sorted(baseline.items()):
+            if not isinstance(entry, dict) or set(entry) != {'deferred_to', 'registered_on'} \
+                    or not re.fullmatch(r'PL-\d{3}', str(entry.get('deferred_to', ''))):
+                finding('FAIL', 'BASELINE_SCHEMA', {'id': uid}, '冻结存量条目须含 PL-nnn 台账引用与登记日期')
+                continue
+            try:
+                registered = datetime.strptime(entry['registered_on'], '%Y-%m-%d').date()
+                if registered > datetime.now().date():
+                    raise ValueError('未来日期')
+            except (TypeError, ValueError):
+                finding('FAIL', 'BASELINE_SCHEMA', {'id': uid}, '冻结存量登记日期不可解析或在未来')
+    for path, raw in sorted(files.items()):
+        result['files'].append({'path': path, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)})
+        try:
+            parsed = data_content_units(path, raw)
+        except UnicodeError:
+            finding('FAIL', 'ENCODING', {'path': path}, 'UTF-8解码失败，不能跳过')
+            continue
+        result['excluded'].extend(dict(item, path=path) for item in parsed['excluded_lines'])
+        for error in parsed['errors']:
+            finding('FAIL', 'PARSE', {'path': path, 'line': error['line']}, error['reason'])
+        result['units'].extend(parsed['units'])
+    if not result['units']:
+        finding('FAIL', 'EMPTY', {}, '内容集合为空，禁止空跑')
+    observed = {unit['id'] for unit in result['units']}
+    for stale in sorted(set(records) - observed):
+        finding('FAIL', 'STALE_REVIEW', {}, f'内容或上下文已变化/删除，复核记录失效：{stale}')
+    for stale in sorted(set(baseline) - observed):
+        finding('FAIL', 'STALE_BASELINE', {}, f'冻结存量条目已不在扫描面（内容被改动或删除），须同批从 baseline 移除并转为复核记录：{stale}')
+    for both in sorted(set(records) & set(baseline)):
+        finding('FAIL', 'DOUBLE_REGISTRATION', {}, f'同一单元既有复核记录又在冻结存量：{both}')
+    deferred_files = {}
+    reviewed = 0
+    for unit in result['units']:
+        record = records.get(unit['id'])
+        unit['review_state'] = '未判定'
+        if record is None:
+            if unit['id'] in baseline:
+                unit['review_state'] = '冻结存量（待迁移，未判定为合规）'
+                deferred_files[unit['path']] = deferred_files.get(unit['path'], 0) + 1
+                continue
+            finding('FAIL', 'UNREVIEWED', unit, '内容未分类复核；不能据此断言属于错标或缺来源')
+            continue
+        if not isinstance(record, dict) or set(record) != {'segments'} or not isinstance(record['segments'], list) or not record['segments']:
+            finding('FAIL', 'SEGMENT_SCHEMA', unit, '每块须用非空 segments 覆盖全文')
+            continue
+        cursor, valid = 0, True
+        confidence_cells = [c for c in unit['confidence_cells'] if c['start'] < c['end']]
+        bound_confidence, has_data = set(), False
+        for segment in record['segments']:
+            required = {'start', 'end', 'class', 'reason'}
+            optional = {'source_spans', 'confidence_spans', 'verified_on'}
+            if not isinstance(segment, dict) or not required <= set(segment) or set(segment) - required - optional:
+                valid = False
+                finding('FAIL', 'SEGMENT_SCHEMA', unit, '片段字段缺失或越界')
+                continue
+            start, end, kind = segment['start'], segment['end'], segment['class']
+            if type(start) is not int or type(end) is not int or start != cursor or not start < end <= len(unit['text']):
+                valid = False
+                finding('FAIL', 'SEGMENT_COVERAGE', unit, '片段须顺序连续、无重叠、无遗漏，使用Unicode字符偏移')
+                continue
+            cursor = end
+            if kind not in ('A', 'B', 'C', 'D', 'N') or not isinstance(segment['reason'], str) or not segment['reason'].strip():
+                valid = False
+                finding('FAIL', 'CLASS', unit, '类别仅A/B/C/D/N；N表示非数据断言，也须说明判定依据')
+                continue
+            if kind == 'N':
+                continue
+            has_data = True
+            labels = segment.get('confidence_spans')
+            if labels is None and len(confidence_cells) <= 1:
+                labels = [[c['start'], c['end']] for c in confidence_cells]
+            elif labels is None:
+                valid = False
+                finding('FAIL', 'AMBIGUOUS_CONFIDENCE', unit, '多个置信度列须为各断言显式绑定，不得整行广播')
+                labels = []
+            if not isinstance(labels, list):
+                valid = False
+                finding('FAIL', 'CONFIDENCE_BINDING', unit, '置信度引用须为完整单元格偏移列表')
+                labels = []
+            if confidence_cells and not labels:
+                valid = False
+                finding('FAIL', 'UNBOUND_CONFIDENCE', unit, '存在置信度列时每个数据断言均须绑定，不能借其他断言已覆盖而留空')
+            resolved_labels = []
+            for span in labels:
+                if not isinstance(span, list) or len(span) != 2 or any(type(x) is not int for x in span) or not any(span == [c['start'], c['end']] for c in confidence_cells):
+                    valid = False
+                    finding('FAIL', 'CONFIDENCE_BINDING', unit, '置信度须绑定本行完整置信度单元格，不能绑定来源格或部分字面')
+                    continue
+                bound_confidence.add(tuple(span))
+                try:
+                    label = data_source_text(unit, span)
+                except ValueError as error:
+                    valid = False
+                    finding('FAIL', 'CONFIDENCE_CONTEXT', unit, str(error))
+                    continue
+                resolved_labels.append({'span': span, 'raw': unit['text'][span[0]:span[1]], 'visible': label})
+                if kind in ('B', 'C') and DATA_LABEL_RE.search(label):
+                    finding('FAIL', 'BC_CONFIDENCE_LABEL', unit, f'{kind}类断言的置信度含S1：{label}')
+            unit.setdefault('resolved_confidence', []).append({'segment_start': start, 'class': kind, 'labels': resolved_labels})
+            sources, visible_sources = [], []
+            spans = segment.get('source_spans', [])
+            if not isinstance(spans, list):
+                valid = False
+                finding('FAIL', 'SOURCE_SCHEMA', unit, '来源须引用本块原文片段')
+                continue
+            source_cells = unit['source_cells']
+            if not spans and len(source_cells) == 1:
+                spans = [[source_cells[0]['start'], source_cells[0]['end']]]
+            elif not spans and len(source_cells) > 1:
+                valid = False
+                finding('FAIL', 'AMBIGUOUS_SOURCE', unit, '多个数值来源列须为各断言显式绑定来源，禁止整行广播')
+            for span in spans:
+                if not isinstance(span, list) or len(span) != 2 or any(type(x) is not int for x in span) or not 0 <= span[0] < span[1] <= len(unit['text']):
+                    valid = False
+                    finding('FAIL', 'SOURCE_SCHEMA', unit, '来源引用片段非法')
+                elif unit['kind'] == 'table_row' and not any(span == [c['start'], c['end']] for c in source_cells):
+                    valid = False
+                    finding('FAIL', 'SOURCE_BINDING', unit, '表格来源必须绑定完整数值来源单元格，方法列不得代替')
+                else:
+                    sources.append(unit['text'][span[0]:span[1]])
+                    try:
+                        visible_sources.append(data_source_text(unit, span))
+                    except ValueError as error:
+                        valid = False
+                        finding('FAIL', 'SOURCE_CONTEXT', unit, str(error))
+            unit.setdefault('resolved_sources', []).append({'segment_start': start, 'class': kind, 'raw_sources': sources, 'visible_sources': visible_sources})
+            sources = [s for s in visible_sources if s not in ('', '-', '—', '未提供', '待补', '无')]
+            if not sources:
+                finding('FAIL', 'MISSING_SOURCE', unit, f'{kind}类断言缺可定位来源；不得编造多源一致声明')
+            for source in sources:
+                if kind in ('B', 'C') and (DATA_LABEL_RE.search(source) or DATA_STANDARD_RE.search(source)):
+                    finding('FAIL', 'BC_SOURCE_LABEL', unit, f'{kind}类数值来源含S1或标准编号：{source}')
+            if kind == 'A':
+                verified = segment.get('verified_on', '')
+                try:
+                    if not isinstance(verified, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', verified):
+                        raise ValueError('核验日期缺失或格式无效')
+                    date = datetime.strptime(verified, '%Y-%m-%d').date()
+                    if date > datetime.now().date():
+                        raise ValueError('未来核验日期')
+                except ValueError:
+                    finding('WARN', 'A_VERIFY_DATE', unit, '核验日期缺失、无效或在未来；沿检查3语义，不视作标准失效')
+        if has_data and {(c['start'], c['end']) for c in confidence_cells} - bound_confidence:
+            valid = False
+            finding('FAIL', 'UNBOUND_CONFIDENCE', unit, '含数据断言的行存在未绑定置信度，不能以N分类或空绑定跳过')
+        if cursor != len(unit['text']):
+            valid = False
+            finding('FAIL', 'SEGMENT_COVERAGE', unit, '正文尾部未被分类覆盖')
+        if valid:
+            reviewed += 1
+            unit['review_record'] = json.loads(json.dumps(record, ensure_ascii=False))
+            unit['review_state'] = '分类记录有效（不等于证据真实或工程合格）'
+    deferred_total = sum(deferred_files.values())
+    result['counts'] = {'files': len(files), 'units': len(result['units']), 'reviewed': reviewed,
+                        'deferred': deferred_total,
+                        'unreviewed': len(result['units']) - reviewed - deferred_total,
+                        'confirmed_mislabel_findings': sum(x['code'] in ('BC_SOURCE_LABEL', 'BC_CONFIDENCE_LABEL') for x in result['findings']),
+                        'missing_source_findings': sum(x['code'] == 'MISSING_SOURCE' for x in result['findings']),
+                        'fail': sum(x['level'] == 'FAIL' for x in result['findings']),
+                        'warn': sum(x['level'] == 'WARN' for x in result['findings'])}
+    report.info('分类记录绑定「文件路径＋块形态＋所属小节／表头上下文＋本单元引用到的引用式链接定义＋单元正文」五项哈希：'
+                '该单元自身上下文、正文或其所用链接定义任一字节改变即失配并回到必判定态，同件其他单元不受牵连；'
+                '不自动跟踪跨文件引用目标。')
+    report.info('本检查仅证明覆盖、来源字面与日期结构；不证明分类判断正确、多源真实、数值复算或工程合规。')
+    if deferred_total:
+        report.info('冻结存量（待迁移）%d 条 / %d 件，逐条绑定单元自身内容哈希：该行的表头、正文或所属小节标题任一字节变化即失配并回到必判定态（同件其他单元不受牵连）；'
+                    '台账引用与条数见 baseline 段（%s）' % (deferred_total, len(deferred_files),
+                    '、'.join('%s %d' % (p, n) for p, n in sorted(deferred_files.items(), key=lambda x: (-x[1], x[0]))[:5])))
+    generated = sorted(i['path'] for i in (excluded or []) if i.get('generated_by_sync'))
+    if generated:
+        report.info('扫描面自产件豁免 %d 件（%s）：豁免名由同步脚本产生侧的 AST 声明推出，非文件名白名单'
+                    '——脚本改名或停止写盘即自动失效；自产名若与治理声明重叠则报冲突而非静默豁免'
+                    % (len(generated), '、'.join(generated)))
+    if result['counts']['fail'] == 0:
+        report.ok('数据分类覆盖与来源字面检查通过')
+    return result
+
+
+def data_unique_json_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f'分类清单JSON键重复：{key}')
+        result[key] = value
+    return result
+
+
+def run_data_class_check(root, sync_path, review_path, report):
+    try:
+        files, excluded, problems = collect_data_class_inventory(root, sync_path)
+        review = json.loads(review_path.read_text(encoding='utf-8-sig'), object_pairs_hook=data_unique_json_object) if review_path.exists() else {'version': 1, 'records': {}}
+        result = check_data_class_consistency(files, review, report, excluded)
+        result['excluded_files'] = excluded
+        for problem in problems:
+            report.fail(problem)
+            result['findings'].append({'level': 'FAIL', 'code': 'SCOPE', 'detail': problem})
+            result['counts']['fail'] += 1
+        return result
+    except (OSError, ValueError, SyntaxError, ImportError) as error:
+        report.section('数据分类与来源一致性（检查 10）')
+        report.fail(f'无法建立完整扫描面：{error}')
+        return {'findings': [{'level': 'FAIL', 'code': 'INPUT', 'detail': str(error)}], 'counts': {'fail': 1}}
 
 
 # ── 主流程 ────────────────────────────────────────────────
@@ -2554,7 +3156,22 @@ def main():
         "--verbose", action="store_true",
         help="显示详细信息"
     )
+    parser.add_argument('--data-class-only', action='store_true', help='仅执行检查10，不代表其余九项通过')
+    parser.add_argument('--data-root', type=Path, default=REPO_BACKUP_DIR, help='数据扫描镜像根目录')
+    parser.add_argument('--data-review', type=Path, help='与原文指纹绑定的分类复核清单')
+    parser.add_argument('--data-json', action='store_true', help='检查10以JSON输出同一枚举清单（须与--data-class-only同用）')
     args = parser.parse_args()
+    if args.data_json and not args.data_class_only:
+        parser.error('--data-json须与--data-class-only同用')
+    if args.data_class_only:
+        report = Report()
+        result = run_data_class_check(args.data_root, SCRIPT_DIR / 'sync_skill_backup.py',
+                                     args.data_review or Path(args.dir) / '数据分类复核清单.json', report)
+        if args.data_json:
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+        else:
+            report.print_report()
+        sys.exit(1 if result['counts']['fail'] else 0)
 
     base_dir = Path(args.dir)
     if not base_dir.exists():
@@ -2617,6 +3234,9 @@ def main():
 
     # 检查 9：技能件跨层内容一致性（运行时 ↔ 技能仓备份镜像 字节全等，FAIL 档，计入 fail_count）
     check_skill_cross_layer(base_dir, report)
+
+    run_data_class_check(args.data_root, SCRIPT_DIR / 'sync_skill_backup.py',
+                         args.data_review or base_dir / '数据分类复核清单.json', report)
 
     # 输出报告
     fail_count = report.print_report()

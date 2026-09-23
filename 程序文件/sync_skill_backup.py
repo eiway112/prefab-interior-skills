@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 技能仓备份同步脚本
-sync_skill_backup.py v1.5（2026-09-21，CG-20260921-004／PL-035）
+sync_skill_backup.py v1.6（2026-09-22 起稿、2026-09-23 随 CG-20260923-001 发布：SHARED_FILES 7→8，新增 data-classification.md，同步范围判据 72→73）
+  v1.5（2026-09-21，CG-20260921-004／PL-035）
   v1.5：留痕件跳过判据由字面 `"_pre_"` 改为命名文法 `_pre_?<8 位日期>`
         （并扩至路径任一段）。原判据对本机实际形态 `_pre<日期>CG<序号>`
         （pre 后无下划线）命中 0，50 件运行时留痕件被当内容件带进镜像，
@@ -21,10 +22,11 @@ sync_skill_backup.py v1.5（2026-09-21，CG-20260921-004／PL-035）
      prefab-governance-sync、scanned-standard-clause-verify +
      acoustic-calculation-engine
   2. skills 根治理文件：standards-index.md、platform-adapter-reference.md
-  3. shared/ 治理镜像 7 文件（不含 CG 留痕备份件）
-     change-governance / glossary / interface-contracts /
+  3. shared/ 治理镜像 8 文件（不含 CG 留痕备份件）
+     change-governance / data-classification / glossary / interface-contracts /
      platform-adapter-reference / redlines-registry / standards-index /
-     standards-reasoning-rules（2026-08-08 首发运行时，CG-20260808-025）
+     standards-reasoning-rules（2026-08-08 首发运行时，CG-20260808-025）；
+     data-classification（2026-09-22 数据分类迁移批草案新增）
 
 不备份：系统安装的通用技能（lark/docx/pdf 等）、CG 留痕备份件
 （命名文法 `_pre_?<日期>CG<序号>`，见 TRACE_ARTIFACT_RE）。
@@ -85,6 +87,7 @@ ROOT_FILES = [
 
 SHARED_FILES = [
     "change-governance.md",
+    "data-classification.md",
     "glossary.md",
     "interface-contracts.md",
     "platform-adapter-reference.md",
@@ -229,7 +232,7 @@ def sync(check_only: bool) -> int:
             "> 更新机制：① 每次涉及运行时技能文件或治理文件的 CG 变更发布后运行一次同步；",
             "> ② 每月至少一次 `--check` 核对漂移；③ 同步后随项目仓提交推送。",
             ">",
-            "> 范围说明：仅含合集相关 15 个技能目录 + 根治理文件 + shared 治理 7 文件；",
+            "> 范围说明：仅含合集相关 15 个技能目录 + 根治理文件 + shared 治理 8 文件；",
             "> 不含系统通用技能（lark/docx/pdf 等）与 CG 留痕备份件（`_pre_?<日期>CG<序号>`）；",
             "> ACE 已于 2026-08-07 发布运行时并纳入备份（项目仓 _专题_ACE开发/ 转为开发归档）；",
             "> SRE 于 2026-08-08 首发运行时（shared 镜像，CG-20260808-025），运行时镜像纳入备份；",
