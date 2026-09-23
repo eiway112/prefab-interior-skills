@@ -173,7 +173,7 @@
 ### 裁定 5 — 热层超限腾退（仓外记忆治理，须单独明文授权）
 
 - **实测**：project 级 55 条 > cap 30、user 级 43 条 > cap 40；project 级 ≥10 组重复标题（同主题两份文件，如 `oss-index-html-content-type-text-html.md` 与 `…-2.md`）。
-- **落点**：`C:\Users\聂卫华\.qoder\projects\D--Qoder-Files----------\memory\` 与 `C:\Users\聂卫华\.qoder\memory\`（含各自 `MEMORY.md` 索引）——**均在本仓之外**。
+- **落点**：`C:\Users\<user>\.qoder\projects\D--Qoder-Files----------\memory\` 与 `C:\Users\<user>\.qoder\memory\`（含各自 `MEMORY.md` 索引）——**均在本仓之外**。
 - **闸门**（参照实例已登记的做法）：**冻结新增，不做批量删除**。
 - **建议动作**：先只做**去重合并**（同标题两份合成一份，索引行同步减一），不删任何内容条目。
 - **不做的后果**：热层是常驻注入面，超限意味着每轮对话注入的信噪比持续下降；重复标题使同一条经验占两份预算。
