@@ -7,8 +7,27 @@ Run after any document change to catch inconsistencies.
 Usage:  python ace_regression_test.py
         python ace_regression_test.py -v          (verbose)
 
-Version: 1.4.0
+Version: 1.6.0
 Date: 2026-09-24
+
+v1.6.0 (2026-09-24, CG-20260924-007 专业整改七批-组7 M6 缝隙):
+  新增 TestM6GapBoundary 守卫组（PL-038 G-2）：ACE M6 简化表末档下界
+  「> 1%」与自述公式矛盾（R_wall=30／R_gap=0 前提下 p=1.01% 损失 10.45 dB，
+  12 dB 阈值实为 p≈1.49%）收窄为「> 1.5%」并四档逐档复算；PW「任何缝隙
+  封顶 20 dB」改写为封顶式 −10·lg(S_缝)（1%→20／0.1%→30／5%→13 dB）；
+  PW 分层损失表 6 行×2 档全部复算（±1 dB）；两件新增「单值代入口径
+  （近似声明）」（单值代入仅近似、严格路径逐频带合成后计权）。
+  全部 C 类派生量内部复算闭合，不走官方核验通道。
+  支持 ACE_SKILL_DIR / PW_SKILL_DIR 环境变量指向改前原像目录做复红自证。
+
+v1.5.0 (2026-09-24, CG-20260924-005 专业整改五批-组5 M2 吻合频率):
+  新增 TestM2CoincidenceDocConsistency 守卫组（PL-065／PL-038 G-3）：
+  PL-065 ACE 修正因子省略误差说明须与公式一致（旧「3-8%」→ 省略整因子偏低约 70%、
+  泊松比项次级约 2.6%，端点 2961↔883 可复算）；G-3 PW 三表同源（参数域→fc 范围表
+  按声明域包络复算→搭配表标称点落在包络内）、Δfc 对 E 非单调披露、绝对结论
+  「任何合理参数下均有效错开 Δfc≥690」收窄为「须按实测 ρ/E 逐案核算」。
+  全部 C 类派生量／B 类参数域内部复算闭合，不走官方核验通道。
+  支持 ACE_SKILL_DIR / PW_SKILL_DIR 环境变量指向改前原像目录做复红自证。
 
 v1.4.0 (2026-09-24, CG-20260924-004 专业整改四批-组4 FL 构造与预测):
   新增 TestFloorF02F03Boundary 守卫组（PL-052／PL-064／PL-038 G-1／PL-056／PL-057）：
@@ -1263,6 +1282,454 @@ class TestFloorF02F03Boundary(unittest.TestCase):
         self.assert_f03_boundary(self.doc_f03.replace("\n\n", "\n\n\n"))
         self.assert_examples(self.ex_doc + "\nLn,w(浮筑) ≈ 42-46 dB（实验室量出口，允许）\n")
         self.assert_examples(self.ex_doc + "\n恒荷载 ≈ 0.35 kN/m²，远低于住宅活荷载标准值\n")
+
+
+# ============================================================
+# TEST SUITE: M2 吻合频率文档一致性（CG-20260924-005 组5 M2）
+#   PL-065：ACE 修正因子省略误差说明须与公式一致（内部复算闭合）
+#   PL-038 G-3：PW 三表同源（参数域→fc范围包络→搭配标称点）＋绝对结论收窄
+#   全部为 C 类派生量／B 类参数域，按 data-classification.md 内部复算，不走官方通道。
+#   ACE_SKILL_DIR / PW_SKILL_DIR 环境变量可指向改前原像目录做复红自证。
+# ============================================================
+
+def _m2_table_after(text, title_sub):
+    """返回 title_sub 之后第一张 Markdown 表的单元列表（跳过表头与分隔行）。"""
+    idx = text.index(title_sub)
+    rows, started = [], False
+    for line in text[idx:].splitlines():
+        s = line.strip()
+        if s.startswith("|"):
+            started = True
+            cells = [c.strip() for c in s.strip("|").split("|")]
+            if all(c and set(c) <= set("-: ") for c in cells):
+                continue
+            rows.append(cells)
+        elif started:
+            break
+    return rows
+
+
+def _m2_fc(h_mm, rho, E_GPa, sigma):
+    return coincidence_freq(h_mm / 1000.0, rho, E_GPa * 1e9, sigma)
+
+
+class TestM2CoincidenceDocConsistency(unittest.TestCase):
+    """M2 吻合频率：PL-065 误差说明一致 ＋ G-3 三表同源与绝对结论收窄守卫。"""
+
+    # 声明标称基准（搭配表所用；须落在参数表声明域内）
+    NOM_GYPSUM = (800, 2.5, 0.25)
+    NOM_CASI = (1400, 6.0, 0.22)
+    NOM_GYPSUM_95 = (900, 2.5, 0.25)
+
+    @classmethod
+    def setUpClass(cls):
+        ace_base = Path(os.environ.get("ACE_SKILL_DIR") or
+                        (Path.home() / ".qoder/skills/acoustic-calculation-engine"))
+        pw_base = Path(os.environ.get("PW_SKILL_DIR") or
+                       (Path.home() / ".qoder/skills/prefab-partition-wall-solution"))
+        cls.ace = (ace_base / "reference.md").read_text(encoding="utf-8")
+        cls.pw = (pw_base / "reference.md").read_text(encoding="utf-8")
+
+    # ---------- 参数域解析（B 类，真值源＝PW 参数表，不改） ----------
+
+    def _param_domains_from(self, pw_text):
+        rows = _m2_table_after(pw_text, "隔墙常用板材声学参数参考表")
+        groups = {"石膏板": [], "硅酸钙板": [], "ALC B06": []}
+        for c in rows:
+            if len(c) < 4 or c[0] == "板材类型":
+                continue
+            name = c[0]
+            rho = [float(x) for x in c[1].split("-")]
+            e = [float(x) for x in c[2].split("-")]
+            sigma = float(c[3])
+            if "石膏板" in name:
+                groups["石膏板"].append((rho, e, sigma))
+            elif "硅酸钙板" in name:
+                groups["硅酸钙板"].append((rho, e, sigma))
+            elif "B06" in name:
+                groups["ALC B06"].append((rho, e, sigma))
+        dom = {}
+        for g, items in groups.items():
+            self.assertTrue(items, f"参数表未解析到 {g} 行")
+            dom[g] = (min(it[0][0] for it in items), max(it[0][1] for it in items),
+                      min(it[1][0] for it in items), max(it[1][1] for it in items),
+                      items[0][2])
+        return dom
+
+    # ---------- G-3(1) fc 范围表＝参数域包络（三表同源核心） ----------
+
+    def assert_fc_range_table_is_envelope(self, pw_text):
+        dom = self._param_domains_from(pw_text)
+        rows = _m2_table_after(pw_text, "常用板材吻合临界频率参考表")
+        label2group = {"普通/耐火石膏板": "石膏板", "硅酸钙板": "硅酸钙板",
+                       "ALC B06": "ALC B06"}
+        checked = 0
+        for c in rows:
+            if len(c) < 3 or c[0] == "板材":
+                continue
+            label, thick_s, rng = c[0], c[1], c[2]
+            self.assertIn(label, label2group, f"fc 表出现未声明板材 {label}")
+            rlo, rhi, elo, ehi, sig = dom[label2group[label]]
+            h = float(thick_s.replace("mm", ""))
+            fmin = _m2_fc(h, rlo, ehi, sig)   # 最小ρ/最大E
+            fmax = _m2_fc(h, rhi, elo, sig)   # 最大ρ/最小E
+            lo_s, hi_s = rng.split("-")
+            self.assertAlmostEqual(float(lo_s), round(fmin), delta=1.0,
+                msg=f"{label} {thick_s} fc_min 漂移：表 {lo_s} vs 包络复算 {fmin:.0f}")
+            self.assertAlmostEqual(float(hi_s), round(fmax), delta=1.0,
+                msg=f"{label} {thick_s} fc_max 漂移：表 {hi_s} vs 包络复算 {fmax:.0f}")
+            checked += 1
+        self.assertEqual(checked, 10, "fc 范围表应恰有 10 行（3 石膏＋4 硅钙＋3 ALC）")
+
+    # ---------- G-3(2) 搭配表标称点可复现且落在包络内 ----------
+
+    def assert_combination_table_same_source(self, pw_text):
+        # 基准声明须在场
+        for phrase in ("石膏板 ρ800/E2.5/σ0.25", "硅酸钙板 ρ1400/E6/σ0.22",
+                       "9.5mm 石膏板取 ρ900"):
+            self.assertIn(phrase, pw_text, "搭配表缺标称基准声明")
+        # 标称基准须落在声明参数域内
+        dom = self._param_domains_from(pw_text)
+        grlo, grhi, gelo, gehi, _ = dom["石膏板"]
+        crlo, crhi, celo, cehi, _ = dom["硅酸钙板"]
+        self.assertTrue(grlo <= self.NOM_GYPSUM[0] <= grhi)
+        self.assertTrue(gelo <= self.NOM_GYPSUM[1] <= gehi)
+        self.assertTrue(crlo <= self.NOM_CASI[0] <= crhi)
+        self.assertTrue(celo <= self.NOM_CASI[1] <= cehi)
+
+        g12 = _m2_fc(12, *self.NOM_GYPSUM)
+        g15 = _m2_fc(15, *self.NOM_GYPSUM)
+        g95 = _m2_fc(9.5, *self.NOM_GYPSUM_95)
+        c10 = _m2_fc(10, *self.NOM_CASI)
+        c8 = _m2_fc(8, *self.NOM_CASI)
+        expect = {
+            "12mm石膏板 + 10mm硅酸钙板": (g12, c10),
+            "12mm石膏板 + 8mm硅酸钙板": (g12, c8),
+            "15mm石膏板 + 10mm硅酸钙板": (g15, c10),
+            "12mm石膏板 + 9.5mm石膏板（不同密度）": (g12, g95),
+        }
+        # 包络（用于同源性交叉核对）
+        env = {
+            "12mm石膏板 + 10mm硅酸钙板": ((_m2_fc(12, grlo, gehi, 0.25), _m2_fc(12, grhi, gelo, 0.25)),
+                                    (_m2_fc(10, crlo, cehi, 0.22), _m2_fc(10, crhi, celo, 0.22))),
+            "12mm石膏板 + 8mm硅酸钙板": ((_m2_fc(12, grlo, gehi, 0.25), _m2_fc(12, grhi, gelo, 0.25)),
+                                  (_m2_fc(8, crlo, cehi, 0.22), _m2_fc(8, crhi, celo, 0.22))),
+            "15mm石膏板 + 10mm硅酸钙板": ((_m2_fc(15, grlo, gehi, 0.25), _m2_fc(15, grhi, gelo, 0.25)),
+                                  (_m2_fc(10, crlo, cehi, 0.22), _m2_fc(10, crhi, celo, 0.22))),
+            "12mm石膏板 + 9.5mm石膏板（不同密度）": ((_m2_fc(12, grlo, gehi, 0.25), _m2_fc(12, grhi, gelo, 0.25)),
+                                        (_m2_fc(9.5, grlo, gehi, 0.25), _m2_fc(9.5, grhi, gelo, 0.25))),
+        }
+        rows = _m2_table_after(pw_text, "异质复合吻合谷错开有效性分析")
+        seen = 0
+        for c in rows:
+            if len(c) < 5 or c[0] == "组合":
+                continue
+            combo = c[0]
+            self.assertIn(combo, expect, f"搭配表出现未预期组合 {combo}")
+            fc1 = float(c[1].lstrip("~"))
+            fc2 = float(c[2].lstrip("~"))
+            dfc = float(c[3].lstrip("~"))
+            e1, e2 = expect[combo]
+            self.assertAlmostEqual(fc1, round(e1), delta=2.0,
+                msg=f"{combo} fc1 非标称复算：表 {fc1} vs {e1:.0f}")
+            self.assertAlmostEqual(fc2, round(e2), delta=2.0,
+                msg=f"{combo} fc2 非标称复算：表 {fc2} vs {e2:.0f}")
+            self.assertAlmostEqual(dfc, round(abs(e1 - e2)), delta=2.0,
+                msg=f"{combo} Δfc 与 fc1/fc2 不自洽")
+            # 同源性：标称点须落在 fc 范围表包络内
+            (glo, ghi), (clo, chi) = env[combo]
+            self.assertTrue(glo - 1 <= fc1 <= ghi + 1, f"{combo} fc1 超出包络")
+            self.assertTrue(clo - 1 <= fc2 <= chi + 1, f"{combo} fc2 超出包络")
+            # 判定列与 Δfc 阈值自洽
+            if "✅" in c[4]:
+                self.assertGreaterEqual(dfc, 300, f"{combo} 判有效但 Δfc<300")
+            elif "❌" in c[4]:
+                self.assertLess(dfc, 150, f"{combo} 判无效但 Δfc≥150")
+            seen += 1
+        self.assertEqual(seen, 4, "搭配表应恰有 4 行")
+
+    # ---------- G-3(3) 绝对结论收窄＋Δfc 非单调披露 ----------
+
+    def assert_absolute_claim_narrowed(self, pw_text):
+        # 旧绝对结论不得作为断言复现
+        self.assertNotIn("以确保在任何合理参数下均有效错开", pw_text)
+        self.assertNotIn("Δfc约130-180", pw_text)
+        # 收窄与披露须在场
+        for phrase in ("非单调", "无法保证", "这一绝对结论不成立",
+                       "最小角点差仅约 22 Hz", "逐案核算"):
+            self.assertIn(phrase, pw_text, f"缺收窄披露：{phrase}")
+        # Δfc 非单调可复算：E=8→314、E≈6.3→~0、E=4→783
+        g12 = _m2_fc(12, *self.NOM_GYPSUM)
+        d8 = abs(g12 - _m2_fc(10, 1400, 8.0, 0.22))
+        d63 = abs(g12 - _m2_fc(10, 1400, 6.3, 0.22))
+        d4 = abs(g12 - _m2_fc(10, 1400, 4.0, 0.22))
+        self.assertAlmostEqual(d8, 314, delta=2)
+        self.assertLess(d63, 40, "E≈6.3 应接近交叉过零")
+        self.assertAlmostEqual(d4, 783, delta=3)
+        self.assertTrue(d8 > d63 < d4, "Δfc 须非单调（先减后增）")
+
+    # ---------- PL-065：ACE 修正因子省略误差说明 ----------
+
+    def assert_ace_correction_factor_text(self, ace_text):
+        self.assertNotIn("误差约 3-8%", ace_text, "PL-065 旧误差说明未清除")
+        for phrase in ("偏低约 70%", "29.8%", "2961 Hz 误算为 883 Hz", "2.6%"):
+            self.assertIn(phrase, ace_text, f"PL-065 缺披露：{phrase}")
+        # 数值可复算
+        factor = math.sqrt(12 * (1 - 0.25 ** 2))
+        self.assertAlmostEqual(100 / factor, 29.8, delta=0.1)
+        self.assertAlmostEqual(100 - 100 / factor, 70.2, delta=0.1)
+        self.assertAlmostEqual(_m2_fc(12, 800, 2.5, 0.25), 2961, delta=1)
+        simp = (C_SOUND ** 2) / (2 * math.pi * 0.012) * math.sqrt(800 / 2.5e9)
+        self.assertAlmostEqual(simp, 883, delta=1)
+
+    def assert_ace_delta_fc_nonmonotonic(self, ace_text):
+        self.assertNotIn("Δfc ≈ 131 Hz（无效）", ace_text, "ACE 旧单调叙述未清除")
+        for phrase in ("非单调", "6.3 GPa", "388→783"):
+            self.assertIn(phrase, ace_text, f"ACE 缺 Δfc 非单调披露：{phrase}")
+        # ≥300 判据字面须保留（test_M2_delta_fc_criterion 同源）
+        self.assertIn("Δfc = |fc₁ - fc₂| ≥ 300 Hz", ace_text)
+
+    # ---------- 常态通过 ----------
+
+    def test_runtime_fc_range_envelope(self):
+        self.assert_fc_range_table_is_envelope(self.pw)
+
+    def test_runtime_combination_same_source(self):
+        self.assert_combination_table_same_source(self.pw)
+
+    def test_runtime_absolute_claim_narrowed(self):
+        self.assert_absolute_claim_narrowed(self.pw)
+
+    def test_runtime_ace_correction_factor(self):
+        self.assert_ace_correction_factor_text(self.ace)
+
+    def test_runtime_ace_delta_fc_nonmonotonic(self):
+        self.assert_ace_delta_fc_nonmonotonic(self.ace)
+
+    # ---------- 负向注入（守卫须仍能失败） ----------
+
+    def test_fc_range_old_value_rejected(self):
+        # 回潮旧表值（系统性低约 1.4×）须复红
+        with self.assertRaises(AssertionError):
+            self.assert_fc_range_table_is_envelope(self.pw.replace("2769-3511", "1950-2450", 1))
+        with self.assertRaises(AssertionError):
+            self.assert_fc_range_table_is_envelope(self.pw.replace("2216-2809", "1550-1950", 1))
+
+    def test_combination_old_value_rejected(self):
+        with self.assertRaises(AssertionError):
+            self.assert_combination_table_same_source(self.pw.replace("~3056", "~3060", 1))
+        # 撤除标称基准声明须复红
+        with self.assertRaises(AssertionError):
+            self.assert_combination_table_same_source(
+                self.pw.replace("硅酸钙板 ρ1400/E6/σ0.22", "硅酸钙板典型值"))
+
+    def test_absolute_claim_restored_rejected(self):
+        injected = self.pw + "\n> 以确保在任何合理参数下均有效错开（Δfc ≥ 690 Hz）。\n"
+        with self.assertRaises(AssertionError):
+            self.assert_absolute_claim_narrowed(injected)
+        with self.assertRaises(AssertionError):
+            self.assert_absolute_claim_narrowed(self.pw.replace("非单调", "高度敏感", 1))
+
+    def test_ace_old_error_text_rejected(self):
+        with self.assertRaises(AssertionError):
+            self.assert_ace_correction_factor_text(
+                self.ace.replace("偏低约 70%", "误差约 3-8%", 1))
+        with self.assertRaises(AssertionError):
+            self.assert_ace_delta_fc_nonmonotonic(
+                self.ace.replace("非单调", "高度敏感", 1))
+
+    # ---------- 控制例（守卫不恒真） ----------
+
+    def test_control_layout_and_valid_variant(self):
+        # 追加空行不改判定
+        self.assert_fc_range_table_is_envelope(self.pw.replace("\n\n", "\n\n\n"))
+        self.assert_combination_table_same_source(self.pw.replace("\n\n", "\n\n\n"))
+        # 包络口径本身可失败：把 fc_min/fc_max 对调必红（证明确在算包络而非恒真）
+        swapped = self.pw.replace("2769-3511", "3511-2769", 1)
+        with self.assertRaises(AssertionError):
+            self.assert_fc_range_table_is_envelope(swapped)
+
+
+# ============================================================
+# TEST SUITE: M6 缝隙边界与封顶口径（CG-20260924-007 组7 M6）
+#   PL-038 G-2：ACE 简化表末档边界、PW 封顶式结论、分层损失表复算、
+#   单值代入近似口径声明。闭合条件＝所有边界陈述由自述公式与条件复算；
+#   频带能量合成与 Rw 单值计权分开（直接代入单值只标近似及适用边界）；
+#   覆盖全部同表行；保留改前反例（原像重注入复红）。
+#   全部 C 类派生量，按 data-classification.md 内部复算，不走官方通道。
+#   ACE_SKILL_DIR / PW_SKILL_DIR 环境变量可指向改前原像目录做复红自证。
+# ============================================================
+
+def _m6_r_composite(p, r_wall, r_gap=0.0):
+    """复合隔声量 R_composite = -10·lg[(1-p)·10^(-R_wall/10) + p·10^(-R_gap/10)]。"""
+    return -10.0 * math.log10((1.0 - p) * 10 ** (-r_wall / 10.0)
+                              + p * 10 ** (-r_gap / 10.0))
+
+
+def _m6_loss(p, r_wall, r_gap=0.0):
+    """损失量 = R_wall - R_composite。"""
+    return r_wall - _m6_r_composite(p, r_wall, r_gap)
+
+
+def _m6_num(cell):
+    """「~20 dB」→ 20.0（取首个数字，忽略约等号与单位）。"""
+    m = re.search(r"(\d+(?:\.\d+)?)", cell.replace("~", ""))
+    return float(m.group(1))
+
+
+def _m6_simplified_rows(ace_text):
+    """ACE M6 简化表数据行（以来源标记「本式复算」定位，M6 唯一）。"""
+    rows = []
+    for line in ace_text.splitlines():
+        s = line.strip()
+        if s.startswith("|") and "本式复算" in s:
+            rows.append([c.strip() for c in s.strip("|").split("|")])
+    return rows
+
+
+def _m6_pw_tier_rows(pw_text):
+    """PW §3.B.2 分层损失表数据行（首列为 Rw ≈/≥ … dB 的 5 列行）。"""
+    rows = []
+    for line in pw_text.splitlines():
+        s = line.strip()
+        if s.startswith("|") and re.match(r"^\|\s*Rw [≈≥]", s):
+            rows.append([c.strip() for c in s.strip("|").split("|")])
+    return rows
+
+
+class TestM6GapBoundary(unittest.TestCase):
+    """M6 缝隙：ACE 边界行、PW 封顶式、分层表复算、单值口径声明守卫。"""
+
+    @classmethod
+    def setUpClass(cls):
+        ace_base = Path(os.environ.get("ACE_SKILL_DIR") or
+                        (Path.home() / ".qoder/skills/acoustic-calculation-engine"))
+        pw_base = Path(os.environ.get("PW_SKILL_DIR") or
+                       (Path.home() / ".qoder/skills/prefab-partition-wall-solution"))
+        cls.ace = (ace_base / "reference.md").read_text(encoding="utf-8")
+        cls.pw = (pw_base / "reference.md").read_text(encoding="utf-8")
+
+    # ---------- R1 ACE M6 简化表：四档边界由自述公式复算（覆盖全部同表行） ----------
+
+    def assert_ace_simplified_table_boundary(self, ace_text):
+        rows = _m6_simplified_rows(ace_text)
+        self.assertEqual(len(rows), 4, f"M6 简化表应恰 4 行，现 {len(rows)}")
+        # 前三档：公式值（R_wall=30、R_gap=0 前提）落在声明区间内
+        spec = [("0.01%", 0.0001, 0.0, 1.0), ("0.1%", 0.001, 2.0, 4.0),
+                ("1%", 0.01, 8.0, 12.0)]
+        labels = [r[0] for r in rows]
+        for label, p, lo, hi in spec:
+            self.assertIn(label, labels, f"M6 简化表缺行 {label}")
+            val = _m6_loss(p, 30.0)
+            self.assertTrue(lo <= val <= hi,
+                f"{label} 档公式值 {val:.2f} dB 越出声明区间 {lo}-{hi}")
+        # 末档：下界 1.5% 使损失严格 > 12 dB；旧「> 1%」在 1%—1.49% 段不成立
+        self.assertEqual(rows[3][0], "> 1.5%",
+            "M6 简化表末档下界须为 1.5%：12 dB 阈值 p≈1.49%，旧「> 1%」越界（p=1.01% 损失仅 10.45 dB）")
+        self.assertIn("12", rows[3][1], "末档损失列须锚定 12 dB")
+        self.assertGreater(_m6_loss(0.015, 30.0), 12.0)
+        self.assertLess(_m6_loss(0.0101, 30.0), 12.0)  # 改前反例复算
+        self.assertAlmostEqual(_m6_loss(0.014864, 30.0), 12.0, delta=0.05)
+        # 前提注记须披露阈值并覆盖四档
+        self.assertIn("p≈1.49%", ace_text, "前提注记缺 12 dB 阈值披露")
+        self.assertIn("四档逐档吻合", ace_text, "前提注记未覆盖全部四档")
+
+    # ---------- R2 PW 封顶式结论：−10·lg(S_缝) 随面积比变化 ----------
+
+    def assert_pw_ceiling_formula(self, pw_text):
+        self.assertNotIn("任何缝隙都会使有效隔声量趋近于 20 dB 上限", pw_text,
+            "旧「任何缝隙封顶 20 dB」回潮：封顶=−10·lg(S_缝) 随面积比变化")
+        self.assertIn("−10·lg(S_缝)", pw_text, "PW 缺缝隙主导段封顶式表述")
+        self.assertIn("随面积比变化而非定值 20 dB", pw_text)
+        # 三点例值与公式一致，且缝隙主导段封顶与墙体本身性能无关
+        for s, phrase, val in [(0.01, "S_缝=1% 封顶约 20 dB", 20.0),
+                               (0.001, "0.1% 约 30 dB", 30.0),
+                               (0.05, "5% 约 13 dB", 13.0)]:
+            self.assertIn(phrase, pw_text, f"PW 缺封顶例值 {phrase}")
+            self.assertAlmostEqual(-10.0 * math.log10(s), val, delta=0.5,
+                msg=f"封顶例值 {phrase} 与 −10·lg(S_缝)={-10.0 * math.log10(s):.1f} 不符")
+        self.assertAlmostEqual(_m6_r_composite(0.01, 50.0), 20.0, delta=0.1)
+
+    # ---------- R3 PW 分层损失表：6 行×2 档复算（覆盖全部同表行） ----------
+
+    def assert_pw_tier_table_recomputed(self, pw_text):
+        rows = _m6_pw_tier_rows(pw_text)
+        self.assertEqual(len(rows), 3, f"PW 分层损失表应恰 3 行，现 {len(rows)}")
+        for c in rows:
+            self.assertEqual(len(c), 5, f"分层表行列数异常：{c}")
+            m = re.match(r"Rw [≈≥]\s*(\d+)", c[0])
+            rw = float(m.group(1))
+            self.assertAlmostEqual(_m6_r_composite(0.01, rw), _m6_num(c[1]),
+                delta=1.0, msg=f"{c[0]} 1% 有效隔声漂移：表 {c[1]} vs 复算 {_m6_r_composite(0.01, rw):.1f}")
+            self.assertAlmostEqual(_m6_loss(0.01, rw), _m6_num(c[2]),
+                delta=1.0, msg=f"{c[0]} 1% 损失量漂移：表 {c[2]} vs 复算 {_m6_loss(0.01, rw):.1f}")
+            self.assertAlmostEqual(_m6_r_composite(0.05, rw), _m6_num(c[3]),
+                delta=1.0, msg=f"{c[0]} 5% 有效隔声漂移：表 {c[3]} vs 复算 {_m6_r_composite(0.05, rw):.1f}")
+            self.assertAlmostEqual(_m6_loss(0.05, rw), _m6_num(c[4]),
+                delta=1.0, msg=f"{c[0]} 5% 损失量漂移：表 {c[4]} vs 复算 {_m6_loss(0.05, rw):.1f}")
+
+    # ---------- R4 单值代入口径声明（两件） ----------
+
+    def assert_single_value_caliber_declared(self, ace_text, pw_text):
+        for name, text in (("ACE", ace_text), ("PW", pw_text)):
+            self.assertIn("单值代入口径（近似声明）", text, f"{name} 缺单值代入口径声明")
+            self.assertIn("逐频带", text, f"{name} 缺严格路径（逐频带合成）声明")
+            self.assertIn("不得当逐频带合成结果使用", text, f"{name} 缺适用边界声明")
+
+    # ---------- 常态通过 ----------
+
+    def test_runtime_ace_boundary(self):
+        self.assert_ace_simplified_table_boundary(self.ace)
+
+    def test_runtime_pw_ceiling(self):
+        self.assert_pw_ceiling_formula(self.pw)
+
+    def test_runtime_pw_tier_table(self):
+        self.assert_pw_tier_table_recomputed(self.pw)
+
+    def test_runtime_caliber_declared(self):
+        self.assert_single_value_caliber_declared(self.ace, self.pw)
+
+    # ---------- 负向注入（守卫须仍能失败） ----------
+
+    def test_ace_old_boundary_rejected(self):
+        injected = self.ace.replace("| > 1.5% | > 12 dB", "| > 1% | > 12 dB", 1)
+        self.assertNotEqual(injected, self.ace, "注入未命中（边界行锚点漂移）")
+        with self.assertRaises(AssertionError):
+            self.assert_ace_simplified_table_boundary(injected)
+
+    def test_pw_old_ceiling_rejected(self):
+        injected = self.pw.replace(
+            "> - 缝隙主导段的有效隔声量封顶值为 −10·lg(S_缝)（R_缝≈0 dB 时），随面积比变化而非定值 20 dB：S_缝=1% 封顶约 20 dB、0.1% 约 30 dB、5% 约 13 dB（上表两档 ~20 dB／~13 dB 即 1%／5% 两点的封顶值）；达到封顶后与墙体本身隔声性能无关",
+            "> - 任何缝隙都会使有效隔声量趋近于 20 dB 上限（由缝隙面积比决定），与墙体本身性能无关", 1)
+        self.assertNotEqual(injected, self.pw, "注入未命中（封顶结论锚点漂移）")
+        with self.assertRaises(AssertionError):
+            self.assert_pw_ceiling_formula(injected)
+
+    def test_pw_tier_value_drift_rejected(self):
+        injected = self.pw.replace(
+            "| Rw ≈ 35 dB（一般隔墙） | ~20 dB | ~15 dB",
+            "| Rw ≈ 35 dB（一般隔墙） | ~25 dB | ~15 dB", 1)
+        self.assertNotEqual(injected, self.pw, "注入未命中（分层表锚点漂移）")
+        with self.assertRaises(AssertionError):
+            self.assert_pw_tier_table_recomputed(injected)
+
+    def test_caliber_removed_rejected(self):
+        with self.assertRaises(AssertionError):
+            self.assert_single_value_caliber_declared(
+                self.ace.replace("单值代入口径（近似声明）", "口径说明", 1), self.pw)
+        with self.assertRaises(AssertionError):
+            self.assert_single_value_caliber_declared(
+                self.ace, self.pw.replace("不得当逐频带合成结果使用", "仅供参考", 1))
+
+    # ---------- 控制例（守卫不恒真：良性变更不报红） ----------
+
+    def test_control_benign_changes_pass(self):
+        # 追加空行/追加段不改判定
+        self.assert_ace_simplified_table_boundary(self.ace.replace("\n\n", "\n\n\n"))
+        self.assert_pw_ceiling_formula(self.pw + "\n> 注：本节封顶口径与 M6 简化表同源。\n")
+        self.assert_pw_tier_table_recomputed(self.pw.replace("\n\n", "\n\n\n"))
+        self.assert_single_value_caliber_declared(self.ace, self.pw)
 
 
 # ============================================================
