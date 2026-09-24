@@ -7,8 +7,15 @@ Run after any document change to catch inconsistencies.
 Usage:  python ace_regression_test.py
         python ace_regression_test.py -v          (verbose)
 
-Version: 1.3.1
-Date: 2026-08-20
+Version: 1.4.0
+Date: 2026-09-24
+
+v1.4.0 (2026-09-24, CG-20260924-004 专业整改四批-组4 FL 构造与预测):
+  新增 TestFloorF02F03Boundary 守卫组（PL-052／PL-064／PL-038 G-1／PL-056／PL-057）：
+  F02 厚度链两口径与不猜新总厚、F03 单层板 28mm 口径与双层板 43mm 超标高、
+  F02/F03 参数表收窄行值、汇总表 ΔLw／达标可行性两列撤除、选型速查 30mm 行改单层板、
+  examples.md 现场 L'nT,w 数值出口（40-48／42-48）禁回潮。
+  支持 FLOOR_SKILL_DIR 环境变量指向改前原像目录做复红自证。
 
 v1.3.1 (2026-08-20, CG-20260820-001 复核整改 F-01):
   TestDocAnchor.test_M7_baseline_standard_citations 断言由已废止的
@@ -37,6 +44,7 @@ v1.1.0 (2026-08-07, CG-20260807-010):
 
 import unittest
 import math
+import os
 import re
 import inspect
 from pathlib import Path
@@ -1031,6 +1039,230 @@ class TestFloorF01Boundary(unittest.TestCase):
         self.assertIn("f₀ = (1/2π) × √(s / m')", method)
         self.assertIn("1 MN/m³ = 10⁶ N/m³", method)
         self.assertAlmostEqual(floating_floor_f0(10, 108), 48.4293069277, places=8)
+
+
+class TestFloorF02F03Boundary(unittest.TestCase):
+    """CG-20260924-004：F02/F03 构造计量与预测收窄守卫（PL-052/064、G-1、PL-056/057）。
+
+    FLOOR_SKILL_DIR 环境变量可指向改前原像目录做复红自证；默认读运行时技能件。
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        base = Path(os.environ.get("FLOOR_SKILL_DIR") or
+                    (Path.home() / ".qoder/skills/prefab-floor-system"))
+        cls.full_doc = (base / "reference.md").read_text(encoding="utf-8")
+        cls.ex_doc = (base / "examples.md").read_text(encoding="utf-8")
+        s2 = cls.full_doc.index("#### 方案 FL-F02：")
+        e2 = cls.full_doc.index("#### 方案 FL-F03：", s2)
+        cls.doc_f02 = cls.full_doc[s2:e2]
+        s3 = cls.full_doc.index("#### 方案 FL-F03：")
+        e3 = cls.full_doc.index("### 6.8 性能数据与选型建议", s3)
+        cls.doc_f03 = cls.full_doc[s3:e3]
+        s5 = cls.full_doc.index("#### 浮筑构造隔声性能汇总")
+        e5 = cls.full_doc.index("#### 选型建议速查", s5)
+        cls.doc_summary = cls.full_doc[s5:e5]
+        s6 = cls.full_doc.index("#### 选型建议速查")
+        e6 = cls.full_doc.index("## 七、架空地面系统", s6)
+        cls.doc_picker = cls.full_doc[s6:e6]
+
+    @staticmethod
+    def _rows(text, ncells):
+        rows = {}
+        for line in text.splitlines():
+            if not line.startswith("| "):
+                continue
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if len(cells) == ncells and cells[0] not in ("参数", "构造方案", "项目条件"):
+                rows.setdefault(cells[0], cells[1:])
+        return rows
+
+    # ---------- F02 厚度链（PL-052）＋参数收窄（G-1） ----------
+
+    def assert_f02_boundary(self, text):
+        self.assertIn("#### 方案 FL-F02：", text)
+        rows = self._rows(text, 3)
+        expected = {
+            "总厚度（不含结构楼板）": "待按计量口径核算",
+            "恒荷载增量": "待逐层计算",
+            "浮筑层面质量 m'": "待逐层计算",
+            "弹性垫动刚度 s": "待按适用条件取值",
+            "共振频率 f₀": "输入核实后计算",
+            "ΔLw 估算": "本例不提供有效预测值",
+        }
+        for name, value in expected.items():
+            self.assertIn(name, rows)
+            self.assertEqual(rows[name][0], value)
+        thick = rows["总厚度（不含结构楼板）"][1]
+        for phrase in ("嵌管口径", "叠加口径", "71-75mm", "91-95mm", "83-85",
+                       "不猜新总厚", "粘结/防潮层未计厚"):
+            self.assertIn(phrase, thick)
+        for phrase in ("原示例值 125 kg/m² 不能由层次表厚度与密度复算得出",
+                       "不从单层厚度反推整层质量"):
+            self.assertIn(phrase, rows["浮筑层面质量 m'"][1])
+        for phrase in ("地暖温升工况", "表观动刚度与修正动刚度不得混用"):
+            self.assertIn(phrase, rows["弹性垫动刚度 s"][1])
+        for phrase in ("互斥", "不以直算值顶替印值"):
+            self.assertIn(phrase, rows["ΔLw 估算"][1])
+        for phrase in ("未计层", "口径待设计文件明确", "嵌于回填层内",
+                       "弹簧 s 待按适用条件取值"):
+            self.assertIn(phrase, text)
+        self.assertNotRegex(text, r"弹簧\s*s\s*≈")
+        for phrase in ("**输出边界**", "嵌管/叠加", "须由设计意图确定后方可复算总厚",
+                       "本例不作现场达标判断"):
+            self.assertIn(phrase, text)
+
+    # ---------- F03 标高口径（PL-064）＋参数收窄（G-1）＋现场出口（PL-057） ----------
+
+    def assert_f03_boundary(self, text):
+        self.assertIn("#### 方案 FL-F03：", text)
+        rows = self._rows(text, 3)
+        expected = {
+            "总厚度（不含结构楼板）": "28mm（单层板口径）",
+            "恒荷载增量": "待逐层计算",
+            "浮筑层面质量 m'": "待逐层计算",
+            "弹性垫动刚度 s": "待按适用条件取值",
+            "共振频率 f₀": "输入核实后计算",
+            "ΔLw 估算": "本例不提供有效预测值",
+            "裸板 Ln,w 基准": "待取得对应构造依据",
+            "浮筑后 Ln,w 估算": "本例不提供数值",
+        }
+        for name, value in expected.items():
+            self.assertIn(name, rows)
+            self.assertEqual(rows[name][0], value)
+        thick = rows["总厚度（不含结构楼板）"][1]
+        for phrase in ("5＋15＋8", "不含找平层与板缝/界面预留", "43mm",
+                       "超出 30mm 标高增量 13mm", "标高仅允许 30mm 时不可装"):
+            self.assertIn(phrase, thick)
+        for phrase in ("无换算式", "不得由实验室量推算现场达标"):
+            self.assertIn(phrase, rows["浮筑后 Ln,w 估算"][1])
+        for phrase in ("互斥", "不以直算值顶替印值"):
+            self.assertIn(phrase, rows["ΔLw 估算"][1])
+        self.assertIn("弹簧 s 待按适用条件取值", text)
+        self.assertNotRegex(text, r"弹簧\s*s\s*≈")
+        for phrase in ("**输出边界**", "现场是否达标以现场检测判定",
+                       "不以实验室量推算", "无换算式"):
+            self.assertIn(phrase, text)
+
+    # ---------- 汇总表两列撤除（G-1＋PL-056） ----------
+
+    def assert_summary_table(self, text):
+        self.assertIn("#### 浮筑构造隔声性能汇总", text)
+        header = next(line for line in text.splitlines()
+                      if line.startswith("| 构造方案"))
+        cells = [c.strip() for c in header.strip("|").split("|")]
+        self.assertEqual(cells, ["构造方案", "弹性垫 s (MN/m³)", "面质量 m' (kg/m²)",
+                                 "f₀ (Hz)", "置信度"])
+        data = [line for line in text.splitlines()
+                if line.startswith("| ") and not line.startswith("| 构造方案")]
+        self.assertEqual(len(data), 6, "汇总表数据行数变动，须按新口径复核守卫")
+        for line in data:
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            self.assertEqual(len(cells), 5)
+            self.assertNotRegex(line, r"余量|达标|dB|极高|中高")
+        for phrase in ("「ΔLw 估算」与「L'nT,w 达标可行性」两列已撤除",
+                       "互斥", "恢复数值出口的条件"):
+            self.assertIn(phrase, text)
+
+    # ---------- 选型速查行（PL-064＋PL-056） ----------
+
+    def assert_picker_rows(self, text):
+        row30 = next(line for line in text.splitlines()
+                     if "标高仅允许增加 30mm" in line)
+        self.assertIn("FL-F03 干式浮筑（单层板）", row30)
+        self.assertNotIn("FL-F03 干式浮筑（双层板）", row30)
+        for phrase in ("28mm", "43mm", "不可装", "隔声性能须另行验证"):
+            self.assertIn(phrase, row30)
+        row_hr = next(line for line in text.splitlines() if "住宅+地暖" in line)
+        self.assertIn("均须另行核实与验证", row_hr)
+        self.assertNotIn("隔声与地暖兼容", row_hr)
+
+    # ---------- examples.md 现场数值出口撤回（PL-057） ----------
+
+    def assert_examples(self, text):
+        self.assertNotRegex(text, r"\d+\s*-\s*48\s*dB")
+        for phrase in ("远低于 65 dB 限值", "由 Ln,w 区间加宽而得",
+                       "此处为区间加宽而非换算结果", "不列余量数值"):
+            self.assertNotIn(phrase, text)
+        self.assertEqual(
+            text.count("不提供数值估算（两量间无换算式），达标须现场 L'nT,w 检测判定"), 2,
+            "示例1/示例4 Step4 D1 现场检测出口应各一处")
+        self.assertEqual(
+            text.count("不提供数值估算（两量间无换算式），达标须现场检测判定"), 2,
+            "示例1/示例4 核验清单 D1 行应各一处")
+        self.assertEqual(
+            text.count("不提供数值估算（两量间无换算式），达标以现场检测判定"), 2,
+            "示例1/示例4 三原则审查行应各一处")
+        self.assertEqual(text.count("实验室 Ln,w 与现场 L'nT,w 之间无换算式"), 4)
+        self.assertEqual(text.count("现场值无数值出口，不作与限值的数值比较"), 2)
+        self.assertEqual(text.count("L'nT,w 无数值出口，不作与限值的数值比较"), 2)
+        self.assertEqual(text.count("区间加宽亦无依据"), 2)
+
+    # ---------- 常态通过 ----------
+
+    def test_runtime_f02_boundary(self):
+        self.assert_f02_boundary(self.doc_f02)
+
+    def test_runtime_f03_boundary(self):
+        self.assert_f03_boundary(self.doc_f03)
+
+    def test_runtime_summary_table(self):
+        self.assert_summary_table(self.doc_summary)
+
+    def test_runtime_picker_rows(self):
+        self.assert_picker_rows(self.doc_picker)
+
+    def test_runtime_examples(self):
+        self.assert_examples(self.ex_doc)
+
+    # ---------- 负向注入（守卫须仍能失败） ----------
+
+    def test_f02_old_thickness_or_stiffness_rejected(self):
+        for old, new in (("待按计量口径核算", "83-85mm"),
+                         ("待按适用条件取值", "≈15 MN/m³")):
+            with self.subTest(new=new), self.assertRaises(AssertionError):
+                self.assert_f02_boundary(self.doc_f02.replace(old, new, 1))
+        with self.assertRaises(AssertionError):
+            self.assert_f02_boundary(self.doc_f02.replace("不猜新总厚", ""))
+        with self.assertRaises(AssertionError):
+            self.assert_f02_boundary(self.doc_f02.replace("未计层", "构造层"))
+
+    def test_f03_bare_thickness_or_old_values_rejected(self):
+        for old, new in (("28mm（单层板口径）", "28mm"),
+                         ("本例不提供数值", "61-65 dB"),
+                         ("待按适用条件取值", "≈10 MN/m³")):
+            with self.subTest(new=new), self.assertRaises(AssertionError):
+                self.assert_f03_boundary(self.doc_f03.replace(old, new, 1))
+        with self.assertRaises(AssertionError):
+            self.assert_f03_boundary(self.doc_f03.replace("43mm", "40mm"))
+
+    def test_summary_columns_restored_rejected(self):
+        with self.assertRaises(AssertionError):
+            self.assert_summary_table(self.doc_summary.replace(
+                "| f₀ (Hz) | 置信度 |", "| f₀ (Hz) | ΔLw 估算 (dB) | 置信度 |"))
+        with self.assertRaises(AssertionError):
+            self.assert_summary_table(self.doc_summary.replace(
+                "| 湿式浮筑（标准） | 10 | 108 | 48 | L5 |",
+                "| 湿式浮筑（标准） | 10 | 108 | 48 | 高（余量充足） | L5 |"))
+
+    def test_picker_double_board_rejected(self):
+        with self.assertRaises(AssertionError):
+            self.assert_picker_rows(self.doc_picker.replace(
+                "FL-F03 干式浮筑（单层板）", "FL-F03 干式浮筑（双层板）"))
+
+    def test_examples_field_value_restored_rejected(self):
+        for injected in ("L'nT,w 估算 ≈ 42-48 dB", "L'nT,w ≈ 40-48 dB < 65 dB",
+                         "远低于 65 dB 限值"):
+            with self.subTest(injected=injected), self.assertRaises(AssertionError):
+                self.assert_examples(self.ex_doc + "\n" + injected + "\n")
+
+    # ---------- 控制例（守卫不恒真） ----------
+
+    def test_layout_and_lab_value_control(self):
+        self.assert_f02_boundary(self.doc_f02.replace("\n\n", "\n\n\n"))
+        self.assert_f03_boundary(self.doc_f03.replace("\n\n", "\n\n\n"))
+        self.assert_examples(self.ex_doc + "\nLn,w(浮筑) ≈ 42-46 dB（实验室量出口，允许）\n")
+        self.assert_examples(self.ex_doc + "\n恒荷载 ≈ 0.35 kN/m²，远低于住宅活荷载标准值\n")
 
 
 # ============================================================
