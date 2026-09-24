@@ -895,6 +895,144 @@ class TestDocAnchor(unittest.TestCase):
                 f"reference.md M7 缺失标准引用 {std}")
 
 
+class TestFloorF01Boundary(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        path = Path.home() / ".qoder/skills/prefab-floor-system/reference.md"
+        cls.full_doc = path.read_text(encoding="utf-8")
+        start = cls.full_doc.index("#### 方案 FL-F01：")
+        end = cls.full_doc.index("#### 方案 FL-F02：", start)
+        cls.doc = cls.full_doc[start:end]
+
+    def assert_f01_boundary(self, text):
+        rows = {}
+        for line in text.splitlines():
+            if line.startswith("| "):
+                cells = [cell.strip() for cell in line.strip("|").split("|")]
+                self.assertEqual(len(cells), 3)
+                self.assertNotIn(cells[0], rows)
+                rows[cells[0]] = cells[1:]
+        expected = {
+            "恒荷载增量": "待逐层计算",
+            "浮筑层面质量 m'": "待逐层计算",
+            "弹性垫动刚度 s": "待按适用条件取值",
+            "共振频率 f₀": "输入核实后计算",
+            "ΔLw 估算": "本例不提供有效预测值",
+            "裸板 Ln,w 基准": "待取得对应构造依据",
+            "浮筑后 Ln,w 估算": "本例不提供数值",
+            "f₀ 评价": "本例不作性能评价",
+        }
+        for name, value in expected.items():
+            self.assertIn(name, rows)
+            self.assertEqual(rows[name][0], value)
+            self.assertNotRegex(rows[name][1], r"\d")
+        mass = rows["浮筑层面质量 m'"][1]
+        load = rows["恒荷载增量"][1]
+        for layer in ("细石混凝土", "瓷砖胶", "瓷砖", "实际配置的钢丝网"):
+            self.assertIn(layer, mass)
+            self.assertIn(layer, load)
+        for phrase in ("共同运动", "不含结构楼板及弹性垫自身", "避免重复计量"):
+            self.assertIn(phrase, mass)
+        for phrase in ("及弹性垫", "不含结构楼板", "重力加速度", "kN/m²", "避免重复计量"):
+            self.assertIn(phrase, load)
+        for phrase in ("材料状态", "荷载", "加载时间", "表观动刚度与修正动刚度不得混用"):
+            self.assertIn(phrase, rows["弹性垫动刚度 s"][1])
+        for phrase in ("「浮筑共振频率 f₀」节", "s 用 N/m³", "m' 用 kg/m²", "结果为 Hz"):
+            self.assertIn(phrase, rows["共振频率 f₀"][1])
+        for phrase in ("不代表已验证的施工控制值", "须经工程设计确认", "不附数值精度承诺",
+                       "ΔL(f)、ΔLw、实验室 Ln,w 与现场 L'nT,w", "本例不作现场达标判断"):
+            self.assertIn(phrase, text)
+        self.assertNotRegex(text, r"(?:≈\s*\d|±\s*\d|C\s*=\s*\d|\d\s*dB|余量充足|充足余量|全频段有效改善|优秀)")
+        self.assertNotRegex(text, r"(?:质量块\s*m'|弹簧\s*s|面积\s*>)")
+
+    def assert_f01_references(self, text):
+        rows = [line for line in text.splitlines()
+                if line.startswith("|") and re.search(r"\bFL-F01\b", line)]
+        self.assertTrue(rows, "FL-F01 选型引用行缺失，禁止空跑")
+        for row in rows:
+            self.assertIn("仅作为构造候选", row)
+            self.assertIn("隔声性能与现场达标均须另行验证", row)
+            self.assertNotRegex(row, r"(?:余量|\d\s*dB|满足|已达标)")
+
+    def test_runtime_f01_boundary(self):
+        self.assert_f01_boundary(self.doc)
+
+    def test_direct_references_preserve_boundary(self):
+        self.assert_f01_references(self.full_doc)
+
+    def test_direct_reference_performance_claim_rejected(self):
+        for claim in ("隔声余量充足", "已达标", "预测 21 dB"):
+            text = self.full_doc.replace("仅作为构造候选；", "仅作为构造候选；" + claim + "；")
+            with self.subTest(claim=claim), self.assertRaises(AssertionError):
+                self.assert_f01_references(text)
+
+    def test_missing_direct_reference_boundary_rejected(self):
+        for phrase in ("仅作为构造候选", "隔声性能与现场达标均须另行验证"):
+            with self.subTest(phrase=phrase), self.assertRaises(AssertionError):
+                self.assert_f01_references(self.full_doc.replace(phrase, ""))
+        with self.assertRaises(AssertionError):
+            self.assert_f01_references(self.doc)
+
+    def test_other_scheme_reference_is_outside_scope(self):
+        self.assert_f01_references(self.full_doc + "\n| 项目 | FL-F02 | 预测 21 dB |\n")
+
+    def test_old_and_substitute_predictions_rejected(self):
+        for value in ("≈21 dB", "36.6 dB", "33.0 dB"):
+            with self.subTest(value=value), self.assertRaises(AssertionError):
+                self.assert_f01_boundary(self.doc.replace("| ΔLw 估算 | 本例不提供有效预测值 |",
+                                                         f"| ΔLw 估算 | {value} |"))
+
+    def test_unverified_mass_stiffness_and_load_rejected(self):
+        for name, old, new in (("浮筑层面质量 m'", "待逐层计算", "108 kg/m²"),
+                               ("恒荷载增量", "待逐层计算", "1.16 kN/m²"),
+                               ("弹性垫动刚度 s", "待按适用条件取值", "10 MN/m³")):
+            with self.subTest(name=name), self.assertRaises(AssertionError):
+                self.assert_f01_boundary(self.doc.replace(f"| {name} | {old} |", f"| {name} | {new} |"))
+
+    def test_unverified_ln_and_resonance_rejected(self):
+        for name, old, new in (("裸板 Ln,w 基准", "待取得对应构造依据", "76-80 dB"),
+                               ("浮筑后 Ln,w 估算", "本例不提供数值", "55-59 dB"),
+                               ("共振频率 f₀", "输入核实后计算", "48.4 Hz")):
+            with self.subTest(name=name), self.assertRaises(AssertionError):
+                self.assert_f01_boundary(self.doc.replace(f"| {name} | {old} |", f"| {name} | {new} |"))
+
+    def test_missing_mass_layer_and_exclusions_rejected(self):
+        for phrase in ("瓷砖胶、", "实际配置的钢丝网", "共同运动", "不含结构楼板及弹性垫自身", "避免重复计量"):
+            with self.subTest(phrase=phrase), self.assertRaises(AssertionError):
+                self.assert_f01_boundary(self.doc.replace(phrase, ""))
+
+    def test_wrong_stiffness_units_rejected(self):
+        with self.assertRaises(AssertionError):
+            self.assert_f01_boundary(self.doc.replace("s 用 N/m³", "s 用 MN/m³"))
+
+    def test_missing_stiffness_conditions_rejected(self):
+        for phrase in ("材料状态", "荷载及加载时间", "表观动刚度与修正动刚度不得混用"):
+            with self.subTest(phrase=phrase), self.assertRaises(AssertionError):
+                self.assert_f01_boundary(self.doc.replace(phrase, ""))
+
+    def test_precision_and_performance_claims_rejected(self):
+        for claim in ("ΔLw 精度 ±3-5 dB", "优秀（<80 Hz）", "全频段有效改善", "现场达标有充足余量", "ΔLw=21 dB"):
+            with self.subTest(claim=claim), self.assertRaises(AssertionError):
+                self.assert_f01_boundary(self.doc + "\n" + claim)
+
+    def test_missing_or_duplicate_result_row_rejected(self):
+        row = next(line for line in self.doc.splitlines(keepends=True) if line.startswith("| ΔLw 估算 |"))
+        for replacement in ("", row + row):
+            with self.subTest(replacement=replacement), self.assertRaises(AssertionError):
+                self.assert_f01_boundary(self.doc.replace(row, replacement))
+
+    def test_layout_control_stays_valid(self):
+        self.assert_f01_boundary(self.doc.replace("\n\n", "\n\n\n"))
+
+    def test_resonance_method_anchor_and_unit_conversion(self):
+        start = self.full_doc.index("#### 浮筑共振频率 f₀")
+        end = self.full_doc.index("**f₀ 与隔声效果的关系**", start)
+        method = self.full_doc[start:end]
+        self.assertIn("f₀ = (1/2π) × √(s / m')", method)
+        self.assertIn("1 MN/m³ = 10⁶ N/m³", method)
+        self.assertAlmostEqual(floating_floor_f0(10, 108), 48.4293069277, places=8)
+
+
 # ============================================================
 # Run
 # ============================================================
