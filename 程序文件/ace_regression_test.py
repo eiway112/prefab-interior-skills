@@ -7,8 +7,23 @@ Run after any document change to catch inconsistencies.
 Usage:  python ace_regression_test.py
         python ace_regression_test.py -v          (verbose)
 
-Version: 1.7.0
+Version: 1.8.0
 Date: 2026-09-25
+
+v1.8.0 (2026-09-25, CG-20260925-002 专业整改九批-组8 M7 校准外推):
+  新增 TestM7CalibrationExtrapolation 守卫组（PL-067）：① M7 全部区间输出
+  入口按数值升序——Step 2 min/max 恒升序（控制锚，组6 前已修）、Step 3 对称
+  变化撤位名式「输出区间 [ΔR_low, ΔR_high]」、Step 5 结果组装改 ΔR_下界/
+  ΔR_上界（＝min/max 端点加和保序）；覆盖增重/减重/等质量三态（r=2 位名序
+  升序、r=1 退化 [0,0]、r=0.5 位名序 [−6.02,−12.04] 降序＝测试内复算）；
+  ② SKILL.md 方法概要补恒升序声明；③ 交叉核对撤「差>5dB 即优先报 M7」
+  自动择优规则，改四类根因核查（构造同族/机理级变化/参数与口径/模型条件）
+  ＋不自动取任一结果＋证据不足降级，并显式禁止「以基准可信推定外推可信」；
+  ④ 路由与组合表行（reference.md :529/:549、SKILL.md :150）统一「路线优先
+  ≠结果自动择优」口径，算例尾句 :438 同批联动；⑤ 旧肯定式字面以计数守卫
+  钉死仅存于否定语境。精度与来源面归 PL-055/PL-068，本组不代结。全部
+  C 类派生量与口径面内部复算闭合，不走官方核验通道。
+  支持 ACE_SKILL_DIR / ACE_SKILL_MD_DIR 环境变量指向改前原像目录做复红自证。
 
 v1.7.0 (2026-09-25, CG-20260925-001 专业整改八批-组6 M3/M4 模型适用性):
   新增 TestM3M4ModelApplicability 守卫组（PL-066）：① M3 约化质量恒等式
@@ -1971,6 +1986,173 @@ class TestM3M4ModelApplicability(unittest.TestCase):
         self.assert_dual_cavity_coupled(self.ace.replace("\n\n", "\n\n\n"))
         self.assert_pw_dual_cavity_retraction(
             self.pw + "\n> 注：双空腔定量路径以 ACE M4 为准。\n")
+
+
+# ============================================================
+# TEST SUITE 17: M7 校准外推（区间数值排序 + 交叉核对不自动择优）
+# ============================================================
+# PL-067（CG-20260925-002）守卫。证据：m7_recalc.py 七节（取证目录）。
+# 位名 ΔR_low/ΔR_high 是 20·lg/40·lg 两界的名称，r<1 时数值序反转；
+# 「差>5dB 优先 M7」把锚点可信度误传给外推结果。本组把两件事分别钉死。
+class TestM7CalibrationExtrapolation(unittest.TestCase):
+    """M7：输出入口恒升序、交叉核对四类核查、路线优先≠结果自动择优。"""
+
+    @classmethod
+    def setUpClass(cls):
+        ace_base = Path(os.environ.get("ACE_SKILL_DIR") or
+                        (Path.home() / ".qoder/skills/acoustic-calculation-engine"))
+        cls.ref = (ace_base / "reference.md").read_text(encoding="utf-8")
+        cls.skill = (ace_base / "SKILL.md").read_text(encoding="utf-8")
+
+    # ---------- R1 Step2 恒升序（控制锚，组6 前先批已修，本批零改） ----------
+
+    def assert_step2_sorted_anchor(self, ref):
+        self.assertIn("输出区间（恒升序）:  [min(ΔR_low, ΔR_high),  max(ΔR_low, ΔR_high)]", ref)
+        self.assertIn("位名与大小排序不是一回事（端点判据）", ref)
+
+    # ---------- R2 Step3 对称变化输出入口数值排序 ----------
+
+    def assert_step3_sorted(self, ref):
+        self.assertNotIn("同时输出区间 [ΔR_low, ΔR_high]", ref,
+            "旧位名式 Step3 输出入口回潮：r<1 时 [low, high] 为降序（复算 −6.02 > −12.04）")
+        self.assertIn("端点一律按数值升序", ref)
+        self.assertIn("r<1 时该序为降序", ref)
+        # 中值与端点书写序无关（复算 §四）：文档须披露 −9.03 中值例
+        self.assertIn("−9.03", ref)
+
+    # ---------- R3 Step5 结果组装保序 ----------
+
+    def assert_step5_sorted(self, ref):
+        self.assertNotIn("[Rw_base + ΔR_low + Σ修正,  Rw_base + ΔR_high + Σ修正]", ref,
+            "旧位名式 Step5 组装回潮：加同一常数保序后仍须以 min/max 端点为下/上界")
+        self.assertIn("Rw_base + ΔR_下界 + Σ修正", ref)
+        self.assertIn("加同一常数与同一 Σ修正后区间保序", ref)
+
+    # ---------- R4 交叉核对撤自动择优（含否定语境计数守卫） ----------
+
+    def assert_crosscheck_no_autopick(self, ref, skill):
+        self.assertIn("不构成自动择优规则", ref)
+        self.assertIn("不得直接取任一结果", ref)
+        for phrase in ("构造是否真正同族", "是否存在机理级变化",
+                       "参数与口径", "模型条件"):
+            self.assertIn(phrase, ref, f"四类根因核查缺项：{phrase}")
+        self.assertIn("交叉核对未通过", ref)
+        self.assertIn("锚点可信度不随差值大小传递到外推结果", ref)
+        self.assertIn("不构成自动择优", skill)
+        self.assertIn("数据锚点可信不等于变体外推可信", skill)
+        # 计数守卫：旧肯定式「优先报 M7 校准值」全件 0 命中；
+        # 「优先报 M7」裸字面仅允许存在于否定句（SKILL.md 恰 1 处）
+        self.assertEqual(ref.count("优先报 M7"), 0,
+            "reference.md 出现「优先报 M7」字面（含披露语境均不允许）")
+        n = skill.count("优先报 M7")
+        self.assertEqual(n, 1, "SKILL.md「优先报 M7」计数漂移（应仅存于否定句 1 处）")
+        i = skill.find("优先报 M7")
+        ctx = skill[max(0, i - 40):i + 40]
+        self.assertIn("不得直接", ctx, "唯一命中不在否定语境（缺「不得直接」前缀）")
+
+    # ---------- R5 路由/组合表/算例尾句「路线优先≠结果自动择优」口径统一 ----------
+
+    def assert_route_wording(self, ref, skill):
+        self.assertIn("路线优先≠结果自动择优", skill)
+        self.assertIn("M7 校准路线优先", skill)
+        self.assertIn("优先 M7 校准路线（路线优先仅指计算入口选择", ref)
+        self.assertIn("M7 校准路线优先 + M1-M6 交叉核对（见 M7，路线优先≠结果自动择优）", ref)
+        self.assertNotIn("M7 应优先", ref,
+            "算例尾句旧肯定式「M7 应优先」回潮（应带四类核查前提）")
+        self.assertIn("四类核查时 M7 作优先参考路线", ref)
+
+    # ---------- R6 SKILL.md 方法概要恒升序声明 ----------
+
+    def assert_skill_sorted_declaration(self, skill):
+        self.assertIn("端点一律按数值升序", skill)
+        self.assertIn("[min(ΔRw_low, ΔRw_high), max(ΔRw_low, ΔRw_high)]", skill)
+        self.assertIn("r<1 时不得按位名写作 [low, high]", skill)
+
+    # ---------- 数值性质（与文档字面解耦的独立复算） ----------
+
+    def test_sorted_bounds_three_states(self):
+        # 复算 §一/§二：位名序在 r<1 侧为降序，min/max 化后恒升序
+        for r in (0.5, 43 / 51, 0.843):
+            a, b = m7_delta_R_bounds(r)
+            self.assertGreater(a, b, f"r={r} 位名序应非升序")
+            lo, hi = min(a, b), max(a, b)
+            self.assertLessEqual(lo, hi)
+        self.assertAlmostEqual(m7_delta_R_bounds(0.5)[0], -6.02, delta=0.01)
+        self.assertAlmostEqual(m7_delta_R_bounds(0.5)[1], -12.04, delta=0.01)
+        self.assertAlmostEqual(m7_delta_R_bounds(2.0)[1], 12.04, delta=0.01)
+        a, b = m7_delta_R_bounds(1.0)
+        self.assertAlmostEqual(a, 0.0, places=12)
+        self.assertAlmostEqual(b, 0.0, places=12)
+        # 中值与端点书写序无关（复算 §四恒等性）
+        for r in (0.5, 0.843, 1.2, 2.0):
+            a, b = m7_delta_R_bounds(r)
+            self.assertAlmostEqual((a + b) / 2, (min(a, b) + max(a, b)) / 2, places=12)
+        # 算例 :426 印值 [−3.0, −1.5] 系 min/max 升序（复算 §三，控制锚非写面）
+        self.assertIn("[−3.0, −1.5]", self.ref)
+
+    # ---------- 常态通过 ----------
+
+    def test_runtime_step2_anchor(self):
+        self.assert_step2_sorted_anchor(self.ref)
+
+    def test_runtime_step3_sorted(self):
+        self.assert_step3_sorted(self.ref)
+
+    def test_runtime_step5_sorted(self):
+        self.assert_step5_sorted(self.ref)
+
+    def test_runtime_crosscheck_no_autopick(self):
+        self.assert_crosscheck_no_autopick(self.ref, self.skill)
+
+    def test_runtime_route_wording(self):
+        self.assert_route_wording(self.ref, self.skill)
+
+    def test_runtime_skill_sorted_declaration(self):
+        self.assert_skill_sorted_declaration(self.skill)
+
+    # ---------- 负向注入（守卫须仍能失败） ----------
+
+    def test_old_step3_position_name_interval_rejected(self):
+        injected = self.ref.replace(
+            "对称变化（两侧叶同步变化）:  ΔR 取区间中值，同时输出区间——端点一律按数值升序，",
+            "对称变化（两侧叶同步变化）:  ΔR 取区间中值，同时输出区间 [ΔR_low, ΔR_high]；", 1)
+        self.assertNotEqual(injected, self.ref, "注入未命中（Step3 改写句锚点漂移）")
+        with self.assertRaises(AssertionError):
+            self.assert_step3_sorted(injected)
+
+    def test_old_step5_position_name_assembly_rejected(self):
+        injected = self.ref.replace(
+            "输出区间: [Rw_base + ΔR_下界 + Σ修正,  Rw_base + ΔR_上界 + Σ修正]",
+            "输出区间: [Rw_base + ΔR_low + Σ修正,  Rw_base + ΔR_high + Σ修正]", 1)
+        self.assertNotEqual(injected, self.ref, "注入未命中（Step5 组装行锚点漂移）")
+        with self.assertRaises(AssertionError):
+            self.assert_step5_sorted(injected)
+
+    def test_old_autopick_rule_rejected(self):
+        injected = self.ref.replace(
+            "**两者差 > 5 dB 不构成自动择优规则**——差值大于 5 dB 时不得直接取任一结果（包括\"看似更优\"者）",
+            "**两者差 > 5 dB 时，优先报 M7 校准值（数据锚点可信度更高）**", 1)
+        self.assertNotEqual(injected, self.ref, "注入未命中（交叉核对改写句锚点漂移）")
+        with self.assertRaises(AssertionError):
+            self.assert_crosscheck_no_autopick(injected, self.skill)
+
+    def test_skill_sorted_declaration_removed_rejected(self):
+        self.assert_skill_sorted_declaration(self.skill)  # 原像态先复绿，防恒真
+        injected = self.skill.replace(
+            "输出区间（端点一律按数值升序，即 [min(ΔRw_low, ΔRw_high), max(ΔRw_low, ΔRw_high)]，r<1 时不得按位名写作 [low, high]）",
+            "输出区间", 1)
+        self.assertNotEqual(injected, self.skill, "注入未命中（SKILL.md :181 锚点漂移）")
+        with self.assertRaises(AssertionError):
+            self.assert_skill_sorted_declaration(injected)
+
+    # ---------- 控制例（守卫不恒真：良性变更不报红） ----------
+
+    def test_control_benign_changes_pass(self):
+        self.assert_step2_sorted_anchor(self.ref.replace("\n\n", "\n\n\n"))
+        self.assert_step3_sorted(self.ref + "\n> 注：本节口径与 Step 2 端点判据同源。\n")
+        self.assert_step5_sorted(self.ref.replace("Σ修正", "Σ 修正", 0))
+        self.assert_crosscheck_no_autopick(self.ref, self.skill + "\n> 注：交叉核对细则见 reference.md。\n")
+        self.assert_route_wording(self.ref, self.skill.replace("\n\n", "\n\n\n"))
 
 
 # ============================================================
