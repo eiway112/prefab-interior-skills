@@ -7,7 +7,7 @@
 import sys, json
 from pathlib import Path
 
-REGISTRY = Path(r'D:\Qoder-Files\装配式装修技能开发\_专题_技能合集策划\数据分类复核清单.json')
+REGISTRY = Path(__file__).resolve().parents[2] / '_专题_技能合集策划' / '数据分类复核清单.json'
 
 # ── 移除：23 条旧条目 ──────────────────────────────────────
 STALE_IDS = [
