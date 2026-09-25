@@ -7,8 +7,24 @@ Run after any document change to catch inconsistencies.
 Usage:  python ace_regression_test.py
         python ace_regression_test.py -v          (verbose)
 
-Version: 1.8.0
+Version: 1.9.0
 Date: 2026-09-25
+
+v1.9.0 (2026-09-25, CG-20260925-003 专业整改十批-组9 参数与证据):
+  新增 TestM5M7CaliberAndEvidence 守卫组（PL-068 三子面 ＋ 组8 移交 S1）：
+  ① M5 m' 由「面层+垫层总面密度／浮筑层总质量」改定义为浮筑层有效振动面密度，
+  排除三项（结构楼板／弹性垫自身／活荷载）跨 ACE 与 FL 两件断言一致，恒荷载侧
+  补反向禁互代句，误代后果的 3 个 dB 与 2 个百分比读数用参考函数独立复算；
+  ② 撤回「C=12 系统性高估约 5 dB」「C=10 经多个常见构造校准」两句（撤回锚＝
+  旧字面 0 命中），保留 C=10 默认值不动，新增 C 灵敏度复算锚（∂ΔLw/∂C≡1，
+  [8,12] 全域仅 4 dB ⇒ 5 dB 量级差不得归因 C）；③ M7 Step 5 裁定 Σ修正端点
+  配对法＝下界端加各修正项下界之和、上界端加上界之和（500 例随机验证保序与
+  中点恒等），算例改 min/max 书写并按该法给出 Rw_A [48.0,49.5]／Rw_B
+  [49.0,51.5]，旧乙口径读数 50~51 撤回；④ 无留痕基准算例的演示身份收口
+  （「交叉验证」名义撤、派生读数承继演示身份、SKILL.md 4-6 dB 挂演示提示）。
+  组8 的 Step 5 判据以 assert_step5_compatible_with_group8 显式复验未被削弱。
+  精度面（PL-055）与经验域（PL-053）字面由 test_precision_faces_untouched 钉住不改。
+  支持 ACE_SKILL_DIR / FL_SKILL_DIR 环境变量指向改前原像目录做复红自证。
 
 v1.8.0 (2026-09-25, CG-20260925-002 专业整改九批-组8 M7 校准外推):
   新增 TestM7CalibrationExtrapolation 守卫组（PL-067）：① M7 全部区间输出
@@ -94,6 +110,7 @@ import unittest
 import math
 import os
 import re
+import random
 import inspect
 from pathlib import Path
 
@@ -2121,8 +2138,10 @@ class TestM7CalibrationExtrapolation(unittest.TestCase):
             self.assert_step3_sorted(injected)
 
     def test_old_step5_position_name_assembly_rejected(self):
+        # 注入源字面随 CG-20260925-003（组9 Step 5 端点配对法）同批更新；判据本身未变：
+        # 位名式组装一旦出现即复红。
         injected = self.ref.replace(
-            "输出区间: [Rw_base + ΔR_下界 + Σ修正,  Rw_base + ΔR_上界 + Σ修正]",
+            "输出区间: [Rw_base + ΔR_下界 + Σ修正_下界,  Rw_base + ΔR_上界 + Σ修正_上界]",
             "输出区间: [Rw_base + ΔR_low + Σ修正,  Rw_base + ΔR_high + Σ修正]", 1)
         self.assertNotEqual(injected, self.ref, "注入未命中（Step5 组装行锚点漂移）")
         with self.assertRaises(AssertionError):
@@ -2156,7 +2175,266 @@ class TestM7CalibrationExtrapolation(unittest.TestCase):
 
 
 # ============================================================
+# TEST SUITE 18: 组9 参数与证据（M5 m' 口径／C 定标证据／M7 Σ 端点配对／演示身份）
+# ============================================================
+# PL-068（CG-20260925-003）三子面 ＋ 组8 移交 S1。证据：m5e_recalc.py 五节（取证目录）。
+# 口径面与配对法是「同一条物理量被两个技能各自表述」的跨件一致问题，故本组同时取
+# ACE 与 FL 两层文件做字面与数值双断言；C 定标面只钉撤回锚与灵敏度复算，不动常数值。
+M_SCREED, M_TILE, M_SLAB, MAT_KG_M3, MAT_T_M = 85.0, 22.0, 288.0, 900.0, 0.008
+S_DEMO = 15.0  # MN/m3，与 FL examples.md 同一构造
+
+
+class TestM5M7CaliberAndEvidence(unittest.TestCase):
+    """M5 有效振动面密度口径、C 证据状态、M7 Σ 端点配对与算例演示身份。"""
+
+    EXCLUSIONS = ("不含结构楼板", "不含弹性垫", "不含活荷载")
+
+    @classmethod
+    def setUpClass(cls):
+        ace_base = Path(os.environ.get("ACE_SKILL_DIR") or
+                        (Path.home() / ".qoder/skills/acoustic-calculation-engine"))
+        fl_base = Path(os.environ.get("FL_SKILL_DIR") or
+                       (Path.home() / ".qoder/skills/prefab-floor-system"))
+        cls.ref = (ace_base / "reference.md").read_text(encoding="utf-8")
+        cls.skill = (ace_base / "SKILL.md").read_text(encoding="utf-8")
+        cls.fl_ref = (fl_base / "reference.md").read_text(encoding="utf-8")
+        cls.fl_skill = (fl_base / "SKILL.md").read_text(encoding="utf-8")
+
+    # ---------- 复算基准（与文档字面解耦） ----------
+
+    @staticmethod
+    def misuse_deltas():
+        ok = M_SCREED + M_TILE
+        cases = {
+            "slab": ok + M_SLAB,        # 误代：以含楼板的恒荷载口径代入
+            "finish": M_TILE,           # 误代：漏计砂浆垫层只计面层
+            "mat": ok + MAT_T_M * MAT_KG_M3,  # 误代：计入弹性垫自身质量
+        }
+        return {k: (impact_sound_deltaLw(v, S_DEMO) - impact_sound_deltaLw(ok, S_DEMO),
+                    floating_floor_f0(S_DEMO, v) / floating_floor_f0(S_DEMO, ok) - 1)
+                for k, v in cases.items()}
+
+    # ---------- R1 m' 口径三元组跨件一致 ----------
+
+    def assert_mass_caliber(self, ref, fl_ref, fl_skill):
+        for phrase in self.EXCLUSIONS:
+            self.assertIn(phrase, ref, f"ACE m' 口径条缺排除项：{phrase}")
+            self.assertIn(phrase, fl_ref, f"FL 参数表 m' 行缺排除项：{phrase}")
+        self.assertIn("共同运动各构造层的单位面积质量之和", ref)
+        self.assertIn("有效振动面密度", fl_ref)
+        self.assertIn("不得互代", ref)
+        self.assertIn("不得互代", fl_ref)  # A3 恒荷载行的反向声明
+        self.assertIn("非仅饰面层", fl_skill)
+        self.assertIn("不进入 f₀ 与 ΔLw 的质量项", ref)  # m_slab 与 m' 分列
+
+    def test_old_mass_labels_withdrawn(self):
+        for dead in ("面层+垫层总面密度", "浮筑层总质量", "面层+垫层面密度"):
+            self.assertNotIn(dead, self.ref, f"ACE 旧含糊口径标签回潮：{dead}")
+        self.assertNotIn("面层+垫层上覆构造的总质量", self.fl_ref,
+            "FL 旧含糊口径标签回潮")
+
+    # ---------- R2 误代后果数值与复算一致 ----------
+
+    def test_mass_misuse_penalties_match_recalc(self):
+        line = next((ln for ln in self.ref.splitlines()
+                     if "以含楼板的合计恒荷载代入" in ln), None)
+        self.assertIsNotNone(line, "ACE 未记录恒荷载误代后果（口径条第 2 条缺项）")
+        db = [float(x) for x in re.findall(r"约 ([\d.]+) dB", line)]
+        pct = [float(x) for x in re.findall(r"约 (\d+)%", line)]
+        d = self.misuse_deltas()
+        self.assertEqual(len(db), 3, f"误代后果 dB 读数应为 3 个，实得 {db}")
+        self.assertAlmostEqual(db[0], d["slab"][0], delta=0.05,
+            msg="含楼板误代的 ΔLw 虚高值与复算不符")
+        self.assertAlmostEqual(db[1], -d["finish"][0], delta=0.05, msg="漏计垫层后果不符")
+        self.assertAlmostEqual(db[2], d["mat"][0], delta=0.05, msg="计入弹性垫后果不符")
+        self.assertAlmostEqual(pct[0], abs(d["slab"][1]) * 100, delta=1.0)
+        self.assertAlmostEqual(pct[1], d["finish"][1] * 100, delta=1.0)
+        self.assertGreater(d["slab"][0], 5.0, "前两类误代须超出精度声明区间（否则口径条量级论证失效）")
+        self.assertLess(d["mat"][0], 1.0)
+
+    # ---------- R3 C 定标说法撤回 ＋ 灵敏度 ----------
+
+    def test_C_calibration_claims_withdrawn(self):
+        for dead in ("C=12 基于理想实验室条件", "系统性高估约 5 dB", "经多个常见构造校准"):
+            self.assertNotIn(dead, self.ref, f"无据 C 定标说法回潮：{dead}")
+
+    def test_C_status_and_sensitivity(self):
+        self.assertIn("待独立验证的经验定标取值", self.ref)
+        self.assertIn("∂ΔLw/∂C ≡ 1 dB/dB", self.ref)
+        self.assertIn("ACE 默认 C=10", self.ref)  # 常数本体不改（与脚本默认一致由 test_M5_default_C 钉）
+        self.assertAlmostEqual(impact_sound_deltaLw(107, S_DEMO, 12)
+                               - impact_sound_deltaLw(107, S_DEMO, 10), 2.0, places=10)
+        self.assertAlmostEqual(impact_sound_deltaLw(107, S_DEMO, 12)
+                               - impact_sound_deltaLw(107, S_DEMO, 8), 4.0, places=10)
+        for v in ("2.00 dB", "4.00 dB"):
+            self.assertIn(v, self.ref, f"C 灵敏度读数缺失：{v}")
+        # 5 dB 量级差在 [8,12] 内不可由 C 产生 ⇒ 文档须把排查方向指回 m'/s 与施工条件
+        self.assertIn("排查方向不在 C 的取值", self.ref)
+
+    # ---------- R4 Σ 修正端点配对法（S1 裁定） ----------
+
+    def test_sigma_endpoint_pairing_rule(self):
+        self.assertIn("输出区间: [Rw_base + ΔR_下界 + Σ修正_下界,  Rw_base + ΔR_上界 + Σ修正_上界]", self.ref)
+        self.assertIn("Σ修正_下界 / Σ修正_上界 ＝ Step 4 各修正项的下界之和 / 上界之和", self.ref)
+        self.assertIn("两端各自相加后区间仍升序", self.ref)
+        self.assertIn("单值输出（工程推荐值）＝区间中点＝Rw_base + ΔR 中值 + Σ修正 中值", self.ref)
+        self.assertIn("区间扩张（Minkowski 和）", self.ref)
+        self.assertIn("不得把 Σ修正 的某一中间值同时加到两端而不声明口径", self.ref)
+        # 组8 既有的单值情形特例句须保留（语义未削弱）
+        self.assertIn("退化为「加同一常数与同一 Σ修正后区间保序」的特例", self.ref)
+        self.assertIn("下界端加 Σ修正_下界", self.skill)
+        self.assertIn("本件不重复承载", self.skill)
+
+    def test_sigma_pairing_order_and_midpoint_property(self):
+        rnd = random.Random(20260925)
+        base = 51.0
+        for _ in range(500):
+            r = rnd.uniform(0.5, 2.0)
+            a, b = m7_delta_R_bounds(r)
+            lo, hi = min(a, b), max(a, b)
+            sl, sh = sorted((rnd.uniform(-3, 3), rnd.uniform(-3, 3)))
+            self.assertLessEqual(base + lo + sl, base + hi + sh,
+                "端点配对法在 ΔR 与 Σ 均升序时须保序；违例即裁定失效")
+            self.assertAlmostEqual((base + lo + sl + base + hi + sh) / 2,
+                                   base + (lo + hi) / 2 + (sl + sh) / 2, places=9,
+                msg="区间中点与「ΔR 中值＋Σ 中值」单值口径不恒等")
+
+    def test_sigma_pairing_wider_than_half_open(self):
+        # 乙口径（ΔR 取中值后叠加 Σ 区间）丢掉 ΔR 宽度 ⇒ 甲区间必不窄于乙，且不等的量＝ΔR 宽度
+        a, b = m7_delta_R_bounds(43 / 51)
+        lo, hi = min(a, b), max(a, b)
+        sl, sh = 1.0, 2.0
+        width_A = (51 + hi + sh) - (51 + lo + sl)
+        width_B = (51 + (lo + hi) / 2 + sh) - (51 + (lo + hi) / 2 + sl)
+        self.assertAlmostEqual(width_A - width_B, hi - lo, places=9)
+        self.assertGreater(width_A, width_B)
+
+    # ---------- R5 算例改 min/max ＋ 甲读数 ----------
+
+    def test_example_minmax_and_assembled_intervals(self):
+        self.assertIn("[−3.0, −1.5]", self.ref)  # 组8 印值控制锚不受影响
+        self.assertNotIn("ΔR ∈ [40·lg(0.843), 20·lg(0.843)]", self.ref,
+            "算例位名式书写回潮（r>1 侧会产出逆序区间）")
+        self.assertIn("min(20·lg 0.843, 40·lg 0.843)", self.ref)
+        self.assertIn("[48.0, 49.5]", self.ref)
+        self.assertIn("[49.0, 51.5]", self.ref)
+        self.assertNotIn("Rw_B ≈ 50~51", self.ref, "乙口径旧读数回潮")
+        a, b = m7_delta_R_bounds(43 / 51)
+        lo, hi = min(a, b), max(a, b)
+        self.assertAlmostEqual(51 + lo, 48.0, delta=0.05)
+        self.assertAlmostEqual(51 + hi + 2.0, 51.5, delta=0.05)
+        self.assertAlmostEqual(51 + (lo + hi) / 2 + 1.5, 50.3, delta=0.05)
+        self.assertAlmostEqual(51 + (lo + hi) / 2, 48.8, delta=0.05)
+
+    # ---------- R6 演示身份 ----------
+
+    def test_demo_identity_of_uncited_benchmark(self):
+        self.assertIn("同构造对照（演示数据，不计为验证样本）", self.ref)
+        self.assertIn("承继同一演示身份", self.ref)
+        self.assertIn("演示对照提示", self.skill)
+        self.assertIn("不得拆出引用为已校准证据", self.skill)
+        self.assertNotIn("已知案例", self.skill, "SKILL.md 把演示读数包装为已证案例")
+        # 算例段内不得再以「交叉验证」名义出现
+        start = self.ref.index("**校准算例记录")
+        end = self.ref.index("## ", start + 10)
+        self.assertNotIn("交叉验证", self.ref[start:end],
+            "无留痕对照仍以「交叉验证」名义出现")
+
+    # ---------- R7 不做项边界：精度面未被本批改写 ----------
+
+    def test_precision_faces_untouched(self):
+        self.assertIn("**精度声明**：ΔLw 估算精度约 ±3-5 dB。Ln,w 估算精度约 ±4-6 dB", self.ref)
+        self.assertIn("**精度声明**：±2-3 dB（同族构造校准）", self.ref)
+        self.assertIn("该精度值的证据状态", self.ref)
+        self.assertIn("经验判断，本件未记录校准样本量", self.ref)
+
+    # ---------- 常态通过 ----------
+
+    def test_runtime_all_anchors(self):
+        self.assert_mass_caliber(self.ref, self.fl_ref, self.fl_skill)
+
+    # ---------- 负向注入（守卫须仍能失败） ----------
+
+    def test_old_mass_row_injection_rejected(self):
+        injected = self.ref.replace(
+            "| 浮筑层有效振动面密度 | m' | kg/㎡ | 弹性垫上方共同运动各构造层的单位面积质量之和；"
+            "不含结构楼板、不含弹性垫自身，组成与排除见下方「m' 口径」条 |",
+            "| 面层+垫层总面密度 | m' | kg/㎡ | 浮筑层总质量 |", 1)
+        self.assertNotEqual(injected, self.ref, "注入未命中（ACE m' 参数表行锚点漂移）")
+        ref_bak, self.ref = self.ref, injected
+        try:
+            with self.assertRaises(AssertionError):
+                self.assert_mass_caliber(injected, self.fl_ref, self.fl_skill)
+            with self.assertRaises(AssertionError):
+                self.test_old_mass_labels_withdrawn()
+        finally:
+            self.ref = ref_bak
+
+    def test_fl_exclusion_dropped_rejected(self):
+        injected = self.fl_ref.replace(
+            "不含结构楼板自重、不含弹性垫自身质量、不含活荷载与可变堆载",
+            "不含弹性垫自身质量", 1)
+        self.assertNotEqual(injected, self.fl_ref, "注入未命中（FL m' 行锚点漂移）")
+        with self.assertRaises(AssertionError):
+            self.assert_mass_caliber(self.ref, injected, self.fl_skill)
+
+    def test_C_claim_reintroduced_rejected(self):
+        injected = self.ref.replace(
+            "C 为经验修正常数，典型取值 8-12。ACE 默认 C=10。",
+            "C 为经验修正常数，典型取值 8-12。ACE 默认 C=10。C=12 基于理想实验室条件，"
+            "对典型浮筑地面构造系统性高估约 5 dB。", 1)
+        self.assertNotEqual(injected, self.ref, "注入未命中（C 取值行锚点漂移）")
+        ref_bak, self.ref = self.ref, injected
+        try:
+            with self.assertRaises(AssertionError):
+                self.test_C_calibration_claims_withdrawn()
+        finally:
+            self.ref = ref_bak
+
+    def test_half_open_sigma_pairing_rejected(self):
+        injected = self.ref.replace(
+            "输出区间: [Rw_base + ΔR_下界 + Σ修正_下界,  Rw_base + ΔR_上界 + Σ修正_上界]",
+            "输出区间: [Rw_base + ΔR 中值 + Σ修正_下界,  Rw_base + ΔR 中值 + Σ修正_上界]", 1)
+        self.assertNotEqual(injected, self.ref, "注入未命中（Step 5 组装行锚点漂移）")
+        ref_bak, self.ref = self.ref, injected
+        try:
+            with self.assertRaises(AssertionError):
+                self.test_sigma_endpoint_pairing_rule()
+        finally:
+            self.ref = ref_bak
+
+    def test_demo_label_restored_rejected(self):
+        injected = self.ref.replace(
+            "同构造对照（演示数据，不计为验证样本）：", "交叉验证：", 1)
+        self.assertNotEqual(injected, self.ref, "注入未命中（算例对照行锚点漂移）")
+        ref_bak, self.ref = self.ref, injected
+        try:
+            with self.assertRaises(AssertionError):
+                self.test_demo_identity_of_uncited_benchmark()
+        finally:
+            self.ref = ref_bak
+
+    # ---------- 控制例（守卫不恒真：良性编辑不误伤） ----------
+
+    def test_control_benign_changes_pass(self):
+        self.assert_mass_caliber(self.ref + "\n> 注：本节口径与楼地面技能方案表同源。\n",
+                                 self.fl_ref, self.fl_skill)
+        self.test_C_calibration_claims_withdrawn()
+        self.test_demo_identity_of_uncited_benchmark()
+        self.test_sigma_pairing_order_and_midpoint_property()
+        self.test_example_minmax_and_assembled_intervals()
+        self.assert_step5_compatible_with_group8(self.ref + "\n")
+
+    def assert_step5_compatible_with_group8(self, ref):
+        """组8 判据在本批改写后仍成立（判据未被削弱，只被一般化）。"""
+        self.assertNotIn("[Rw_base + ΔR_low + Σ修正,  Rw_base + ΔR_high + Σ修正]", ref)
+        self.assertIn("Rw_base + ΔR_下界 + Σ修正", ref)
+        self.assertIn("加同一常数与同一 Σ修正后区间保序", ref)
+
+
+# ============================================================
 # Run
 # ============================================================
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
