@@ -288,10 +288,6 @@
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
     },
-    "prefab-acceptance-checklist-generator/reference.md#30cfddbf3a59a01be0303297f4cbfb1ff9f09c4f6521c2ded6ce07d4a1a1cc81:1": {
-      "deferred_to": "PL-060",
-      "registered_on": "2026-09-23"
-    },
     "prefab-acceptance-checklist-generator/reference.md#347459974d3788f9817f1707ac78b28083fbaee47dd67f7720a3dfe1ada54135:1": {
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
@@ -82275,6 +82271,16 @@
         }
       ]
     },
+    "shared/change-governance.md#418e1b3a8aa176b76f325ca0f2add0f1570171219335e79cd6c057c053e86915:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 1253,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+        }
+      ]
+    },
     "shared/change-governance.md#45dd008942a2c7552b216b9a17733dfb599448132d6aec57d5335965966c8e60:1": {
       "segments": [
         {
@@ -82302,64 +82308,6 @@
           "end": 155,
           "reason": "非数据断言：本块为散文句，残留数字属被引用对象的计数（如\"N 条红线\"\"11 维度\"），非量化取值，不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
-        }
-      ]
-    },
-    "shared/change-governance.md#4ae17e53eddefaffff13b4e8f1ae7eaecbf219d8e26c4519db9d2328f4898561:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 1,
-          "class": "N",
-          "reason": "Markdown 表格行首的分隔符，无断言内容。非数据断言"
-        },
-        {
-          "start": 1,
-          "end": 10,
-          "class": "N",
-          "reason": "§十一 遗留事项台账列「编号」：遗留事项编号（本文件 §十一 台账的行键）；本列内容为本文件成文的治理陈述与可复算自证计数，不主张材料本征量、规范规定限值或派生计算结果，其中所引数值与标准号均为指向其他载体的转述。非数据断言"
-        },
-        {
-          "start": 10,
-          "end": 56,
-          "class": "N",
-          "reason": "§十一 遗留事项台账列「事项」：遗留事项的问题描述，属本文件成文的治理叙述，不主张任何材料参数或规范限值；本列内容为本文件成文的治理陈述与可复算自证计数，不主张材料本征量、规范规定限值或派生计算结果，其中所引数值与标准号均为指向其他载体的转述。非数据断言"
-        },
-        {
-          "start": 56,
-          "end": 74,
-          "class": "N",
-          "reason": "§十一 遗留事项台账列「来源登记」：指向本文件 §九 变更日志的指针编号，真值源在被指向行；本列内容为本文件成文的治理陈述与可复算自证计数，不主张材料本征量、规范规定限值或派生计算结果，其中所引数值与标准号均为指向其他载体的转述。非数据断言"
-        },
-        {
-          "start": 74,
-          "end": 87,
-          "class": "N",
-          "reason": "§十一 遗留事项台账列「登记日期」：台账记账时点，属本文件成文的登记日期；本列内容为本文件成文的治理陈述与可复算自证计数，不主张材料本征量、规范规定限值或派生计算结果，其中所引数值与标准号均为指向其他载体的转述。非数据断言"
-        },
-        {
-          "start": 87,
-          "end": 100,
-          "class": "N",
-          "reason": "§十一 遗留事项台账列「到期日」：台账复查时点，按 §11.1 TTL 规则由登记日期现算，属治理日程而非工程数值；本列内容为本文件成文的治理陈述与可复算自证计数，不主张材料本征量、规范规定限值或派生计算结果，其中所引数值与标准号均为指向其他载体的转述。非数据断言"
-        },
-        {
-          "start": 100,
-          "end": 106,
-          "class": "N",
-          "reason": "§十一 遗留事项台账列「状态」：台账三值状态陈述（待处置／已闭合／已裁定不做），判据取本文件 §11.1 成文条款；本列内容为本文件成文的治理陈述与可复算自证计数，不主张材料本征量、规范规定限值或派生计算结果，其中所引数值与标准号均为指向其他载体的转述。非数据断言"
-        },
-        {
-          "start": 106,
-          "end": 295,
-          "class": "N",
-          "reason": "§十一 遗留事项台账列「处置批次/依据」：处置结论的叙述与指向其他载体（CG 编号／核验报告）的指针，其真值源在被指向件；本列内容为本文件成文的治理陈述与可复算自证计数，不主张材料本征量、规范规定限值或派生计算结果，其中所引数值与标准号均为指向其他载体的转述。非数据断言"
-        },
-        {
-          "start": 295,
-          "end": 296,
-          "class": "N",
-          "reason": "行尾换行符，无断言内容。非数据断言"
         }
       ]
     },
@@ -82526,6 +82474,16 @@
           "end": 24,
           "reason": "小节「装配式装修技能合集 — 知识变更治理规则／一、变更分类」内散文：定性描述/流程/路由/接口约定/声明，未含物理量数值与限值符号（按基准§一 N 类定义）",
           "start": 0
+        }
+      ]
+    },
+    "shared/change-governance.md#574f97206175114b661c8057862bc9982f303965e430bf17853b708105bc8990:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 1666,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -82939,6 +82897,58 @@
         }
       ]
     },
+    "shared/change-governance.md#802b3487faccf5c8e08781638ee3eebe635e037c0e76bcc0a76288b8ef79cc75:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 1,
+          "class": "N",
+          "reason": "Markdown 表格行首的分隔符，无断言内容。非数据断言"
+        },
+        {
+          "start": 1,
+          "end": 19,
+          "class": "N",
+          "reason": "CG 编号标签，结构件。非数据断言"
+        },
+        {
+          "start": 19,
+          "end": 32,
+          "class": "N",
+          "reason": "登记日期元数据。非数据断言"
+        },
+        {
+          "start": 32,
+          "end": 274,
+          "class": "N",
+          "reason": "定级标签与定级依据叙述（所引数值均系门禁读数与写面件转述指针），本行不充当真值源。非数据断言"
+        },
+        {
+          "start": 274,
+          "end": 1080,
+          "class": "N",
+          "reason": "治理登记行叙述：所引行号、数值、公式读数均系对写面技能件与门禁输出的转述指针，真值源在对应载体，本行不独立主张工程技术参数。非数据断言"
+        },
+        {
+          "start": 1080,
+          "end": 1303,
+          "class": "N",
+          "reason": "影响面描述（文件路径与覆盖面指针），非数据断言"
+        },
+        {
+          "start": 1303,
+          "end": 1443,
+          "class": "N",
+          "reason": "状态标签与授权叙述，非数据断言"
+        },
+        {
+          "start": 1443,
+          "end": 1444,
+          "class": "N",
+          "reason": "行尾换行符，无断言内容。非数据断言"
+        }
+      ]
+    },
     "shared/change-governance.md#81d7ebd159d49981557a2f7c1f5e61ac18970db1d9d3e49fb67ac8ab89e8b3ab:1": {
       "segments": [
         {
@@ -83024,6 +83034,16 @@
           "end": 18,
           "reason": "表头行：列名定义，非数据断言",
           "start": 0
+        }
+      ]
+    },
+    "shared/change-governance.md#875d1b307134cb35c7fc22ea2b6c930cbf4c22f63ac89c4ad058100a7547e6f5:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 558,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -83487,64 +83507,6 @@
         }
       ]
     },
-    "shared/change-governance.md#b296241eedc334014b794ed07bed1cf99f003b86c272531b6b6deee3ca055a58:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 1,
-          "class": "N",
-          "reason": "Markdown 表格行首的分隔符，无断言内容。非数据断言"
-        },
-        {
-          "start": 1,
-          "end": 10,
-          "class": "N",
-          "reason": "PL 台账编号标签，结构件。非数据断言"
-        },
-        {
-          "start": 10,
-          "end": 610,
-          "class": "N",
-          "reason": "事项描述叙述：所引文件路径、行号、数值均系对相应载体的转述指针，真值源在对应技能件与报告，本行不独立主张。非数据断言"
-        },
-        {
-          "start": 610,
-          "end": 657,
-          "class": "N",
-          "reason": "来源登记标签列（CG 编号／报告分项指针），非数据断言"
-        },
-        {
-          "start": 657,
-          "end": 670,
-          "class": "N",
-          "reason": "日期元数据。非数据断言"
-        },
-        {
-          "start": 670,
-          "end": 683,
-          "class": "N",
-          "reason": "日期元数据（TTL）。非数据断言"
-        },
-        {
-          "start": 683,
-          "end": 689,
-          "class": "N",
-          "reason": "状态枚举标签。非数据断言"
-        },
-        {
-          "start": 689,
-          "end": 3426,
-          "class": "N",
-          "reason": "处置依据叙述：所引复算过程、数值与门禁读数均系对写面件、执行记录与门禁输出的转述指针，真值源在对应载体，本行不独立主张工程技术参数。非数据断言"
-        },
-        {
-          "start": 3426,
-          "end": 3427,
-          "class": "N",
-          "reason": "行尾换行符，无断言内容。非数据断言"
-        }
-      ]
-    },
     "shared/change-governance.md#b2bbc6c1cb0224de268ab372181c3bf63a8ac83ca0adb9e4d58bb2fc473fb4de:1": {
       "segments": [
         {
@@ -83722,6 +83684,64 @@
           "end": 38,
           "reason": "表头行：列名定义，非数据断言",
           "start": 0
+        }
+      ]
+    },
+    "shared/change-governance.md#c34d15cb0540ce010aac4f8961067be4316dea32d9ec632dc4f361df89e1e960:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 1,
+          "class": "N",
+          "reason": "Markdown 表格行首的分隔符，无断言内容。非数据断言"
+        },
+        {
+          "start": 1,
+          "end": 10,
+          "class": "N",
+          "reason": "PL 台账编号标签，结构件。非数据断言"
+        },
+        {
+          "start": 10,
+          "end": 610,
+          "class": "N",
+          "reason": "事项描述叙述：所引文件路径、行号、数值均系对相应载体的转述指针，真值源在对应技能件与报告，本行不独立主张。非数据断言"
+        },
+        {
+          "start": 610,
+          "end": 657,
+          "class": "N",
+          "reason": "来源登记标签列（CG 编号／报告分项指针），非数据断言"
+        },
+        {
+          "start": 657,
+          "end": 670,
+          "class": "N",
+          "reason": "日期元数据。非数据断言"
+        },
+        {
+          "start": 670,
+          "end": 683,
+          "class": "N",
+          "reason": "日期元数据（TTL）。非数据断言"
+        },
+        {
+          "start": 683,
+          "end": 693,
+          "class": "N",
+          "reason": "状态枚举标签。非数据断言"
+        },
+        {
+          "start": 693,
+          "end": 3749,
+          "class": "N",
+          "reason": "处置依据叙述：所引复算过程、数值与门禁读数均系对写面件、执行记录与门禁输出的转述指针，真值源在对应载体，本行不独立主张工程技术参数。非数据断言"
+        },
+        {
+          "start": 3749,
+          "end": 3750,
+          "class": "N",
+          "reason": "行尾换行符，无断言内容。非数据断言"
         }
       ]
     },
@@ -84022,6 +84042,16 @@
           "end": 2,
           "class": "N",
           "reason": "Markdown 引用续行「>」，结构件无断言内容。非数据断言"
+        }
+      ]
+    },
+    "shared/change-governance.md#c8dea3ffb95e69324325602da742ece261e843c1f7af9c2e3e1ae1783306043d:33": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 2,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -97569,6 +97599,16 @@
         }
       ]
     },
+    "shared/standards-index.md#1a7c90d4c7c8df793096f227b8da329779bf91d5c9c4eee1ac68e5cbb92af82d:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 327,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+        }
+      ]
+    },
     "shared/standards-index.md#1af0d340ad26ba36eb5a980049ba652ceca60fb6417330119a849ee266d00304:1": {
       "segments": [
         {
@@ -97596,6 +97636,26 @@
           "end": 72,
           "reason": "非数据断言：本块数字仅承担编号、日期、版本号或文档定位（剥离编号/日期/条文号/版本/S-L标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
+        }
+      ]
+    },
+    "shared/standards-index.md#1d3dc36cf13004e0a9b9b12794f65f15ad92c6d4064942e27dc6ea4e59b221e3:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 67,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+        }
+      ]
+    },
+    "shared/standards-index.md#1e4463d02e96f6adbf72807c7e3d9d3182ab26b3385dc7970e651b299f41840c:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 207,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -97676,6 +97736,16 @@
           "end": 193,
           "reason": "非数据断言：本块为示例代码块，残留数字属代码示例内的字面量（演示用，非工程数据断言），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
+        }
+      ]
+    },
+    "shared/standards-index.md#30a7826c4312d98a61a0ae14f32b9f228e068a79cf6230b7760702a59dcadffd:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 298,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -98449,6 +98519,16 @@
         }
       ]
     },
+    "shared/standards-index.md#9cfaa1bd44f7e34b16e29a5e1494345f0eb94ef7144cc72b2f7e77f44aaa04fe:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 183,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+        }
+      ]
+    },
     "shared/standards-index.md#9d5c3c5d95a7c591cd6c58404ce81128c45b2a21cd3abeb743508044aeeec444:1": {
       "segments": [
         {
@@ -98697,6 +98777,16 @@
         }
       ]
     },
+    "shared/standards-index.md#d255636d45ef1e70be5ae0cd32d7a9f579fd34e194d27439125da37abcf1e0ae:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 101,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+        }
+      ]
+    },
     "shared/standards-index.md#d357af389662f7855939c6bb76a790b060ea00b136ccc1e00da914760a325cb8:1": {
       "segments": [
         {
@@ -98886,6 +98976,16 @@
           "end": 15,
           "reason": "非数据断言：本块为章节标题，残留数字属结构性编号（版本／章节／计数），非量化取值，不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
+        }
+      ]
+    },
+    "shared/standards-index.md#edd3a5ae9629aaad15144cff1dbe9f99eda3867ee4d57b506b3be83941cdb4fc:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 5134,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -101086,6 +101186,16 @@
           "end": 32,
           "reason": "非数据断言：本块数字仅承担编号、日期、版本号或文档定位（剥离编号/日期/条文号/版本/S-L标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
+        }
+      ]
+    },
+    "shared/standards-reasoning-rules.md#ecbd65f99f7ba3bf37567db4e8dbd0638d5fa70be3d5db15f9a8321bcd31fb93:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 45,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -104739,6 +104849,16 @@
         }
       ]
     },
+    "standards-index.md#0175e8affd7af1ede64497e86ae4c8060d1aaf9fe2778ad8084f277f2aa1bf66:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 183,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+        }
+      ]
+    },
     "standards-index.md#02e6c060e9f188642688e71f3ff9b319447b8922ffa7b5c85b22968f79511c5e:1": {
       "segments": [
         {
@@ -104789,6 +104909,16 @@
         }
       ]
     },
+    "standards-index.md#0b02cbb3ed40a8943b93204abef78c92a03b0b7aa0b01983167ed4b05d39a93f:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 298,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+        }
+      ]
+    },
     "standards-index.md#0b55bfd6d48e9b406cefacd8a14e6884e6eb3f5b468e970457212071fe0f9362:1": {
       "segments": [
         {
@@ -104806,6 +104936,16 @@
           "end": 22,
           "reason": "章节标题行：导航文本，不构成量化断言",
           "start": 0
+        }
+      ]
+    },
+    "standards-index.md#0c2fe04ce39b8f2acbe0b3e6422691d88ffdd2326584e7a210af4c68227cbdc9:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 5134,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -106119,6 +106259,16 @@
         }
       ]
     },
+    "standards-index.md#cab3cad8e71f4012c872afbb4f7d6571a622064839556d4e8168bee1019e1fb5:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 67,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+        }
+      ]
+    },
     "standards-index.md#cbc21319ac3f7565999222bd2f45dd9ddb769a4dd3df2d16a53942875c41c4a6:1": {
       "segments": [
         {
@@ -106126,6 +106276,16 @@
           "end": 77,
           "reason": "非数据断言：本块数字仅承担编号、日期、版本号或文档定位（剥离编号/日期/条文号/版本/S-L标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
+        }
+      ]
+    },
+    "standards-index.md#cc936a031bfda2e8676707f4f94daa8ae504df0f7ada62677f3ca0726400c59b:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 101,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -106229,6 +106389,16 @@
         }
       ]
     },
+    "standards-index.md#e5fa61a3a848c7349b8d69799cb9a6bed3686640d24a9f8b372acec20e56eaf5:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 207,
+          "class": "N",
+          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+        }
+      ]
+    },
     "standards-index.md#e8da66b0fcf8f03f9448f77fcd94be0e864ce3466cf4c973c1dd2b2ba19b76da:1": {
       "segments": [
         {
@@ -106309,56 +106479,6 @@
         }
       ]
     },
-    "standards-index.md#0b02cbb3ed40a8943b93204abef78c92a03b0b7aa0b01983167ed4b05d39a93f:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 298,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
-    "standards-index.md#0c2fe04ce39b8f2acbe0b3e6422691d88ffdd2326584e7a210af4c68227cbdc9:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 5134,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
-    "standards-index.md#cab3cad8e71f4012c872afbb4f7d6571a622064839556d4e8168bee1019e1fb5:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 67,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
-    "standards-index.md#e5fa61a3a848c7349b8d69799cb9a6bed3686640d24a9f8b372acec20e56eaf5:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 207,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
-    "standards-index.md#0175e8affd7af1ede64497e86ae4c8060d1aaf9fe2778ad8084f277f2aa1bf66:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 183,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
     "standards-index.md#ffd434eb99c802029ff6a6628939c30217e0cf97764213c459907b1faf7de169:1": {
       "segments": [
         {
@@ -106369,143 +106489,83 @@
         }
       ]
     },
-    "standards-index.md#cc936a031bfda2e8676707f4f94daa8ae504df0f7ada62677f3ca0726400c59b:1": {
+    "shared/change-governance.md#4bc7914001bf21b1c65255ad26e87f189f4032467323aa05099cd6cd6893781e:1": {
       "segments": [
         {
-          "start": 0,
-          "end": 101,
           "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+          "start": 0,
+          "end": 379,
+          "reason": "非数据断言：本块为变更治理规则文件头部元信息段（最后更新说明），数字仅承担日期与编号定位，不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
         }
       ]
     },
-    "shared/change-governance.md#dff3556d10a9e859ec7a2d915298140d7d6983a5544c32d894b06c8e7a4145d9:1": {
+    "shared/change-governance.md#7165b257c9271627761291d83a6d296a06b60e60300ac2b8a0efbd55f743508d:1": {
       "segments": [
         {
-          "start": 0,
-          "end": 345,
           "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+          "start": 0,
+          "end": 2270,
+          "reason": "非数据断言：本块为 §九 变更日志表行，数字仅承担 CG 编号、日期与流程定位（剥离编号/日期/CG 序号后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
         }
       ]
     },
-    "shared/change-governance.md#875d1b307134cb35c7fc22ea2b6c930cbf4c22f63ac89c4ad058100a7547e6f5:1": {
+    "shared/change-governance.md#79d9e88ab14689312280674c6cadd7cc9ec6abc8f8c755f2bfb828b0081d1176:1": {
       "segments": [
         {
-          "start": 0,
-          "end": 558,
           "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+          "start": 0,
+          "end": 731,
+          "reason": "非数据断言：本块为 §十一 遗留存活性台账表行（PL-071 登记行），数字仅承担 PL 编号、CG 编号、日期与 TTL 定位（剥离编号/日期/PL-CG 序号后无任何物理量或限值残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
         }
       ]
     },
-    "shared/change-governance.md#574f97206175114b661c8057862bc9982f303965e430bf17853b708105bc8990:1": {
+    "shared/change-governance.md#68c741cfb9e7814a0a82b80bae6bcb5b73196d6c3e29969868055ea1fc7218bd:1": {
       "segments": [
         {
-          "start": 0,
-          "end": 1666,
           "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+          "start": 0,
+          "end": 444,
+          "reason": "非数据断言：本块为 §十一 遗留存活性台账表行（PL-073 登记行），数字仅承担 PL 编号、CG 编号、日期与 TTL 定位（剥离编号/日期/PL-CG 序号后无任何物理量或限值残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
         }
       ]
     },
-    "shared/change-governance.md#c8dea3ffb95e69324325602da742ece261e843c1f7af9c2e3e1ae1783306043d:33": {
+    "shared/change-governance.md#fb761ec902e2b92f7234e74ce70fd1ae6b4f5019f35e6163de6ab1a437a1df65:1": {
       "segments": [
         {
-          "start": 0,
-          "end": 2,
           "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+          "start": 0,
+          "end": 411,
+          "reason": "非数据断言：本块为 §十一 遗留存活性台账表行（PL-074 登记行），数字仅承担 PL 编号、CG 编号、日期与 TTL 定位（剥离编号/日期/PL-CG 序号后无任何物理量或限值残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
         }
       ]
     },
-    "shared/change-governance.md#418e1b3a8aa176b76f325ca0f2add0f1570171219335e79cd6c057c053e86915:1": {
+    "prefab-acceptance-checklist-generator/reference.md#59aec2211a4804bf67f4cc925d451d5240845ecc0aa30c0a43629ed9fea338b4:1": {
       "segments": [
         {
-          "start": 0,
-          "end": 1253,
           "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+          "start": 0,
+          "end": 72,
+          "reason": "非数据断言：本块为验收检查项表行，引用来源已改为「设计文件」（非标准编号），S3 为数据来源置信度标注而非物理量限值；行内数字仅承担检查项序号定位，不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
         }
       ]
     },
-    "shared/standards-index.md#30a7826c4312d98a61a0ae14f32b9f228e068a79cf6230b7760702a59dcadffd:1": {
+    "shared/standards-index.md#db26242c9e680a9a2362c7df4dc2a043d9fd83957341edca454f016633eb02b4:1": {
       "segments": [
         {
-          "start": 0,
-          "end": 298,
           "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+          "start": 0,
+          "end": 406,
+          "reason": "非数据断言：本块为标准索引表行（GB 50210-2018 核验补充行），数字仅承担标准编号、日期、序号与核验平台 URL 定位（剥离编号/日期/条文号/版本/S-L 标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
         }
       ]
     },
-    "shared/standards-index.md#edd3a5ae9629aaad15144cff1dbe9f99eda3867ee4d57b506b3be83941cdb4fc:1": {
+    "standards-index.md#505544d323bda1f3bcd492b57c4175f9ae66d427166acc859496a0ebec712dc9:1": {
       "segments": [
         {
-          "start": 0,
-          "end": 5134,
           "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
-    "shared/standards-index.md#1d3dc36cf13004e0a9b9b12794f65f15ad92c6d4064942e27dc6ea4e59b221e3:1": {
-      "segments": [
-        {
           "start": 0,
-          "end": 67,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
-    "shared/standards-index.md#1e4463d02e96f6adbf72807c7e3d9d3182ab26b3385dc7970e651b299f41840c:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 207,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
-    "shared/standards-index.md#9cfaa1bd44f7e34b16e29a5e1494345f0eb94ef7144cc72b2f7e77f44aaa04fe:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 183,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
-    "shared/standards-index.md#1a7c90d4c7c8df793096f227b8da329779bf91d5c9c4eee1ac68e5cbb92af82d:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 327,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
-    "shared/standards-index.md#d255636d45ef1e70be5ae0cd32d7a9f579fd34e194d27439125da37abcf1e0ae:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 101,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
-    "shared/standards-reasoning-rules.md#ecbd65f99f7ba3bf37567db4e8dbd0638d5fa70be3d5db15f9a8321bcd31fb93:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 45,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
+          "end": 406,
+          "reason": "非数据断言：本块为标准索引表行（GB 50210-2018 核验补充行），数字仅承担标准编号、日期、序号与核验平台 URL 定位（剥离编号/日期/条文号/版本/S-L 标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
         }
       ]
     }
