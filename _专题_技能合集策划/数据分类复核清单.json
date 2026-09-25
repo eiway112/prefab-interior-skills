@@ -836,10 +836,6 @@
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
     },
-    "prefab-bathroom-kitchen-system/reference.md#4aeb478d4bbec402c37b5de3f1dccfbd3cebe17776b7a895a3e946777309f636:1": {
-      "deferred_to": "PL-060",
-      "registered_on": "2026-09-23"
-    },
     "prefab-bathroom-kitchen-system/reference.md#4b2fefbbbd0fa3aea3958209f47eda539984624fcd389d23a2b5077f97776de7:1": {
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
@@ -7649,10 +7645,6 @@
       "registered_on": "2026-09-23"
     },
     "prefab-partition-wall-solution/reference.md#5e684a6cba42336f22cab252f0f5bc09b84edff5562ef6d83724ede3d2dee321:1": {
-      "deferred_to": "PL-060",
-      "registered_on": "2026-09-23"
-    },
-    "prefab-partition-wall-solution/reference.md#5e953f2edc64c777d7d4899a7e3b2adcdffa10531a01d9119da21bf8da70b11b:1": {
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
     },
@@ -25497,16 +25489,6 @@
         }
       ]
     },
-    "prefab-bathroom-kitchen-system/examples.md#a2c90f7e025ae9081edc7ad3d452bf89e32ea3b71a31fb37aa6cb4b3d7eae15f:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 1289,
-          "class": "N",
-          "reason": "非本块自身的独立数据断言面：本块为示例 1 的演示输出（D 层示例载体，含输出模板与对比表），本批只在该示例后追加SMC 底盘一体体系适用性注（非数值改动）；块内「约 4.5㎡」系用户输入情境参数而非规范／产品断言。块内数值字面与 CG-20260924-001 改前逐字全等（机器自证：性能字面 12 项 ×3 件差异 0，坡度≥1%／≥1.5%、蓄水≥20mm／≥24h、水封≥50mm、≥I级、DN50／DN75、坑距 300-400mm、2.5mm² 计数逐项相等），本批未新增亦未改动任何量化断言；带来源列的同值登记面在本件示例 1「防水与排水方案」表（含数据来源列：GB 55030-2022／GB 50210-2018／GB 50015-2019／行业经验 S3）与 reference.md :49—:55，仍属 PL-060 冻结存量；「设备部品接口」表无来源列，属 PL-060 成因构成「所在表根本无出处列的表行」同型。本块 `source_cells` 现读为空，检查 10 对 A／B／C／D 段强制可定位来源（无来源即 `MISSING_SOURCE`），故不作数据类登记。N 类**不等于**判定该值无需取证：取源义务见 PL-060／PL-070。分类口径见 `shared/data-classification.md` §一"
-        }
-      ]
-    },
     "prefab-bathroom-kitchen-system/examples.md#a941b9613a46c1bb53be11b197aa2ea1c2d61ef109d7493cdef956fac783db76:1": {
       "segments": [
         {
@@ -26911,16 +26893,6 @@
         }
       ]
     },
-    "prefab-bathroom-kitchen-system/reference.md#5d4d2a4c4df1793228dcc8d82a8ab9ceab529bc72c164b8d6993c239d3e9420e:1": {
-      "segments": [
-        {
-          "class": "N",
-          "end": 35,
-          "reason": "非数据断言：本块数字仅承担编号、日期、版本号或文档定位（剥离编号/日期/条文号/版本/S-L标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
-          "start": 0
-        }
-      ]
-    },
     "prefab-bathroom-kitchen-system/reference.md#5dbbfed477fb358a87715effabf7452e80a8485eca8969ba7e3a9b579e9c72c6:1": {
       "segments": [
         {
@@ -27798,16 +27770,6 @@
         }
       ]
     },
-    "prefab-bathroom-kitchen-system/reference.md#cf907fb44abf19744ddfd65c23f69f218c930c2d71ce59e97579255e8049c38c:1": {
-      "segments": [
-        {
-          "class": "N",
-          "end": 43,
-          "reason": "非数据断言：本块数字仅承担编号、日期、版本号或文档定位（剥离编号/日期/条文号/版本/S-L标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
-          "start": 0
-        }
-      ]
-    },
     "prefab-bathroom-kitchen-system/reference.md#d01c7d95058ceb55820a41fa6d24ef2bfebf0e2d17b2b689dc423cc4420a477a:1": {
       "segments": [
         {
@@ -27855,16 +27817,6 @@
           "end": 31,
           "class": "N",
           "reason": "非数据断言：定性边界陈述（架空腔本身不构成防水层、接口与穿板部位按设计密封），无量化取值"
-        }
-      ]
-    },
-    "prefab-bathroom-kitchen-system/reference.md#d99885f6c24760627cf30c229b49f44ec61678fff060fd13cc4d86279cf137cd:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 89,
-          "class": "N",
-          "reason": "本块为 §3.2 防水节点表行（该表无来源列，`source_cells` 现读为空）：定性工艺要求（地漏预埋本体／法兰先于防水层施工安装、防水层翻包法兰并密封连接、末端篦子于饰面完成后安装）与风险描述不构成量化断言；块内唯一数值「周围50mm范围加强」系D 类工艺控制值，与改前原像 :160 逐字全等（本批只改工序先后与末端附件分列表述、未改该值），且**全件无带来源列的同值面**，属 PL-060 成因构成「所在表根本无出处列的表行」同型；检查 10 对 A／B／C／D 段强制可定位来源（无来源即 `MISSING_SOURCE`），故在本批授权面内不作 D 类登记 → 该值的取源义务由**新登 PL-070** 单独承载（补来源列须另批触写面，或经复核判定为非量化工艺描述并具文理由）。N 类**不等于**判定该值无需取证。分类口径见 `shared/data-classification.md` §一"
         }
       ]
     },
@@ -27938,16 +27890,6 @@
           "end": 64,
           "class": "N",
           "reason": "行尾换行符，无断言内容。非数据断言"
-        }
-      ]
-    },
-    "prefab-bathroom-kitchen-system/reference.md#dcaaac7426c47cbf093cf5b9e1f8031ec732747e9bc04182c65d67ee6f42fa84:1": {
-      "segments": [
-        {
-          "class": "N",
-          "end": 39,
-          "reason": "非数据断言：本块数字仅承担编号、日期、版本号或文档定位（剥离编号/日期/条文号/版本/S-L标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
-          "start": 0
         }
       ]
     },
@@ -28247,16 +28189,6 @@
           "end": 135,
           "class": "N",
           "reason": "非数据断言：适用范围与体系边界约定（干法独立防水层体系 vs SMC 底盘一体体系的路由指针、架空地面以设计文件为准），残留数字属章节号（§2.1／§5.1），块内无量化取值"
-        }
-      ]
-    },
-    "prefab-bathroom-kitchen-system/reference.md#fed8c664f768c7fc4d115a3e84849423277566ec1cdfe5f1f2a1f48b7f74bcde:1": {
-      "segments": [
-        {
-          "class": "N",
-          "end": 25,
-          "reason": "表头行：列名定义，非数据断言",
-          "start": 0
         }
       ]
     },
@@ -59593,16 +59525,6 @@
         }
       ]
     },
-    "prefab-partition-wall-solution/reference.md#0a50dbd7443cfde35bc51c5d9861896aa29a9232c01a35ef7bfe54d1b89956eb:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 55,
-          "class": "N",
-          "reason": "异质复合搭配表行：「组合」系板材组合 designation 标签、「fc1 (Hz)」「fc2 (Hz)」「频率差 Δfc」系按统一标称基准（石膏板 ρ800/E2.5/σ0.25、硅酸钙板 ρ1400/E6/σ0.22、9.5mm 石膏板 ρ900）经吻合频率修正公式复算的派生计算量（C 类语义）、「有效性判定」系定性结论标签；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING，结构上不可按 C 类登记，故整行按 N 类登记并披露——fc1/fc2/Δfc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
-        }
-      ]
-    },
     "prefab-partition-wall-solution/reference.md#0ab334ecc716a2cb497afdd16b0674db46b86dccc54787de3ba21c7901fc5294:1": {
       "segments": [
         {
@@ -59800,16 +59722,6 @@
           "end": 15,
           "reason": "章节标题行：导航文本，不构成量化断言",
           "start": 0
-        }
-      ]
-    },
-    "prefab-partition-wall-solution/reference.md#17d767e7c0bb5545fa5a268f51af772615bcad124e86704c629ec4ab0068cc42:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 42,
-          "class": "N",
-          "reason": "吻合频率参考表行：「板材」「常用厚度」系 designation 标签、「fc 范围 (Hz)」系按声明参数域包络（fc_min 取最小 ρ／最大 E、fc_max 取最大 ρ／最小 E）经吻合频率修正公式复算的派生计算量（C 类语义）、「与关键频段关系」系定性关系描述（含 3150 Hz 频段限值指针，真值源在官方出版物与 standards-index）；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING（来源须绑完整来源单元格），结构上不可按 C 类登记，故整行按 N 类登记并披露——fc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对 fc 数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
         }
       ]
     },
@@ -60193,16 +60105,6 @@
         }
       ]
     },
-    "prefab-partition-wall-solution/reference.md#292cfb2d84b64a967bdbdcf2da8397f9091b271a4cd34aa0a5a033601eddbab8:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 47,
-          "class": "N",
-          "reason": "吻合频率参考表行：「板材」「常用厚度」系 designation 标签、「fc 范围 (Hz)」系按声明参数域包络（fc_min 取最小 ρ／最大 E、fc_max 取最大 ρ／最小 E）经吻合频率修正公式复算的派生计算量（C 类语义）、「与关键频段关系」系定性关系描述（含 3150 Hz 频段限值指针，真值源在官方出版物与 standards-index）；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING（来源须绑完整来源单元格），结构上不可按 C 类登记，故整行按 N 类登记并披露——fc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对 fc 数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
-        }
-      ]
-    },
     "prefab-partition-wall-solution/reference.md#29dfccc4ee81abcb5f346bce6805c38ee736e0c64b59e117922bd17d69a6a81f:1": {
       "segments": [
         {
@@ -60533,16 +60435,6 @@
         }
       ]
     },
-    "prefab-partition-wall-solution/reference.md#39514a1736632ba93153cad226f0a0ca303f3974f0b2924033380664232fbf40:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 48,
-          "class": "N",
-          "reason": "吻合频率参考表行：「板材」「常用厚度」系 designation 标签、「fc 范围 (Hz)」系按声明参数域包络（fc_min 取最小 ρ／最大 E、fc_max 取最大 ρ／最小 E）经吻合频率修正公式复算的派生计算量（C 类语义）、「与关键频段关系」系定性关系描述（含 3150 Hz 频段限值指针，真值源在官方出版物与 standards-index）；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING（来源须绑完整来源单元格），结构上不可按 C 类登记，故整行按 N 类登记并披露——fc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对 fc 数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
-        }
-      ]
-    },
     "prefab-partition-wall-solution/reference.md#395e46cc5cd5f9fd89fd25d14000adca788c752f763f074b88b1cfeb4fcb570f:1": {
       "segments": [
         {
@@ -60620,16 +60512,6 @@
           "end": 44,
           "reason": "小节「四、方法论层（B层）／4.A 选型决策树（B1）」内散文：定性描述/流程/路由/接口约定/声明，未含物理量数值与限值符号（按基准§一 N 类定义）",
           "start": 0
-        }
-      ]
-    },
-    "prefab-partition-wall-solution/reference.md#3d28bafa7fa0f110ffb57b872f11447721fe9a942e76122191e237fb50f261a8:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 46,
-          "class": "N",
-          "reason": "吻合频率参考表行：「板材」「常用厚度」系 designation 标签、「fc 范围 (Hz)」系按声明参数域包络（fc_min 取最小 ρ／最大 E、fc_max 取最大 ρ／最小 E）经吻合频率修正公式复算的派生计算量（C 类语义）、「与关键频段关系」系定性关系描述（含 3150 Hz 频段限值指针，真值源在官方出版物与 standards-index）；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING（来源须绑完整来源单元格），结构上不可按 C 类登记，故整行按 N 类登记并披露——fc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对 fc 数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
         }
       ]
     },
@@ -60790,16 +60672,6 @@
           "end": 55,
           "reason": "非数据断言：本块数字仅承担编号、日期、版本号或文档定位（剥离编号/日期/条文号/版本/S-L标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
-        }
-      ]
-    },
-    "prefab-partition-wall-solution/reference.md#48269154e6f70fb48a97443e46783494166be538152b4cf7aece9fa63b788a4e:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 64,
-          "class": "N",
-          "reason": "异质复合搭配表行：「组合」系板材组合 designation 标签、「fc1 (Hz)」「fc2 (Hz)」「频率差 Δfc」系按统一标称基准（石膏板 ρ800/E2.5/σ0.25、硅酸钙板 ρ1400/E6/σ0.22、9.5mm 石膏板 ρ900）经吻合频率修正公式复算的派生计算量（C 类语义）、「有效性判定」系定性结论标签；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING，结构上不可按 C 类登记，故整行按 N 类登记并披露——fc1/fc2/Δfc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
         }
       ]
     },
@@ -61200,16 +61072,6 @@
           "end": 27,
           "reason": "小节「3.C A3 耐火专业理论体系／3.C.2 耐火极限原理与构造因素分析」内散文：定性描述/流程/路由/接口约定/声明，未含物理量数值与限值符号（按基准§一 N 类定义）",
           "start": 0
-        }
-      ]
-    },
-    "prefab-partition-wall-solution/reference.md#5cc0a992a936fc0c91219ca9d2d8dc318713b57258f78af5be3786cb94f2bbc4:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 62,
-          "class": "N",
-          "reason": "异质复合搭配表行：「组合」系板材组合 designation 标签、「fc1 (Hz)」「fc2 (Hz)」「频率差 Δfc」系按统一标称基准（石膏板 ρ800/E2.5/σ0.25、硅酸钙板 ρ1400/E6/σ0.22、9.5mm 石膏板 ρ900）经吻合频率修正公式复算的派生计算量（C 类语义）、「有效性判定」系定性结论标签；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING，结构上不可按 C 类登记，故整行按 N 类登记并披露——fc1/fc2/Δfc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
         }
       ]
     },
@@ -62919,16 +62781,6 @@
         }
       ]
     },
-    "prefab-partition-wall-solution/reference.md#a0c638b687c4d22e1860a5463ec3b9be312f715a58c89aad9a61fb321952064a:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 42,
-          "class": "N",
-          "reason": "吻合频率参考表行：「板材」「常用厚度」系 designation 标签、「fc 范围 (Hz)」系按声明参数域包络（fc_min 取最小 ρ／最大 E、fc_max 取最大 ρ／最小 E）经吻合频率修正公式复算的派生计算量（C 类语义）、「与关键频段关系」系定性关系描述（含 3150 Hz 频段限值指针，真值源在官方出版物与 standards-index）；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING（来源须绑完整来源单元格），结构上不可按 C 类登记，故整行按 N 类登记并披露——fc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对 fc 数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
-        }
-      ]
-    },
     "prefab-partition-wall-solution/reference.md#a0fc6918c26e95ef167597e29c6c1757498e0aeba4fe53714d89bca65fd44eb9:1": {
       "segments": [
         {
@@ -63645,16 +63497,6 @@
         }
       ]
     },
-    "prefab-partition-wall-solution/reference.md#be9f76bcd4b2c9d5775ef62e264a30cc91d0075e1527e77c92c81aa2f51b6072:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 52,
-          "class": "N",
-          "reason": "吻合频率参考表行：「板材」「常用厚度」系 designation 标签、「fc 范围 (Hz)」系按声明参数域包络（fc_min 取最小 ρ／最大 E、fc_max 取最大 ρ／最小 E）经吻合频率修正公式复算的派生计算量（C 类语义）、「与关键频段关系」系定性关系描述（含 3150 Hz 频段限值指针，真值源在官方出版物与 standards-index）；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING（来源须绑完整来源单元格），结构上不可按 C 类登记，故整行按 N 类登记并披露——fc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对 fc 数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
-        }
-      ]
-    },
     "prefab-partition-wall-solution/reference.md#bed395587385ecba8e02edb3eff081b08289517b8e0fb9e1f2c9101c578bb48d:1": {
       "segments": [
         {
@@ -63662,16 +63504,6 @@
           "end": 47,
           "reason": "小节「4.C 成本分析框架（B3）／4.C.1 造价构成模型」内散文：定性描述/流程/路由/接口约定/声明，未含物理量数值与限值符号（按基准§一 N 类定义）",
           "start": 0
-        }
-      ]
-    },
-    "prefab-partition-wall-solution/reference.md#bed8de8c5ae57adbc51142849907434f98dfd88f848796886c4cc3da35d3a9cf:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 42,
-          "class": "N",
-          "reason": "吻合频率参考表行：「板材」「常用厚度」系 designation 标签、「fc 范围 (Hz)」系按声明参数域包络（fc_min 取最小 ρ／最大 E、fc_max 取最大 ρ／最小 E）经吻合频率修正公式复算的派生计算量（C 类语义）、「与关键频段关系」系定性关系描述（含 3150 Hz 频段限值指针，真值源在官方出版物与 standards-index）；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING（来源须绑完整来源单元格），结构上不可按 C 类登记，故整行按 N 类登记并披露——fc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对 fc 数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
         }
       ]
     },
@@ -63832,16 +63664,6 @@
           "end": 21,
           "reason": "非数据断言：本块为章节标题，残留数字属数据维护时效规则的天数／月数（红线标注义务，非工程量），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
-        }
-      ]
-    },
-    "prefab-partition-wall-solution/reference.md#c809757ec1a557feec4d2ce4a766c854d2da3a0c401ddd7eab5286f7d52e40bd:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 39,
-          "class": "N",
-          "reason": "吻合频率参考表行：「板材」「常用厚度」系 designation 标签、「fc 范围 (Hz)」系按声明参数域包络（fc_min 取最小 ρ／最大 E、fc_max 取最大 ρ／最小 E）经吻合频率修正公式复算的派生计算量（C 类语义）、「与关键频段关系」系定性关系描述（含 3150 Hz 频段限值指针，真值源在官方出版物与 standards-index）；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING（来源须绑完整来源单元格），结构上不可按 C 类登记，故整行按 N 类登记并披露——fc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对 fc 数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
         }
       ]
     },
@@ -64115,16 +63937,6 @@
         }
       ]
     },
-    "prefab-partition-wall-solution/reference.md#d2f1f4d54a63c8cef232c90728a1f2d752e8e6579eb6cddbd651cb2d6deb99f9:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 52,
-          "class": "N",
-          "reason": "吻合频率参考表行：「板材」「常用厚度」系 designation 标签、「fc 范围 (Hz)」系按声明参数域包络（fc_min 取最小 ρ／最大 E、fc_max 取最大 ρ／最小 E）经吻合频率修正公式复算的派生计算量（C 类语义）、「与关键频段关系」系定性关系描述（含 3150 Hz 频段限值指针，真值源在官方出版物与 standards-index）；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING（来源须绑完整来源单元格），结构上不可按 C 类登记，故整行按 N 类登记并披露——fc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对 fc 数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
-        }
-      ]
-    },
     "prefab-partition-wall-solution/reference.md#d388229741714339fe8d85d5e5c69d0905ef1c5d0ddf9c5b76eaf7dd6f454b8c:1": {
       "segments": [
         {
@@ -64202,16 +64014,6 @@
           "end": 26,
           "reason": "小节「3.C A3 耐火专业理论体系／3.C.2 耐火极限原理与构造因素分析」内散文：定性描述/流程/路由/接口约定/声明，未含物理量数值与限值符号（按基准§一 N 类定义）",
           "start": 0
-        }
-      ]
-    },
-    "prefab-partition-wall-solution/reference.md#d6e3dcf7db1cd0da5f961a0535b8e923a4ee58d1e948d27061ddf624af9b64a1:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 47,
-          "class": "N",
-          "reason": "Markdown 表头／分隔行（列名结构件），无数据断言。非数据断言"
         }
       ]
     },
@@ -64432,16 +64234,6 @@
           "end": 47,
           "reason": "非数据断言：本块为散文句，残留数字属被引用对象的计数（如\"N 条红线\"\"11 维度\"），非量化取值，不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
-        }
-      ]
-    },
-    "prefab-partition-wall-solution/reference.md#dd15aaddb2980aa4eaf9b09a9f1d6e6e7f0f34f9054e18c3af0151c86bb6ff99:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 35,
-          "class": "N",
-          "reason": "吻合频率参考表行：「板材」「常用厚度」系 designation 标签、「fc 范围 (Hz)」系按声明参数域包络（fc_min 取最小 ρ／最大 E、fc_max 取最大 ρ／最小 E）经吻合频率修正公式复算的派生计算量（C 类语义）、「与关键频段关系」系定性关系描述（含 3150 Hz 频段限值指针，真值源在官方出版物与 standards-index）；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING（来源须绑完整来源单元格），结构上不可按 C 类登记，故整行按 N 类登记并披露——fc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对 fc 数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
         }
       ]
     },
@@ -65202,16 +64994,6 @@
           "end": 82,
           "reason": "小节「六、一体化双空腔轻钢龙骨隔墙／6.1 构造特征与核心原理」内散文：定性描述/流程/路由/接口约定/声明，未含物理量数值与限值符号（按基准§一 N 类定义）",
           "start": 0
-        }
-      ]
-    },
-    "prefab-partition-wall-solution/reference.md#fee541bdd861290d64d3a6364b21462f5d88a486d4c1e9750136b16d3a74a482:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 54,
-          "class": "N",
-          "reason": "异质复合搭配表行：「组合」系板材组合 designation 标签、「fc1 (Hz)」「fc2 (Hz)」「频率差 Δfc」系按统一标称基准（石膏板 ρ800/E2.5/σ0.25、硅酸钙板 ρ1400/E6/σ0.22、9.5mm 石膏板 ρ900）经吻合频率修正公式复算的派生计算量（C 类语义）、「有效性判定」系定性结论标签；本表无来源列（source_cells 现读为空），检查 10 对 table_row 的 C 类强制 SOURCE_BINDING，结构上不可按 C 类登记，故整行按 N 类登记并披露——fc1/fc2/Δfc 派生值取源义务由本批新登 PL-072 承载（为表补来源列后按 C 类逐行复算登记），本行不充当独立真值源、不构成对数值正确性的判定，亦不减轻 PL-060 取源义务。非数据断言（就本登记面而言）"
         }
       ]
     },
@@ -82527,16 +82309,6 @@
         }
       ]
     },
-    "shared/change-governance.md#5cd54a2ce1903c84afb946e3043d7b6266f6dcc75e30921c50c8a61750329b8b:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 1199,
-          "class": "N",
-          "reason": "非数据断言：§11.2 遗留台账新行（PL-070），七列均治理元数据＝编号／事项／来源登记／登记与到期日／状态／处置依据；依据列所引数值字面（蓄水≥20mm、坡度≥1%、50mm 等）系对取源义务对象的指认而非工程数据断言，baseline 3,898→3,893 读数系对本批机械后果的披露（非迁移进展声明）"
-        }
-      ]
-    },
     "shared/change-governance.md#5db184b0a9dff0d4d527f1bb9e679b9330b63b1ee50fdd7b319eefa6bcb409ba:1": {
       "segments": [
         {
@@ -82744,64 +82516,6 @@
           "end": 1136,
           "class": "N",
           "reason": "头部快照行：本行是该批变更的过程叙述与自证计数，所引标准编号／行号／数值均为指向对应载体的转述指针，真值源在写面技能件与门禁输出，本文件不充当其真值源。非数据断言"
-        }
-      ]
-    },
-    "shared/change-governance.md#7013940e1f68d7cc21c9e2b844e07026636db44dda177898537e28ccd714bed9:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 1,
-          "class": "N",
-          "reason": "Markdown 表格行首的分隔符，无断言内容。非数据断言"
-        },
-        {
-          "start": 1,
-          "end": 10,
-          "class": "N",
-          "reason": "PL 台账编号标签，结构件。非数据断言"
-        },
-        {
-          "start": 10,
-          "end": 262,
-          "class": "N",
-          "reason": "事项描述叙述：所引文件路径、行号、数值均系对相应载体的转述指针，真值源在对应技能件与报告，本行不独立主张。非数据断言"
-        },
-        {
-          "start": 262,
-          "end": 280,
-          "class": "N",
-          "reason": "来源登记标签列（CG 编号／报告分项指针），非数据断言"
-        },
-        {
-          "start": 280,
-          "end": 293,
-          "class": "N",
-          "reason": "日期元数据。非数据断言"
-        },
-        {
-          "start": 293,
-          "end": 306,
-          "class": "N",
-          "reason": "日期元数据（TTL）。非数据断言"
-        },
-        {
-          "start": 306,
-          "end": 312,
-          "class": "N",
-          "reason": "状态枚举标签。非数据断言"
-        },
-        {
-          "start": 312,
-          "end": 1241,
-          "class": "N",
-          "reason": "处置依据叙述：所引复算过程、数值与门禁读数均系对写面件、执行记录与门禁输出的转述指针，真值源在对应载体，本行不独立主张工程技术参数。非数据断言"
-        },
-        {
-          "start": 1241,
-          "end": 1242,
-          "class": "N",
-          "reason": "行尾换行符，无断言内容。非数据断言"
         }
       ]
     },
@@ -106489,16 +106203,6 @@
         }
       ]
     },
-    "shared/change-governance.md#4bc7914001bf21b1c65255ad26e87f189f4032467323aa05099cd6cd6893781e:1": {
-      "segments": [
-        {
-          "class": "N",
-          "start": 0,
-          "end": 379,
-          "reason": "非数据断言：本块为变更治理规则文件头部元信息段（最后更新说明），数字仅承担日期与编号定位，不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
-        }
-      ]
-    },
     "shared/change-governance.md#7165b257c9271627761291d83a6d296a06b60e60300ac2b8a0efbd55f743508d:1": {
       "segments": [
         {
@@ -106566,6 +106270,296 @@
           "start": 0,
           "end": 406,
           "reason": "非数据断言：本块为标准索引表行（GB 50210-2018 核验补充行），数字仅承担标准编号、日期、序号与核验平台 URL 定位（剥离编号/日期/条文号/版本/S-L 标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
+        }
+      ]
+    },
+    "prefab-bathroom-kitchen-system/examples.md#d0a0acbc82b3f934a826850d388a99d125fda4a13712156e1449c32a4a0d742a:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 1366,
+          "class": "N",
+          "reason": "代码块（```markdown … ```）：内含选型比较表各列（防水可靠性/装饰效果/工期/成本/适用酒店类型/推荐度）均为文字等级评定（如\"最优/良好/一般\"\"最短/较长\"\"较低/中等/较高\"），无物理量数值与限值符号，不构成量化数据断言（按基准§一 N 类定义）"
+        }
+      ]
+    },
+    "prefab-bathroom-kitchen-system/reference.md#50ef3544c58759c8aa7165d6866b194c1283ca34b7572eb47b5903a3f997568f:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 33,
+          "class": "N",
+          "reason": "表头行：列名定义（节点部位/构造要求/常见失效模式/性质与来源），非数据断言"
+        }
+      ]
+    },
+    "prefab-bathroom-kitchen-system/reference.md#ddac622f604c934733dfcd8d70937ce9305acc1f855253eefc053a63e51fa9c1:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 104,
+          "class": "D",
+          "reason": "D类工艺控制值（\"周围50mm范围加强\"）：经验数据，非标准或检测报告规定值"
+        }
+      ]
+    },
+    "prefab-bathroom-kitchen-system/reference.md#fa1fe2006bfc8ffec8005137b755f12546ce21361a8fcb55db575ae31d5f3ba9:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 52,
+          "class": "N",
+          "reason": "定性工艺要求（\"管根周围防水加强层，套管密封\"），无物理量数值与限值符号，非量化断言"
+        }
+      ]
+    },
+    "prefab-bathroom-kitchen-system/reference.md#30fc8a58fbf70e7ce940dda9b00c6b5b34f0c9a79d28cfd0aace57af9f2e6928:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 44,
+          "class": "N",
+          "reason": "定性工艺要求（\"圆弧过渡+防水加强层\"），无物理量数值与限值符号，非量化断言"
+        }
+      ]
+    },
+    "prefab-bathroom-kitchen-system/reference.md#c3dc1172b89f8a2035930008ff81049bcec5d882c029332c81e5d919a2486785:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 61,
+          "class": "D",
+          "reason": "D类工艺控制值（\"挡水高度≥20mm\"）：经验数据，非标准或检测报告规定值"
+        }
+      ]
+    },
+    "prefab-bathroom-kitchen-system/reference.md#ca07c5c585d0be61f37c637eaf679b02801f59f448b3a6b1746a8fe2d5089f6a:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 48,
+          "class": "N",
+          "reason": "定性工艺要求（\"专用法兰+橡胶密封垫圈\"），无物理量数值与限值符号，非量化断言"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#cfdcbfd573657d21105867927538376402478c6dba451423756d722ec64db042:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 58,
+          "class": "N",
+          "reason": "表头行：列名定义（板材/常用厚度/fc范围/与关键频段关系/复算来源），非数据断言"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#e51f2283164969e218dcc093311821c7914814f8ae41d4c299d3d6440e27a8ca:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 70,
+          "class": "C",
+          "reason": "派生复算值：由参数表声明参数域（ρ/E/h）代入吻合频率修正公式包络计算得出，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#a1a99b215d3a672e0f9f2911d7721ecc7f35e51f634919ab20f7897ceaa3af9d:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 70,
+          "class": "C",
+          "reason": "派生复算值：由参数表声明参数域（ρ/E/h）代入吻合频率修正公式包络计算得出，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#ebadf253a30d77efa2df5a0471baed4d83c7cbf1c3733e0df4726d8d4805ba94:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 57,
+          "class": "C",
+          "reason": "派生复算值：由参数表声明参数域（ρ/E/h）代入吻合频率修正公式包络计算得出，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#2af58e767875def1bd3c17af0ce4e0d2479efe46ffc166375c4763e9ea5e067b:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 64,
+          "class": "C",
+          "reason": "派生复算值：由参数表声明参数域（ρ/E/h）代入吻合频率修正公式包络计算得出，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#3f11b28c9f21d01576e7af46be58a5c74d5c79fb4392f5749254f8706166958a:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 65,
+          "class": "C",
+          "reason": "派生复算值：由参数表声明参数域（ρ/E/h）代入吻合频率修正公式包络计算得出，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#40807acf8f44701687f28dd9acf877db056ac05275a5e99507f93bb7128c1d8c:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 66,
+          "class": "C",
+          "reason": "派生复算值：由参数表声明参数域（ρ/E/h）代入吻合频率修正公式包络计算得出，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#87873dff7848ca519d80d6416ab1327a6d431122d6c874588e37764c59f23824:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 53,
+          "class": "C",
+          "reason": "派生复算值：由参数表声明参数域（ρ/E/h）代入吻合频率修正公式包络计算得出，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#354467e7cb06e1a88d69441d0bf6b83e3b0ff687a82b788a3df546b62d3c2460:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 60,
+          "class": "C",
+          "reason": "派生复算值：由参数表声明参数域（ρ/E/h）代入吻合频率修正公式包络计算得出，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#005aa05da042078310d6002287c4b1b3b7ae71e6a7e52d2e40ac1ce91d1522b8:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 60,
+          "class": "C",
+          "reason": "派生复算值：由参数表声明参数域（ρ/E/h）代入吻合频率修正公式包络计算得出，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#e9b06bf5c1de2881134ceef752970837164e2f80b519302c62eccdddd3c8cb10:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 60,
+          "class": "C",
+          "reason": "派生复算值：由参数表声明参数域（ρ/E/h）代入吻合频率修正公式包络计算得出，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#b46a6184222e1f40fc5190c9c55e9acf07fb170a39eaee836a36d4a77b55535b:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 54,
+          "class": "N",
+          "reason": "表头行：列名定义（组合/fc1/fc2/频率差Δfc/有效性判定/复算来源），非数据断言"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#472b9f3c145271b24e5585bbb5fe41a0bfce4cf22ebfed3072bb2e47f8b1a773:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 83,
+          "class": "C",
+          "reason": "派生复算值：由参数表标称基准参数代入吻合频率修正公式按统一标称基准复算，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#04f579bf8a8e9037ad4c5a05afd9451bb4144fac4824607e71fd13dc2c1bb44e:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 73,
+          "class": "C",
+          "reason": "派生复算值：由参数表标称基准参数代入吻合频率修正公式按统一标称基准复算，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#ea6ad161be67cd7ef83c77c152e504db6b4e9e87f5a30b9d47ed0f2f220fb526:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 74,
+          "class": "C",
+          "reason": "派生复算值：由参数表标称基准参数代入吻合频率修正公式按统一标称基准复算，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "prefab-partition-wall-solution/reference.md#84916faa5b3ba9b8c466d4471971bd5823c10d34e79ccc7ac0394e1f09e18b0c:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 81,
+          "class": "C",
+          "reason": "派生复算值：由参数表标称基准参数代入吻合频率修正公式按统一标称基准复算，非直接引用标准或检测报告"
+        }
+      ]
+    },
+    "shared/change-governance.md#0fe7afde982000d7d5c260e48eb2c9c5bb37e2ad4598ebbbf138c519c284b968:1": {
+      "segments": [
+        {
+          "class": "N",
+          "start": 0,
+          "end": 354,
+          "reason": "治理流程记录（头部快照链最后更新行），非技术数据断言"
+        }
+      ]
+    },
+    "shared/change-governance.md#37b750d56d8cd0f81097aafe45f094204cd7d3a8d4bed322461d22d3603edabf:1": {
+      "segments": [
+        {
+          "class": "N",
+          "start": 0,
+          "end": 385,
+          "reason": "治理流程记录（头部快照链历史快照行），非技术数据断言"
+        }
+      ]
+    },
+    "shared/change-governance.md#7d7b1b4b3c2f7aefc6585d5e496aa67e5fbbc82c1b93f2800b5cbbd589bbbdcb:1": {
+      "segments": [
+        {
+          "class": "N",
+          "start": 0,
+          "end": 2223,
+          "reason": "治理流程记录（§九 CG-20260925-007 登记行），非技术数据断言"
+        }
+      ]
+    },
+    "shared/change-governance.md#c8dea3ffb95e69324325602da742ece261e843c1f7af9c2e3e1ae1783306043d:34": {
+      "segments": [
+        {
+          "class": "N",
+          "start": 0,
+          "end": 2,
+          "reason": "治理流程记录（§九表后分隔原文），非技术数据断言"
+        }
+      ]
+    },
+    "shared/change-governance.md#5374d12442e43a938c8d04a3af2e9993634b76cf5b3ef66df1a072f74b7e7ef8:1": {
+      "segments": [
+        {
+          "class": "N",
+          "start": 0,
+          "end": 544,
+          "reason": "治理流程记录（§十一 PL-070 台账行），非技术数据断言"
+        }
+      ]
+    },
+    "shared/change-governance.md#d55020a026ae08476de0f6b9d878af23ff32ae24e57a3b5fca02aef7c51d8d9e:1": {
+      "segments": [
+        {
+          "class": "N",
+          "start": 0,
+          "end": 653,
+          "reason": "治理流程记录（§十一 PL-072 台账行），非技术数据断言"
         }
       ]
     }
