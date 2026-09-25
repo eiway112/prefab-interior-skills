@@ -20,7 +20,8 @@
         §5.2 闭水行须含「蓄水≥20mm，≥24h」（数值本体属 PL-063 责任，本守卫防静默撤值）
   范围控制例：§5.1 SMC 工序（底盘闭水在第 5 步、无预埋步）与墙面层序块不得被 R1—R3 误伤。
 负向注入以合成文本直调 check_wetzone，不落盘、不改任何技能件；
-端到端以真实件副本注入旧缺陷必红。临时面落与本仓同级的 _tmp-scripts\\（不落 C 盘），跑后自清。
+端到端以真实件副本注入旧缺陷必红。临时面落点由 gate_scratch.py 单源给出（工作区
+`_整理与清理/<日期>/门禁临时面-*/`，不落 C 盘、不在工作区根新建常驻目录），跑后自清。
 """
 import io
 import re
@@ -31,7 +32,11 @@ import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-TMP_ROOT = REPO.parent / '_tmp-scripts'
+sys.path.insert(0, str(REPO / '程序文件'))
+
+import gate_scratch  # noqa: E402
+
+TMP_ROOT = gate_scratch.scratch_dir('wetzone_construction_guard')
 RUNTIME_DEFAULT = Path.home() / '.qoder' / 'skills' / 'prefab-bathroom-kitchen-system'
 TARGET_FILES = ('SKILL.md', 'reference.md', 'examples.md')
 

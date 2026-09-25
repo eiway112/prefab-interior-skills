@@ -16,18 +16,17 @@ cross_layer_eol_test.py — 检查 6 (C)「副本 ↔ HEAD 前像行尾形态」
             → (C) 独立报红；clean 仓零 FAIL；单副本漂移只报该副本；不可达降级为 WARN 不静默
   真实面    本仓声明表的 git 可见副本 clean 态零 FAIL；判据用真实 HEAD blob 注入体仍能失败
 
-临时仓落点：与本仓同级的 `_tmp-scripts/`（工作区外，落点由本件自身位置推导）——落本仓内会成嵌套 git 仓，
-落 C 盘违反临时文件纪律；清理须先解 .git 对象的只读位，否则 Windows 下 rmtree 报 WinError 5。
+临时仓落点：由 `gate_scratch.py` 单源给出（工作区 `_整理与清理/<日期>/门禁临时面-*/`，跑后自清）——
+落本仓内会成嵌套 git 仓，落 C 盘违反临时文件纪律，在工作区根新建常驻目录则被
+`workspace_health.py::check_root_dir_whitelist` 判 FAIL；清理须先解 .git 对象的只读位，
+否则 Windows 下 rmtree 报 WinError 5（该逻辑同在 gate_scratch 内单源）。
 
 用法：python -B 程序文件/cross_layer_eol_test.py
 依赖：Python 3.8+（仅标准库）＋ git 可执行（不可达时集成组按降级态断言，不回判 FAIL）
 """
 
 import atexit
-import os
-import shutil
 import subprocess
-import stat
 import sys
 import tempfile
 import unittest
@@ -37,27 +36,16 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
 import validate_governance as V  # noqa: E402
+import gate_scratch  # noqa: E402
 
 REPO_ROOT = SCRIPT_DIR.parent
-SCRATCH_ROOT = REPO_ROOT.parent / "_tmp-scripts" / "cross_layer_eol_scratch"
-SCRATCH_ROOT.mkdir(parents=True, exist_ok=True)
+SCRATCH_ROOT = gate_scratch.scratch_dir("cross_layer_eol")
 
 LF_TEXT = b"line one\nline two\nline three\n"
 CRLF_TEXT = LF_TEXT.replace(b"\n", b"\r\n")
 
-
-def rmtree_force(target: Path):
-    """git 把 object 文件写成只读，Windows 下直接 rmtree 会 WinError 5。"""
-    if not target.exists():
-        return
-    for dirpath, dirnames, filenames in os.walk(target):
-        for n in dirnames + filenames:
-            try:
-                os.chmod(os.path.join(dirpath, n), stat.S_IWRITE)
-            except OSError:
-                pass
-    shutil.rmtree(target, onerror=lambda func, path, _exc: (
-        os.chmod(path, stat.S_IWRITE), func(path)))
+# git 把 object 文件写成只读，Windows 下直接 rmtree 会 WinError 5；解只读位逻辑单源在 gate_scratch。
+rmtree_force = gate_scratch.force_rmtree
 
 
 def run_report(files):

@@ -12,7 +12,8 @@
   P  正向锚：核查入口参数、缺参停止判据、承载确定方式列名必须在场（防"撤了值也没立入口"）
 负向注入以合成文本直调 check_storage_anchor，不落盘、不改任何技能件；
 控制例证守卫非恒真：家具使用荷载（挂衣杆/换鞋凳 kg 值）与不带数值的"安全系数"字样不得误伤。
-临时面落与本仓同级的 _tmp-scripts\\（不落 C 盘），跑后自清。
+临时面落点由 gate_scratch.py 单源给出（工作区 `_整理与清理/<日期>/门禁临时面-*/`，不落 C 盘、
+不在工作区根新建常驻目录），跑后自清。
 """
 import io
 import os
@@ -24,7 +25,11 @@ import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-TMP_ROOT = REPO.parent / '_tmp-scripts'
+sys.path.insert(0, str(REPO / '程序文件'))
+
+import gate_scratch  # noqa: E402
+
+TMP_ROOT = gate_scratch.scratch_dir('storage_anchor_guard')
 RUNTIME_DEFAULT = Path.home() / '.qoder' / 'skills' / 'prefab-storage-system'
 TARGET_FILES = ('SKILL.md', 'reference.md', 'examples.md')
 
