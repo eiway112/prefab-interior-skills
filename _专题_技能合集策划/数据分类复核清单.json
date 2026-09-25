@@ -7720,10 +7720,6 @@
    "deferred_to": "PL-060",
    "registered_on": "2026-09-23"
   },
-  "prefab-partition-wall-solution/reference.md#6b4c5a5909e5ad80eecdd4bb8319e3ed4ebdfb9583045f126e4bbfbfc6fc70cc:1": {
-   "deferred_to": "PL-060",
-   "registered_on": "2026-09-23"
-  },
   "prefab-partition-wall-solution/reference.md#6e884dae0ac234c3d8dc22b6e8d5e3564ede382f0bb01b867d86d6aeae34b423:1": {
    "deferred_to": "PL-060",
    "registered_on": "2026-09-23"
@@ -16830,13 +16826,25 @@
     }
    ]
   },
-  "acoustic-calculation-engine/reference.md#37af5d9f0b22d5650bcf7a9e2e82caba2ad23c2ff8a980bbf046ae0c75762a26:1": {
+  "acoustic-calculation-engine/reference.md#385ba413f30c34de08f734bb2042d99201d07e5119f78cf31187b8da8c06d94d:1": {
    "segments": [
     {
+     "start": 0,
+     "end": 106,
+     "class": "C",
+     "reason": "派生计算量（近对称近似式偏差）：按总质量的近似式 f₀≈1200/√(d×(m₁+m₂)) 仅适用于 m₁≈m₂，其相对精确解的频率偏差 r=2 约 −5.7%、r=3 约 −13%（凭据＝CG-20260925-001 复算取证 §二，复算能复现；偏差系同 d 下与精确式之比，与 d 绝对值无关）；输入项（m₁/m₂/d）系模型给定，适用前提＝近对称 m₁≈m₂ 写明。仅证算术自洽，不证输入物理有效性，不能据分类登记认定C类全部合格",
+     "source_spans": [
+      [
+       35,
+       57
+      ]
+     ]
+    },
+    {
+     "start": 106,
+     "end": 149,
      "class": "N",
-     "end": 11,
-     "reason": "说明性/规则性/声明性散文：模型定义、口径声明、流程规则或判据说明，无独立数据取值断言",
-     "start": 0
+     "reason": "非数据断言——方法指令：非对称构造须回到本件 M3 精确式、不得把近似式误差误归为约化质量式的适用域限制，系方法路径规定，无量化取值"
     }
    ]
   },
@@ -17055,6 +17063,16 @@
      "end": 60,
      "reason": "板材类材料参数行：密度/弹性模量/泊松比为 B 类材料物理参数（产品标准＋检测统计区间）",
      "start": 0
+    }
+   ]
+  },
+  "acoustic-calculation-engine/reference.md#46d32e2396a851af89c13fd89542fa16d591924ebf12f42102db4ac353edcab7:1": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 20,
+     "class": "N",
+     "reason": "非数据断言——小标题结构件（引出下列三面分清），无量化取值"
     }
    ]
   },
@@ -17306,28 +17324,6 @@
     }
    ]
   },
-  "acoustic-calculation-engine/reference.md#522bd86b37ffb47aeb6f8cfd7133d34a40dca0f263f163817c7e0ad85d091822:1": {
-   "segments": [
-    {
-     "class": "N",
-     "end": 74,
-     "reason": "非对称构造模型行为说明：m_red 代表性偏差的定性陈述",
-     "start": 0
-    },
-    {
-     "class": "D",
-     "end": 146,
-     "reason": "5-13% 提示区间为工程经验提示值（段内自标'经验提示值、待实测校准'）",
-     "source_spans": [
-      [
-       74,
-       90
-      ]
-     ],
-     "start": 74
-    }
-   ]
-  },
   "acoustic-calculation-engine/reference.md#52943911d650f6ee71586b15e4165701e0bd047fe8d54760609c4f717e0716cf:1": {
    "segments": [
     {
@@ -17528,6 +17524,16 @@
     }
    ]
   },
+  "acoustic-calculation-engine/reference.md#5e6e84590afca2cd98bdc298aed5ea1dad9abe21d47cde3818bc75dbf8901a04:1": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 24,
+     "class": "N",
+     "reason": "非数据断言——小标题结构件（引出下列双空腔耦合系统），无量化取值"
+    }
+   ]
+  },
   "acoustic-calculation-engine/reference.md#5f70f9a8dbaff043b7a4178fed79ae91157b8e58ba2079b3dd4a00887aa1fe6d:1": {
    "segments": [
     {
@@ -17725,6 +17731,28 @@
      "end": 58,
      "reason": "公式/模型定义代码块：模型关系式定义非取值断言",
      "start": 0
+    }
+   ]
+  },
+  "acoustic-calculation-engine/reference.md#7016e127b25016790e033f251caab61833a3a8e3eb1530fe3b1a3fcb6f6c013f:1": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 197,
+     "class": "C",
+     "reason": "派生计算量（恒等式）：f₀=600/√(d×m_red) 源于理想两质量-一弹簧系统非零模态精确解 ω²=k(1/m₁+1/m₂)=k/m_red，对任意正质量比精确成立；复算质量比 r=0.1—10 下特征方程非零根与 k/m_red 相对偏差恒为 0（凭据＝CG-20260925-001 复算取证 §一，复算能复现）；输入项（理想弹簧 k、质量 m₁/m₂）系模型给定，适用前提＝理想两质量-一弹簧写明；「质量比本身不使本公式产生偏差」系恒等式的定性复述。仅证算术自洽，不证输入物理有效性，不能据分类登记认定C类全部合格",
+     "source_spans": [
+      [
+       67,
+       94
+      ]
+     ]
+    },
+    {
+     "start": 197,
+     "end": 278,
+     "class": "N",
+     "reason": "非数据断言——撤回披露叙述：所引「m₁/m₂ 超出 0.5—2 产生 5-13% 偏差」系被撤回的原提示区间（非现行主张、不给替代偏差值），本段说明撤回理由＝归因在理想模型内不成立＋无可定位实测来源"
     }
    ]
   },
@@ -18023,6 +18051,32 @@
      "end": 48,
      "reason": "ACE 行为规则声明（声桥与缝隙风险评估红线指称），非数据断言",
      "start": 0
+    }
+   ]
+  },
+  "acoustic-calculation-engine/reference.md#81ab12e90a31977da8e051438e51746afdc956805973656b57ac782400a78b10:1": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 171,
+     "class": "C",
+     "reason": "派生计算量（MSM 常数导出）：常数 600 由 1/(2π)×√(ρ_air×c²×100) 导出，代入空气物性 ρ_air=1.2 kg/m³、c=343 m/s 复算得 598.1≈600，复算能复现；输入项（空气密度、声速）系本段给定，适用前提（空腔内为空气弹簧）写明；「导出式不含面密度项、常数不依赖 m₁ 与 m₂ 是否相近」系由导出式不含面密度项得出的定性结论。仅证算术自洽，不证输入物理有效性，不能据分类登记认定C类全部合格",
+     "source_spans": [
+      [
+       27,
+       55
+      ],
+      [
+       129,
+       154
+      ]
+     ]
+    },
+    {
+     "start": 171,
+     "end": 269,
+     "class": "N",
+     "reason": "非数据断言——结构性交叉指向：m_red 约化质量式对任意正质量比精确成立（指向下条第 1 条）、面密度对称性影响的是近对称近似式（1200 式）精度而非本式（指向下条第 2 条）；「1200 式」系对下条公式的名称指针，其复算登记于该条，本段无独立量化取值"
     }
    ]
   },
@@ -18512,16 +18566,6 @@
      "class": "N",
      "end": 70,
      "reason": "适用边界表行：能力边界声明非取值断言",
-     "start": 0
-    }
-   ]
-  },
-  "acoustic-calculation-engine/reference.md#9da50c4fa721cd3ae8f2e8a0e9e3dd41d2b83955fab972c7dcc538e8dedb0dd3:1": {
-   "segments": [
-    {
-     "class": "N",
-     "end": 88,
-     "reason": "说明性/规则性/声明性散文：模型定义、口径声明、流程规则或判据说明，无独立数据取值断言",
      "start": 0
     }
    ]
@@ -19370,16 +19414,6 @@
     }
    ]
   },
-  "acoustic-calculation-engine/reference.md#cfffa20fd7aa743486191eb83636d1043557076ea348d7bfe1a47a977378991d:1": {
-   "segments": [
-    {
-     "class": "N",
-     "end": 13,
-     "reason": "说明性/规则性/声明性散文：模型定义、口径声明、流程规则或判据说明，无独立数据取值断言",
-     "start": 0
-    }
-   ]
-  },
   "acoustic-calculation-engine/reference.md#d106ed08f8ca9e637750df5a55e898742f36fe18d9edcdde2e1b2048ba06cbc1:1": {
    "segments": [
     {
@@ -19506,6 +19540,46 @@
     }
    ]
   },
+  "acoustic-calculation-engine/reference.md#d5fd42075bea54e2f86d7d0a61a2b20f3baf36e2c1d1cb7692fcdea53a810d27:1": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 194,
+     "class": "C",
+     "reason": "派生计算量（三质量-两弹簧耦合模态）：对称双腔 m₁=m₃=20、m₂=16、d₁=d₂=37.5mm 下耦合系统自由振动含 1 刚体模态＋2 非零耦合模态，非零耦合模态复算 69.1/129.2 Hz（凭据＝CG-20260925-001 复算取证 §四，复算能复现）；对称双腔恒有一模态精确位于 ω²=k/m（中板静止、外板反相 (1,0,−1)）、另一模态随中板质量上移系特征方程解析性质；输入项（三层质量、两空腔厚度）系本段给定，适用前提＝对称双腔一体化龙骨隔墙写明。仅证算术自洽，不证输入物理有效性，不能据分类登记认定C类全部合格",
+     "source_spans": [
+      [
+       70,
+       102
+      ]
+     ]
+    },
+    {
+     "start": 194,
+     "end": 275,
+     "class": "N",
+     "reason": "非数据断言——定性方向与撤回叙述：隔声优势定性方向（多一层板质量＋两道解耦路径）维持、增益无 dB 可加性、旧「按两层空腔分别计算增益后叠加」算法已撤回（两腔分别按单腔 MSM 计算不还原耦合模态逐值）；「dB」系单位指涉无现行量化取值"
+    },
+    {
+     "start": 275,
+     "end": 290,
+     "class": "C",
+     "reason": "派生计算量（单腔 MSM 反例）：两腔分别按单腔 MSM 计算同例均得 f₀≈103.6 Hz（精确常数 598.1 口径；与面公式常数 600→103.9 的 0.3% 舍入差经 SRE OBS 披露、不改写面），由同例输入基准（对称双腔 m₁=m₃=20、m₂=16、d₁=d₂=37.5mm）按单腔约化质量式复算，复算能复现；作耦合模态 69.1/129.2 Hz 的反例对照（差值 >30／>20 Hz 示单腔分别计算不还原耦合逐值）。仅证算术自洽，不证输入物理有效性，不能据分类登记认定C类全部合格",
+     "source_spans": [
+      [
+       70,
+       102
+      ]
+     ]
+    },
+    {
+     "start": 290,
+     "end": 462,
+     "class": "N",
+     "reason": "非数据断言——双空腔增益定量输出纪律：单腔叠加不还原耦合逐值与 dB 相加无依据的定性结论、禁编造通用扣减值、两条合法路径（① 耦合模型三质量-两弹簧特征方程估算并逐项列模型外假设／② 引用同构造实测检测报告编号）、二者皆无时的定性方向与标注文案；「①②／三质量-两弹簧」系枚举与模型名称，无独立量化取值"
+    }
+   ]
+  },
   "acoustic-calculation-engine/reference.md#d7dcfd4f367ca7a1f36aab4555df05247f66039ba737a7bc9480d6d99df358ee:1": {
    "segments": [
     {
@@ -19513,6 +19587,16 @@
      "end": 56,
      "reason": "板材类材料参数行：密度/弹性模量/泊松比为 B 类材料物理参数（产品标准＋检测统计区间）",
      "start": 0
+    }
+   ]
+  },
+  "acoustic-calculation-engine/reference.md#d7fae4e1b00b00dbc1ebab2bd46243c4bb01fc040c8ae0f0ff9b430243620f13:1": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 165,
+     "class": "N",
+     "reason": "非数据断言——模型外假设定性清单：声桥／阻尼／边界条件／板弯曲模态／空腔无质量弹簧假设五项，说明 M3 与实测 f₀ 偏差来源；「c/4d」系四分之一波长共振的符号表达非独立量化取值，无数值断言"
     }
    ]
   },
@@ -19593,6 +19677,16 @@
      "end": 44,
      "reason": "公式/模型定义代码块：模型关系式定义非取值断言",
      "start": 0
+    }
+   ]
+  },
+  "acoustic-calculation-engine/reference.md#e151e9d8275d772d4599c3fe6c3b73c0a27263ee0c4dffaa6ceb3100d1ccf12e:1": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 68,
+     "class": "N",
+     "reason": "非数据断言——ACE 输出行为规范：标注非对称度 m₁/m₂ 供构造识别、精度降低归因按第 3 条模型外假设逐项作出而非按质量比本身，系方法／流程约定，无量化取值"
     }
    ]
   },
@@ -20049,34 +20143,6 @@
      "end": 10,
      "reason": "说明性/规则性/声明性散文：模型定义、口径声明、流程规则或判据说明，无独立数据取值断言",
      "start": 0
-    }
-   ]
-  },
-  "acoustic-calculation-engine/reference.md#fc759f02793ab3e6b22c1ca061f15350f5cc3e4486d9616500703fb182270f0a:1": {
-   "segments": [
-    {
-     "class": "N",
-     "end": 128,
-     "reason": "MSM 常数 600 的导出式说明（常数来源与空气弹簧假设陈述，导出式为模型定义）",
-     "start": 0
-    },
-    {
-     "class": "C",
-     "end": 170,
-     "reason": "MSM 常数代入复算：ρ_air=1.2 kg/m³、c=343 m/s 时代入导出式得 598≈600，可复现",
-     "source_spans": [
-      [
-       129,
-       169
-      ]
-     ],
-     "start": 128
-    },
-    {
-     "class": "N",
-     "end": 215,
-     "reason": "MSM 建模前提说明（对称性只影响 m_red 代表性、不影响常数本身）",
-     "start": 170
     }
    ]
   },
@@ -60453,6 +60519,16 @@
     }
    ]
   },
+  "prefab-partition-wall-solution/reference.md#50804c61b0b26529f5116b0d6c5a2dd5974612cba09366511718b1fd6e4bcf57:1": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 179,
+     "class": "N",
+     "reason": "非数据断言——PW 侧双空腔隔声优势定性方向与撤回披露的转述指针：定性方向成立（多一层板质量、两道解耦路径）、系耦合系统（1 刚体＋2 非零耦合模态、共振分裂为二）增益无 dB 可加性，均转述自 ACE M4「双空腔系统」条（耦合模态 69.1/129.2 Hz 与单腔反例 103.6 Hz 的真值源在 ACE reference.md :203 与复算取证 §四、已就地登记 C 类）；旧「比单空腔可额外提升约 5-10 dB」因无可定位实测来源已撤回数值出口（被撤回值非现行主张）；定量以同构造检测报告或耦合模型估算为准、不得编造通用扣减值系方法约定。本行无独立定量主张"
+    }
+   ]
+  },
   "prefab-partition-wall-solution/reference.md#50ed7960101dd6b324481a6bc558fc77d59ba8df0ee546cfc223090c6ad43461:1": {
    "segments": [
     {
@@ -81379,6 +81455,58 @@
     }
    ]
   },
+  "shared/change-governance.md#2e81e25f1d075e68b61ae1e83e278d3609120fc6fbc23241dbfb9aae75a9fa18:1": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 1,
+     "class": "N",
+     "reason": "Markdown 表格行首的分隔符，无断言内容。非数据断言"
+    },
+    {
+     "start": 1,
+     "end": 19,
+     "class": "N",
+     "reason": "CG 编号标签，结构件。非数据断言"
+    },
+    {
+     "start": 19,
+     "end": 32,
+     "class": "N",
+     "reason": "登记日期元数据。非数据断言"
+    },
+    {
+     "start": 32,
+     "end": 560,
+     "class": "N",
+     "reason": "定级标签与定级依据叙述（所引数值均系门禁读数与写面件转述指针），本行不充当真值源。非数据断言"
+    },
+    {
+     "start": 560,
+     "end": 3067,
+     "class": "N",
+     "reason": "治理登记行叙述：所引行号、数值、公式读数均系对写面技能件与门禁输出的转述指针，真值源在对应载体，本行不独立主张工程技术参数。非数据断言"
+    },
+    {
+     "start": 3067,
+     "end": 3781,
+     "class": "N",
+     "reason": "影响面描述（文件路径与覆盖面指针），非数据断言"
+    },
+    {
+     "start": 3781,
+     "end": 4009,
+     "class": "N",
+     "reason": "状态标签与授权叙述，非数据断言"
+    },
+    {
+     "start": 4009,
+     "end": 4010,
+     "class": "N",
+     "reason": "行尾换行符，无断言内容。非数据断言"
+    }
+   ]
+  },
   "shared/change-governance.md#37024c72af638a15099f1c1c8bf2f3cdd5bbe7b9bc3c919c796a55fe7075a6f3:1": {
    "segments": [
     {
@@ -81879,64 +82007,6 @@
     }
    ]
   },
-  "shared/change-governance.md#5e1c8f231d4aadcb8b91d171ad1abc98923781574cce4145170bd78a15b505ab:1": {
-   "segments": [
-    {
-     "start": 0,
-     "end": 1,
-     "class": "N",
-     "reason": "表格行首分隔符"
-    },
-    {
-     "start": 1,
-     "end": 10,
-     "class": "N",
-     "reason": "遗留编号，仅为治理身份键"
-    },
-    {
-     "start": 10,
-     "end": 37,
-     "class": "N",
-     "reason": "专业问题的定性任务描述，不含工程定量断言"
-    },
-    {
-     "start": 37,
-     "end": 55,
-     "class": "N",
-     "reason": "来源批次指针"
-    },
-    {
-     "start": 55,
-     "end": 68,
-     "class": "N",
-     "reason": "登记日期，流程元数据"
-    },
-    {
-     "start": 68,
-     "end": 81,
-     "class": "N",
-     "reason": "复查期限，流程元数据"
-    },
-    {
-     "start": 81,
-     "end": 87,
-     "class": "N",
-     "reason": "治理处置状态，非标准效力状态"
-    },
-    {
-     "start": 87,
-     "end": 190,
-     "class": "N",
-     "reason": "处置历史及本次任务编排、验收指针，不是工程设计结论"
-    },
-    {
-     "start": 190,
-     "end": 191,
-     "class": "N",
-     "reason": "行尾空白"
-    }
-   ]
-  },
   "shared/change-governance.md#6054c98148e6458a391e5f1cc5f9f0929d07fe21f7d7fd06208e348a40c5b77e:1": {
    "segments": [
     {
@@ -82006,16 +82076,6 @@
      "end": 5281,
      "class": "N",
      "reason": "行尾换行符，无断言内容。非数据断言"
-    }
-   ]
-  },
-  "shared/change-governance.md#6594adc99ea91d71efb27fa366d997f8c2adbe87d9133ab91311d1114c4ddccd:1": {
-   "segments": [
-    {
-     "start": 0,
-     "end": 686,
-     "class": "N",
-     "reason": "头部快照行：本行是该批变更的过程叙述与自证计数，所引标准编号／行号／数值均为指向对应载体的转述指针，真值源在写面技能件与门禁输出，本文件不充当其真值源。非数据断言"
     }
    ]
   },
@@ -82297,6 +82357,64 @@
     }
    ]
   },
+  "shared/change-governance.md#81d7ebd159d49981557a2f7c1f5e61ac18970db1d9d3e49fb67ac8ab89e8b3ab:1": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 1,
+     "class": "N",
+     "reason": "Markdown 表格行首的分隔符，无断言内容。非数据断言"
+    },
+    {
+     "start": 1,
+     "end": 10,
+     "class": "N",
+     "reason": "PL 台账编号标签，结构件。非数据断言"
+    },
+    {
+     "start": 10,
+     "end": 37,
+     "class": "N",
+     "reason": "事项描述叙述：所引文件路径、行号、数值均系对相应载体的转述指针，真值源在对应技能件与报告，本行不独立主张。非数据断言"
+    },
+    {
+     "start": 37,
+     "end": 55,
+     "class": "N",
+     "reason": "来源登记标签列（CG 编号／报告分项指针），非数据断言"
+    },
+    {
+     "start": 55,
+     "end": 68,
+     "class": "N",
+     "reason": "日期元数据。非数据断言"
+    },
+    {
+     "start": 68,
+     "end": 72,
+     "class": "N",
+     "reason": "日期元数据（TTL）。非数据断言"
+    },
+    {
+     "start": 72,
+     "end": 78,
+     "class": "N",
+     "reason": "状态枚举标签。非数据断言"
+    },
+    {
+     "start": 78,
+     "end": 934,
+     "class": "N",
+     "reason": "处置依据叙述：所引复算过程、数值与门禁读数均系对写面件、执行记录与门禁输出的转述指针，真值源在对应载体，本行不独立主张工程技术参数。非数据断言"
+    },
+    {
+     "start": 934,
+     "end": 935,
+     "class": "N",
+     "reason": "行尾换行符，无断言内容。非数据断言"
+    }
+   ]
+  },
   "shared/change-governance.md#8372e29d0fb5f00dcb98c0da70dfc476b9bf79010b20b760856c5c7b6d2d7bf3:1": {
    "segments": [
     {
@@ -82304,6 +82422,16 @@
      "end": 14,
      "reason": "章节标题行：导航文本，不构成量化断言",
      "start": 0
+    }
+   ]
+  },
+  "shared/change-governance.md#8717ddb7780456e636538ee5397e0387f7e37694450f89dd90d178dd5e0c0356:1": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 692,
+     "class": "N",
+     "reason": "头部快照行：本行是该批变更的过程叙述与自证计数，所引标准编号／行号／数值均为指向对应载体的转述指针，真值源在写面技能件与门禁输出，本文件不充当其真值源。非数据断言"
     }
    ]
   },
@@ -83001,6 +83129,16 @@
     }
    ]
   },
+  "shared/change-governance.md#bc5093f3abcdc40b09057a8805af3ff9318d8f979cc0d4a3ade98f8e25f06dd3:1": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 679,
+     "class": "N",
+     "reason": "头部快照行：本行是该批变更的过程叙述与自证计数，所引标准编号／行号／数值均为指向对应载体的转述指针，真值源在写面技能件与门禁输出，本文件不充当其真值源。非数据断言"
+    }
+   ]
+  },
   "shared/change-governance.md#c2ce6b24bb82e405087aa39c2a01a88907a0b54b617eded3afb6ddc89f22b231:1": {
    "segments": [
     {
@@ -83278,6 +83416,16 @@
      "end": 2,
      "reason": "分隔线/结构行：无内容断言",
      "start": 0
+    }
+   ]
+  },
+  "shared/change-governance.md#c8dea3ffb95e69324325602da742ece261e843c1f7af9c2e3e1ae1783306043d:30": {
+   "segments": [
+    {
+     "start": 0,
+     "end": 2,
+     "class": "N",
+     "reason": "Markdown 引用续行「>」，结构件无断言内容。非数据断言"
     }
    ]
   },

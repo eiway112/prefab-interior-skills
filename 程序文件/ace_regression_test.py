@@ -7,8 +7,22 @@ Run after any document change to catch inconsistencies.
 Usage:  python ace_regression_test.py
         python ace_regression_test.py -v          (verbose)
 
-Version: 1.6.0
-Date: 2026-09-24
+Version: 1.7.0
+Date: 2026-09-25
+
+v1.7.0 (2026-09-25, CG-20260925-001 专业整改八批-组6 M3/M4 模型适用性):
+  新增 TestM3M4ModelApplicability 守卫组（PL-066）：① M3 约化质量恒等式
+  ω²=k(1/m₁+1/m₂)=k/m_red 对任意正质量比精确成立（r=0.1—10 复算偏差恒 0），
+  旧「m₁/m₂ 超出 0.5—2 产生 5-13% 偏差」提示区间撤回（撤回无据结论、
+  不给替代偏差值）；② 5-13% 量级正确归因到近对称近似式 1200/√(d×(m₁+m₂))
+  的误差（r=2 约 −5.7%、r=3 约 −13%），PW :318 近似式适用性声明为控制锚；
+  ③ 真实模型误差＝模型外假设五项逐项显式列出（声桥/阻尼/边界/板弯曲模态/
+  空腔无质量弹簧）；④ 双空腔＝三质量-两弹簧耦合系统（1 刚体模态+2 非零
+  耦合模态，共振分裂为二），旧「分别计算增益后叠加」算法与 PW「额外提升约
+  5-10 dB」数值出口撤回，不编造通用扣减值，定量输出仅限耦合模型或同构造
+  实测证据两路径；对称双腔例 69.1/129.2 Hz 与两腔分别算 103.6 Hz 反例
+  均在测试内解析复算。全部 C 类派生量内部复算闭合，不走官方核验通道。
+  支持 ACE_SKILL_DIR / PW_SKILL_DIR 环境变量指向改前原像目录做复红自证。
 
 v1.6.0 (2026-09-24, CG-20260924-007 专业整改七批-组7 M6 缝隙):
   新增 TestM6GapBoundary 守卫组（PL-038 G-2）：ACE M6 简化表末档下界
@@ -1730,6 +1744,233 @@ class TestM6GapBoundary(unittest.TestCase):
         self.assert_pw_ceiling_formula(self.pw + "\n> 注：本节封顶口径与 M6 简化表同源。\n")
         self.assert_pw_tier_table_recomputed(self.pw.replace("\n\n", "\n\n\n"))
         self.assert_single_value_caliber_declared(self.ace, self.pw)
+
+
+# ============================================================
+# PL-038 组6 / PL-066：M3 约化质量恒等式、近对称近似归因、
+#   模型外假设显式列出、双空腔三质量-两弹簧耦合系统守卫。
+#   闭合条件＝区分恒等变换/近对称近似/真实模型误差；多腔按耦合模型
+#   或同构造证据推断；不机械相加两段单腔增益、不编通用扣减值。
+#   全部 C 类派生量，按 data-classification.md 内部复算，不走官方通道。
+#   ACE_SKILL_DIR / PW_SKILL_DIR 环境变量可指向改前原像目录做复红自证。
+# ============================================================
+
+_K_CAV_M34 = RHO_AIR * C_SOUND ** 2   # 空腔弹簧刚度 K=ρ₀c² ≈ 141,178.8 N/m³
+
+
+def _m34_two_leaf_dev(r):
+    """两质量-一弹簧非零根与 k/m_red 的相对偏差（理想模型内恒为 0）。"""
+    m2 = 10.0
+    m1 = r * m2
+    m_red = m1 * m2 / (m1 + m2)
+    return abs(1.0 / m_red - (1.0 / m1 + 1.0 / m2)) / (1.0 / m_red)
+
+
+def _m34_apsym_pct(r):
+    """近对称近似式 1200/√(d·(m₁+m₂)) 相对精确式 600/√(d·m_red) 的偏差 %。"""
+    d = 3.75  # cm；两式同 ∝1/√d，比值与 d 无关
+    m2 = 10.0
+    m1 = r * m2
+    m_red = m1 * m2 / (m1 + m2)
+    exact = 600.0 / math.sqrt(d * m_red)
+    apsym = 1200.0 / math.sqrt(d * (m1 + m2))
+    return (apsym - exact) / exact * 100.0
+
+
+def _m34_three_leaf(m1, m2, m3, d1_m, d2_m):
+    """三质量-两弹簧耦合系统两非零模态频率 (Hz)；刚体模态 λ=0 不计。"""
+    k1 = _K_CAV_M34 / d1_m
+    k2 = _K_CAV_M34 / d2_m
+    B = k1 / m1 + (k1 + k2) / m2 + k2 / m3
+    C = k1 * k2 * (m1 + m2 + m3) / (m1 * m2 * m3)
+    disc = B * B - 4.0 * C
+    assert disc >= 0.0, "特征方程判别式为负（输入非物理）"
+    lam_lo = (B - math.sqrt(disc)) / 2.0
+    lam_hi = (B + math.sqrt(disc)) / 2.0
+    return (math.sqrt(lam_lo) / (2 * math.pi), math.sqrt(lam_hi) / (2 * math.pi))
+
+
+def _m34_single_cav_f0(ma, mb, d_m):
+    """单腔 MSM 精确式 f₀=(1/2π)√(k(1/mₐ+1/m_b))，k=K_CAV/d。"""
+    lam = (_K_CAV_M34 / d_m) * (1.0 / ma + 1.0 / mb)
+    return math.sqrt(lam) / (2 * math.pi)
+
+
+class TestM3M4ModelApplicability(unittest.TestCase):
+    """M3/M4：恒等式适用域、近对称近似归因、模型外假设、双空腔耦合守卫。"""
+
+    @classmethod
+    def setUpClass(cls):
+        ace_base = Path(os.environ.get("ACE_SKILL_DIR") or
+                        (Path.home() / ".qoder/skills/acoustic-calculation-engine"))
+        pw_base = Path(os.environ.get("PW_SKILL_DIR") or
+                       (Path.home() / ".qoder/skills/prefab-partition-wall-solution"))
+        cls.ace = (ace_base / "reference.md").read_text(encoding="utf-8")
+        cls.pw = (pw_base / "reference.md").read_text(encoding="utf-8")
+
+    # ---------- R1 约化质量恒等式：任意正质量比精确成立，旧区间撤回 ----------
+
+    def assert_m3_identity_and_retraction(self, ace_text):
+        self.assertIn("非对称构造适用性（三面分清）", ace_text)
+        self.assertIn("对任意正质量比精确成立", ace_text)
+        self.assertIn("质量比本身不使本公式产生偏差", ace_text)
+        self.assertNotIn("以 5-13% 作为提示区间", ace_text,
+            "旧肯定式「以 5-13% 作为提示区间」回潮：恒等式对任意正质量比精确成立，区间归因无据")
+        self.assertIn("撤回无据结论，不给替代偏差值", ace_text)
+        # 数值自证：r=0.1—10 恒等式偏差恒 0（复算取证 §一）
+        for r in (0.1, 0.25, 0.5, 1.0, 2.0, 4.0, 10.0):
+            self.assertAlmostEqual(_m34_two_leaf_dev(r), 0.0, places=12,
+                msg=f"r={r} 恒等式偏差非 0")
+
+    # ---------- R2 5-13% 量级归因到近对称近似式，非约化质量式 ----------
+
+    def assert_apsym_attribution(self, ace_text, pw_text):
+        self.assertIn("近对称近似（另一公式，非本件 M3）", ace_text)
+        self.assertIn("1200/√(d×(m₁+m₂))", ace_text)
+        self.assertIn("r=2 约 −5.7%、r=3 约 −13%", ace_text)
+        self.assertIn("不得把近似式的误差误归为约化质量式的适用域限制", ace_text)
+        # PW :318 控制锚（本批不改面）：近似式适用性声明在场
+        self.assertIn("适用于对称或近对称构造 m₁≈m₂", pw_text)
+        # 复算（取证 §二）：近似式偏差方向为低估 f₀，量级与文档一致
+        self.assertAlmostEqual(_m34_apsym_pct(1.0), 0.0, delta=0.05)
+        self.assertAlmostEqual(_m34_apsym_pct(1.5), -2.0, delta=0.15)
+        self.assertAlmostEqual(_m34_apsym_pct(2.0), -5.7, delta=0.15)
+        self.assertAlmostEqual(_m34_apsym_pct(3.0), -13.4, delta=0.15)
+
+    # ---------- R3 真实模型误差＝模型外假设逐项显式列出 ----------
+
+    def assert_out_of_model_assumptions(self, ace_text):
+        for phrase in ("声桥（龙骨等刚性连接）", "阻尼（填充材料耗能）",
+                       "边界条件（板尺寸有限与边缘约束）", "板弯曲模态",
+                       "空腔无质量弹簧假设"):
+            self.assertIn(phrase, ace_text, f"模型外假设缺项：{phrase}")
+        self.assertIn("逐项显式列出", ace_text)
+        self.assertIn("精度降低的归因按上列第 3 条模型外假设逐项作出，不按质量比本身归因",
+                      ace_text)
+
+    # ---------- R4 双空腔＝三质量-两弹簧耦合系统，叠加算法撤回 ----------
+
+    def assert_dual_cavity_coupled(self, ace_text):
+        self.assertIn("双空腔系统（三质量-两弹簧耦合系统）", ace_text)
+        self.assertIn("1 个刚体模态 + 2 个非零耦合模态，共振分裂为二", ace_text)
+        self.assertIn("耦合模态 69.1/129.2 Hz", ace_text)
+        self.assertIn("增益无 dB 可加性", ace_text)
+        self.assertIn("按两层空腔分别计算增益后叠加」算法已撤回", ace_text)
+        self.assertIn("同例均为 103.6 Hz", ace_text)
+        self.assertIn("亦不编造通用扣减值替代", ace_text)
+        self.assertIn("检测报告编号", ace_text)
+        self.assertNotIn("理论上隔声增益优于单空腔", ace_text,
+            "旧肯定式「理论上隔声增益优于单空腔」回潮：耦合系统不还原逐值，叠加无据")
+        self.assertNotIn("ACE 按两层空腔分别计算增益后叠加，但标注", ace_text,
+            "旧叠加算法肯定式回潮")
+        # 解析复算（取证 §四例1）：对称双腔 m₁=m₃=20、m₂=16、d=37.5mm
+        f_lo, f_hi = _m34_three_leaf(20.0, 16.0, 20.0, 0.0375, 0.0375)
+        self.assertAlmostEqual(f_lo, 69.1, delta=0.15)
+        self.assertAlmostEqual(f_hi, 129.2, delta=0.15)
+        # 对称双腔恒等式：低模态精确位于 ω²=k/m（中板静止、外板反相 (1,0,−1)）
+        k = _K_CAV_M34 / 0.0375
+        self.assertAlmostEqual(f_lo, math.sqrt(k / 20.0) / (2 * math.pi), places=6)
+        # 撤回算法反例：两腔分别按单腔 MSM 计算同值 103.6 Hz，不还原耦合模态
+        f_single = _m34_single_cav_f0(20.0, 16.0, 0.0375)
+        self.assertAlmostEqual(f_single, 103.6, delta=0.15)
+        self.assertGreater(abs(f_single - f_lo), 30.0)
+        self.assertGreater(abs(f_single - f_hi), 20.0)
+
+    # ---------- R5 PW 双空腔数值出口撤回（披露句外肯定式灭活） ----------
+
+    def assert_pw_dual_cavity_retraction(self, pw_text):
+        self.assertIn("1 刚体模态＋2 非零耦合模态，共振分裂为二", pw_text)
+        self.assertIn("增益无 dB 可加性", pw_text)
+        self.assertIn("因无可定位实测来源已撤回数值出口", pw_text)
+        self.assertIn("不得编造通用扣减值替代", pw_text)
+        self.assertIn("见 ACE M4「双空腔系统」条", pw_text)
+        # 计数守卫：旧肯定式字面仅允许存在于撤回披露句内（组4「互斥披露含原印值」先例）
+        n = pw_text.count("比单空腔可额外提升约 5-10 dB")
+        self.assertEqual(n, 1, "旧「额外提升约 5-10 dB」在披露句外复活或缺失")
+        i = pw_text.find("比单空腔可额外提升约 5-10 dB")
+        ctx = pw_text[max(0, i - 30):i + 80]
+        self.assertIn("原「", ctx, "唯一命中不在撤回语境（缺「原「」前缀）")
+        self.assertIn("已撤回", ctx, "唯一命中不在撤回语境（缺「已撤回」后缀）")
+
+    # ---------- 常态通过 ----------
+
+    def test_runtime_m3_identity(self):
+        self.assert_m3_identity_and_retraction(self.ace)
+
+    def test_runtime_apsym_attribution(self):
+        self.assert_apsym_attribution(self.ace, self.pw)
+
+    def test_runtime_out_of_model_assumptions(self):
+        self.assert_out_of_model_assumptions(self.ace)
+
+    def test_runtime_dual_cavity_coupled(self):
+        self.assert_dual_cavity_coupled(self.ace)
+
+    def test_runtime_pw_dual_cavity_retraction(self):
+        self.assert_pw_dual_cavity_retraction(self.pw)
+
+    # ---------- 数值性质（与文档字面解耦的独立复算） ----------
+
+    def test_apsym_error_monotonic_decreasing(self):
+        prev = 0.0
+        for r in (1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 10.0):
+            e = _m34_apsym_pct(r)
+            self.assertLessEqual(e, prev + 1e-9, f"r={r} 近似式偏差非单调")
+            prev = e
+        self.assertAlmostEqual(_m34_apsym_pct(6.0), -30.0, delta=0.3)
+        self.assertAlmostEqual(_m34_apsym_pct(10.0), -42.5, delta=0.3)
+
+    def test_three_leaf_asymmetric_example(self):
+        # 取证 §四例3：非对称三叶 12/16/40、d=50mm
+        f_lo, f_hi = _m34_three_leaf(12.0, 16.0, 40.0, 0.05, 0.05)
+        self.assertAlmostEqual(f_lo, 58.4, delta=0.15)
+        self.assertAlmostEqual(f_hi, 115.2, delta=0.15)
+        # 两腔分别算（撤回算法）逐值不同：102.1 / 79.1 Hz
+        self.assertAlmostEqual(_m34_single_cav_f0(12.0, 16.0, 0.05), 102.1, delta=0.2)
+        self.assertAlmostEqual(_m34_single_cav_f0(16.0, 40.0, 0.05), 79.1, delta=0.2)
+
+    # ---------- 负向注入（守卫须仍能失败） ----------
+
+    def test_ace_old_asym_interval_rejected(self):
+        injected = self.ace.replace(
+            "质量比本身不使本公式产生偏差。原「m₁/m₂ 超出 0.5—2 产生 5-13% 偏差」的提示区间因归因在理想模型内不成立、且无可定位实测来源而**撤回**（撤回无据结论，不给替代偏差值）",
+            "当 m₁ 与 m₂ 差异较大时（m₁/m₂ > 2 或 < 0.5），以单一 m_red 代表双叶系统会产生偏差，本件以 5-13% 作为提示区间", 1)
+        self.assertNotEqual(injected, self.ace, "注入未命中（R1 撤回句锚点漂移）")
+        with self.assertRaises(AssertionError):
+            self.assert_m3_identity_and_retraction(injected)
+
+    def test_ace_old_dual_cavity_superposition_rejected(self):
+        injected = self.ace.replace(
+            "增益无 dB 可加性**：原「按两层空腔分别计算增益后叠加」算法已撤回——两腔分别按单腔 MSM 计算（同例均为 103.6 Hz）不还原耦合模态逐值，dB 相加亦无依据；亦不编造通用扣减值替代",
+            "理论上隔声增益优于单空腔。ACE 按两层空腔分别计算增益后叠加，但标注影响较大", 1)
+        self.assertNotEqual(injected, self.ace, "注入未命中（R4 撤回句锚点漂移）")
+        with self.assertRaises(AssertionError):
+            self.assert_dual_cavity_coupled(injected)
+
+    def test_pw_old_gain_value_rejected(self):
+        injected = self.pw.replace(
+            "原「比单空腔可额外提升约 5-10 dB」因无可定位实测来源已撤回数值出口——定量值以同构造检测报告或耦合模型估算为准（见 ACE M4「双空腔系统」条），不得编造通用扣减值替代",
+            "比单空腔可额外提升约 5-10 dB", 1)
+        self.assertNotEqual(injected, self.pw, "注入未命中（R5 撤回句锚点漂移）")
+        with self.assertRaises(AssertionError):
+            self.assert_pw_dual_cavity_retraction(injected)
+
+    def test_pw_apsym_control_anchor_removed_rejected(self):
+        injected = self.pw.replace("适用于对称或近对称构造 m₁≈m₂", "适用于任意构造", 1)
+        self.assertNotEqual(injected, self.pw, "注入未命中（PW :318 控制锚漂移）")
+        with self.assertRaises(AssertionError):
+            self.assert_apsym_attribution(self.ace, injected)
+
+    # ---------- 控制例（守卫不恒真：良性变更不报红） ----------
+
+    def test_control_benign_changes_pass(self):
+        self.assert_m3_identity_and_retraction(self.ace.replace("\n\n", "\n\n\n"))
+        self.assert_apsym_attribution(
+            self.ace + "\n> 注：本节口径与 M4「双空腔系统」条同源。\n", self.pw)
+        self.assert_out_of_model_assumptions(self.ace.replace("\n\n", "\n\n\n"))
+        self.assert_dual_cavity_coupled(self.ace.replace("\n\n", "\n\n\n"))
+        self.assert_pw_dual_cavity_retraction(
+            self.pw + "\n> 注：双空腔定量路径以 ACE M4 为准。\n")
 
 
 # ============================================================
