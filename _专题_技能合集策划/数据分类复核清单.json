@@ -172,10 +172,6 @@
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
     },
-    "prefab-acceptance-checklist-generator/SKILL.md#c8268a06e87dc47466f4054e57f81880dfb8947253e52725c46f46159876e6e0:1": {
-      "deferred_to": "PL-060",
-      "registered_on": "2026-09-23"
-    },
     "prefab-acceptance-checklist-generator/SKILL.md#d5166d1d453b742b48cd3f2d5a014ca1be6a1cc95cd1c2e3672c78cf11d4fb94:1": {
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
@@ -236,10 +232,6 @@
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
     },
-    "prefab-acceptance-checklist-generator/reference.md#13d752c5a1bffbcf4ff6342852c6f9013c9f358ed0dc396f23499c13ff057b65:1": {
-      "deferred_to": "PL-060",
-      "registered_on": "2026-09-23"
-    },
     "prefab-acceptance-checklist-generator/reference.md#1422793573b0321c102714148e9126f6a88e48e78c88eb42f4e23e7c3e458572:1": {
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
@@ -252,15 +244,7 @@
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
     },
-    "prefab-acceptance-checklist-generator/reference.md#1ddb73ad6f0754dd910a983e96b5f7d1b079d007386032e2642d06442eb867ae:1": {
-      "deferred_to": "PL-060",
-      "registered_on": "2026-09-23"
-    },
     "prefab-acceptance-checklist-generator/reference.md#1e2b829cd3c798561e9367129ec0264ddc3d27447fdd044c36035c5ac0537962:1": {
-      "deferred_to": "PL-060",
-      "registered_on": "2026-09-23"
-    },
-    "prefab-acceptance-checklist-generator/reference.md#22c93986b62eaaf2eeb92bf2a7b9a08def5a4ff5b32a4466989acf316e0b580e:1": {
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
     },
@@ -420,10 +404,6 @@
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
     },
-    "prefab-acceptance-checklist-generator/reference.md#9ece6d52987ca35b89d424178e01fee90c9cac7b7fa135924a73cbdc2f6384b9:1": {
-      "deferred_to": "PL-060",
-      "registered_on": "2026-09-23"
-    },
     "prefab-acceptance-checklist-generator/reference.md#a2132badafcf3c4b5547d86bf1ea147787ffbda45fa93dac2f6e262e33695734:1": {
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
@@ -452,10 +432,6 @@
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
     },
-    "prefab-acceptance-checklist-generator/reference.md#b8458c38a268670bc0195675841693101394f78eb80a12aa760b0d593e6994c0:1": {
-      "deferred_to": "PL-060",
-      "registered_on": "2026-09-23"
-    },
     "prefab-acceptance-checklist-generator/reference.md#bd1c2db35b0900c7ed1e4e87ffeefce931dc01816c91f13517faa8ecd9aadf7e:1": {
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
@@ -469,10 +445,6 @@
       "registered_on": "2026-09-23"
     },
     "prefab-acceptance-checklist-generator/reference.md#c37f6f0b7dbbc6df98a585f0dd3486a48b9fc8412d0cf20a9c959521c432f026:1": {
-      "deferred_to": "PL-060",
-      "registered_on": "2026-09-23"
-    },
-    "prefab-acceptance-checklist-generator/reference.md#c3e4223a20b2cc64b852a821941609032d888423038156b97c67aa026556db3b:1": {
       "deferred_to": "PL-060",
       "registered_on": "2026-09-23"
     },
@@ -23110,16 +23082,6 @@
         }
       ]
     },
-    "prefab-acceptance-checklist-generator/reference.md#7d7265250c86418b5552e41ed0a4b1179ac9da56ab569ec4b204c270d62b423d:1": {
-      "segments": [
-        {
-          "class": "N",
-          "end": 59,
-          "reason": "非数据断言：本块数字仅承担编号、日期、版本号或文档定位（剥离编号/日期/条文号/版本/S-L标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
-          "start": 0
-        }
-      ]
-    },
     "prefab-acceptance-checklist-generator/reference.md#7febbb6e0e833e5799d297bfda48c2ad170d8c0f1885583d5569f6822be9b1eb:1": {
       "segments": [
         {
@@ -23577,65 +23539,6 @@
           "end": 49,
           "reason": "非数据断言：本块数字仅承担编号、日期、版本号或文档定位（剥离编号/日期/条文号/版本/S-L标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
-        }
-      ]
-    },
-    "prefab-acceptance-checklist-generator/reference.md#e13e005fc6e3e108c15e6e43f7aedaa2efedb285b5542edfc6b1125b7aecd679:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 1,
-          "class": "N",
-          "reason": "Markdown 表格行首的分隔符，无断言内容。非数据断言"
-        },
-        {
-          "start": 1,
-          "end": 8,
-          "class": "N",
-          "reason": "检查对象名标签。非数据断言"
-        },
-        {
-          "start": 8,
-          "end": 48,
-          "class": "A",
-          "reason": "管道坡度必须符合设计要求、严禁无坡或倒坡系 GB 50242-2002 第10.2.1条（强条）；塑料排水横支管标准坡度 0.026 系 GB 50015-2019 第4.5.6条第1款，均经官方出版物逐字核验",
-          "verified_on": "2026-09-24",
-          "source_spans": [
-            [
-              102,
-              169
-            ]
-          ]
-        },
-        {
-          "start": 48,
-          "end": 91,
-          "class": "N",
-          "reason": "地面坡度≥1%／淋浴区≥1.5% 系合集内部工艺控制值转述（真值源 prefab-bathroom-kitchen-system §B3 表2），本行已随文注明\"非规范规定值\"，不据以主张规范底线。非数据断言"
-        },
-        {
-          "start": 91,
-          "end": 101,
-          "class": "N",
-          "reason": "检验工具描述，非规范数值。非数据断言"
-        },
-        {
-          "start": 101,
-          "end": 171,
-          "class": "N",
-          "reason": "本行条文引用标签，真值源在各标准官方出版物与 standards-index 核验记录。非数据断言"
-        },
-        {
-          "start": 171,
-          "end": 176,
-          "class": "N",
-          "reason": "本行置信度标签列，凭据真值源在 standards-index 官方核验记录。非数据断言"
-        },
-        {
-          "start": 176,
-          "end": 177,
-          "class": "N",
-          "reason": "行尾换行符，无断言内容。非数据断言"
         }
       ]
     },
@@ -97353,16 +97256,6 @@
         }
       ]
     },
-    "shared/standards-index.md#1d3dc36cf13004e0a9b9b12794f65f15ad92c6d4064942e27dc6ea4e59b221e3:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 67,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
     "shared/standards-index.md#1e4463d02e96f6adbf72807c7e3d9d3182ab26b3385dc7970e651b299f41840c:1": {
       "segments": [
         {
@@ -97450,16 +97343,6 @@
           "end": 193,
           "reason": "非数据断言：本块为示例代码块，残留数字属代码示例内的字面量（演示用，非工程数据断言），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
-        }
-      ]
-    },
-    "shared/standards-index.md#30a7826c4312d98a61a0ae14f32b9f228e068a79cf6230b7760702a59dcadffd:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 298,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -98491,16 +98374,6 @@
         }
       ]
     },
-    "shared/standards-index.md#d255636d45ef1e70be5ae0cd32d7a9f579fd34e194d27439125da37abcf1e0ae:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 101,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
     "shared/standards-index.md#d357af389662f7855939c6bb76a790b060ea00b136ccc1e00da914760a325cb8:1": {
       "segments": [
         {
@@ -98690,16 +98563,6 @@
           "end": 15,
           "reason": "非数据断言：本块为章节标题，残留数字属结构性编号（版本／章节／计数），非量化取值，不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
-        }
-      ]
-    },
-    "shared/standards-index.md#edd3a5ae9629aaad15144cff1dbe9f99eda3867ee4d57b506b3be83941cdb4fc:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 5134,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -100900,16 +100763,6 @@
           "end": 32,
           "reason": "非数据断言：本块数字仅承担编号、日期、版本号或文档定位（剥离编号/日期/条文号/版本/S-L标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
-        }
-      ]
-    },
-    "shared/standards-reasoning-rules.md#ecbd65f99f7ba3bf37567db4e8dbd0638d5fa70be3d5db15f9a8321bcd31fb93:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 45,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -104623,16 +104476,6 @@
         }
       ]
     },
-    "standards-index.md#0b02cbb3ed40a8943b93204abef78c92a03b0b7aa0b01983167ed4b05d39a93f:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 298,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
     "standards-index.md#0b55bfd6d48e9b406cefacd8a14e6884e6eb3f5b468e970457212071fe0f9362:1": {
       "segments": [
         {
@@ -104650,16 +104493,6 @@
           "end": 22,
           "reason": "章节标题行：导航文本，不构成量化断言",
           "start": 0
-        }
-      ]
-    },
-    "standards-index.md#0c2fe04ce39b8f2acbe0b3e6422691d88ffdd2326584e7a210af4c68227cbdc9:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 5134,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -105973,16 +105806,6 @@
         }
       ]
     },
-    "standards-index.md#cab3cad8e71f4012c872afbb4f7d6571a622064839556d4e8168bee1019e1fb5:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 67,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
-        }
-      ]
-    },
     "standards-index.md#cbc21319ac3f7565999222bd2f45dd9ddb769a4dd3df2d16a53942875c41c4a6:1": {
       "segments": [
         {
@@ -105990,16 +105813,6 @@
           "end": 77,
           "reason": "非数据断言：本块数字仅承担编号、日期、版本号或文档定位（剥离编号/日期/条文号/版本/S-L标注后无任何数字残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）",
           "start": 0
-        }
-      ]
-    },
-    "standards-index.md#cc936a031bfda2e8676707f4f94daa8ae504df0f7ada62677f3ca0726400c59b:1": {
-      "segments": [
-        {
-          "start": 0,
-          "end": 101,
-          "class": "N",
-          "reason": "CG-20260925-004 补登：编辑性标注或索引元数据，非规范性数据，无需来源分类"
         }
       ]
     },
@@ -106220,36 +106033,6 @@
           "start": 0,
           "end": 731,
           "reason": "非数据断言：本块为 §十一 遗留存活性台账表行（PL-071 登记行），数字仅承担 PL 编号、CG 编号、日期与 TTL 定位（剥离编号/日期/PL-CG 序号后无任何物理量或限值残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
-        }
-      ]
-    },
-    "shared/change-governance.md#68c741cfb9e7814a0a82b80bae6bcb5b73196d6c3e29969868055ea1fc7218bd:1": {
-      "segments": [
-        {
-          "class": "N",
-          "start": 0,
-          "end": 444,
-          "reason": "非数据断言：本块为 §十一 遗留存活性台账表行（PL-073 登记行），数字仅承担 PL 编号、CG 编号、日期与 TTL 定位（剥离编号/日期/PL-CG 序号后无任何物理量或限值残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
-        }
-      ]
-    },
-    "shared/change-governance.md#fb761ec902e2b92f7234e74ce70fd1ae6b4f5019f35e6163de6ab1a437a1df65:1": {
-      "segments": [
-        {
-          "class": "N",
-          "start": 0,
-          "end": 411,
-          "reason": "非数据断言：本块为 §十一 遗留存活性台账表行（PL-074 登记行），数字仅承担 PL 编号、CG 编号、日期与 TTL 定位（剥离编号/日期/PL-CG 序号后无任何物理量或限值残留），不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
-        }
-      ]
-    },
-    "prefab-acceptance-checklist-generator/reference.md#59aec2211a4804bf67f4cc925d451d5240845ecc0aa30c0a43629ed9fea338b4:1": {
-      "segments": [
-        {
-          "class": "N",
-          "start": 0,
-          "end": 72,
-          "reason": "非数据断言：本块为验收检查项表行，引用来源已改为「设计文件」（非标准编号），S3 为数据来源置信度标注而非物理量限值；行内数字仅承担检查项序号定位，不构成对材料物理量、构造性能或工艺控制值的量化断言（分类口径见 shared/data-classification.md §一 N 类）"
         }
       ]
     },
@@ -106503,16 +106286,6 @@
         }
       ]
     },
-    "shared/change-governance.md#0fe7afde982000d7d5c260e48eb2c9c5bb37e2ad4598ebbbf138c519c284b968:1": {
-      "segments": [
-        {
-          "class": "N",
-          "start": 0,
-          "end": 354,
-          "reason": "治理流程记录（头部快照链最后更新行），非技术数据断言"
-        }
-      ]
-    },
     "shared/change-governance.md#37b750d56d8cd0f81097aafe45f094204cd7d3a8d4bed322461d22d3603edabf:1": {
       "segments": [
         {
@@ -106560,6 +106333,520 @@
           "start": 0,
           "end": 653,
           "reason": "治理流程记录（§十一 PL-072 台账行），非技术数据断言"
+        }
+      ]
+    },
+    "prefab-acceptance-checklist-generator/SKILL.md#37d7e86c679fb6cb0510e3c40d09bd620580785aca3a232038f0303a63e6e204:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 103,
+          "class": "A",
+          "reason": "规范规定值：必检项第 2 项合格标准（蓄水最浅处高度≥20mm、蓄水时间≥24h 无渗漏）＝GB 55030-2022 第6.0.12条第1款；原引 GB 50210-2018 第6.1.4条（∈门窗工程·一般规定）系来源误标已改引。凭据同上",
+          "source_spans": [
+            [
+              50,
+              95
+            ]
+          ],
+          "verified_on": "2026-09-25"
+        }
+      ]
+    },
+    "prefab-acceptance-checklist-generator/reference.md#ef72113c640b580da4d329d05779656854768addeafec47490b2d36cf257e20e:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 103,
+          "class": "A",
+          "reason": "规范规定值：蓄水最浅处高度≥20mm、蓄水时间≥24h 无渗漏＝GB 55030-2022 第6.0.12条第1款逐字值；原引 GB 50210-2018 第6.1.4条（∈门窗工程·一般规定）系来源误标，已随 CG-20260925-008 改引。凭据＝本地官方出版物扫描版视觉核验＋逐条对账（成果/标准核验/GB 55030-2022_核验报告_20260925.md）",
+          "source_spans": [
+            [
+              50,
+              95
+            ]
+          ],
+          "verified_on": "2026-09-25"
+        }
+      ]
+    },
+    "prefab-acceptance-checklist-generator/reference.md#17770428e1966326459c39834fd8104570d9443698ac6dfed18676b9a71b0cdb:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 166,
+          "class": "A",
+          "reason": "规范规定值：架空地板表面平整度≤2.0mm/2m 与「其他面层按对应面层种类的允许偏差表取值」均出自 GB 50209-2010 表6.1.8（经第6.1.8条、第6.7.14条引用）；架空地板系第6.7.1条「组装成架空板」定义的类比锚点。原「≤3mm（其他）」系无来源归并值已撤除。凭据＝本地官方出版物扫描版视觉核验＋逐条对账（成果/标准核验/GB 50209-2010_核验报告_20260925.md）",
+          "source_spans": [
+            [
+              84,
+              158
+            ]
+          ],
+          "verified_on": "2026-09-25"
+        }
+      ]
+    },
+    "prefab-acceptance-checklist-generator/reference.md#c914f754c84a6d92155bd5f3f672a06c40a09c879c980f0f0e0f112964959e48:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 109,
+          "class": "A",
+          "reason": "规范规定值：架空地板接缝高低差≤0.4mm 系 GB 50209-2010 表6.1.8 实值（原≤0.5mm 宽于规范，本批单向收紧）；「其他面层」按对应面层种类允许偏差表取值，原「≤1mm」归并值已撤除。凭据同上",
+          "source_spans": [
+            [
+              60,
+              101
+            ]
+          ],
+          "verified_on": "2026-09-25"
+        }
+      ]
+    },
+    "prefab-acceptance-checklist-generator/reference.md#48214fcbf1a884715901b812bf321e34f97812963263441b75d4beecc374ecf9:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 109,
+          "class": "A",
+          "reason": "规范规定值（定性要求）：固定牢固＝GB 50209-2010 第6.7.2条（支座柱与横梁构成框架一体并与基层连接牢固），无空鼓＝第6.2.7条（面层与下一层结合牢固、无空鼓）；本段无独立量化限值，判据仍取规范条文而非经验值。凭据同上",
+          "source_spans": [
+            [
+              34,
+              101
+            ]
+          ],
+          "verified_on": "2026-09-25"
+        }
+      ]
+    },
+    "prefab-acceptance-checklist-generator/reference.md#387c3f5bc885a792130abc68bf6a693e70ea916f6833ecfa9316b33402bfca08:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 45,
+          "class": "A",
+          "reason": "规范规定值：「有防水要求的楼地面排水坡度不应小于1.0%」系 GB 55030-2022 第4.6.3条逐字值，含坡向地漏的定性要求。原行标「≥1% 系非规范规定值」的定性经 CG-20260925-008 核验判为不成立并改判。凭据＝本地官方出版物扫描版视觉核验（成果/标准核验/GB 55030-2022_核验报告_20260925.md）",
+          "source_spans": [
+            [
+              85,
+              131
+            ]
+          ],
+          "verified_on": "2026-09-25"
+        },
+        {
+          "start": 45,
+          "end": 139,
+          "class": "D",
+          "reason": "工程经验控制值：淋浴区≥1.5% 为合集内部工艺控制值，官方无该数值条文，按 D 类登记；出处列同时载有本行 A 段的规范条文与「设计文件」，不构成本段 1.5% 的官方来源",
+          "source_spans": [
+            [
+              85,
+              131
+            ]
+          ]
+        }
+      ]
+    },
+    "prefab-acceptance-checklist-generator/reference.md#41b72e8a3298189ddb91e210896740cc83e5355e0b2719f31835372afe6a526c:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 125,
+          "class": "A",
+          "reason": "规范规定值：蓄水最浅处高度≥20mm、蓄水时间≥24h 无渗漏＝GB 55030-2022 第6.0.12条第1款；「防水层和饰面层完成后均应做蓄水试验」＝同条第4款。原引 GB 50210-2018 第6.1.4条系来源误标已改引。凭据同上",
+          "source_spans": [
+            [
+              68,
+              117
+            ]
+          ],
+          "verified_on": "2026-09-25"
+        }
+      ]
+    },
+    "prefab-acceptance-checklist-generator/reference.md#02021534d00ef978017f07b75910540796aa503ada310289c4b953950a4c8396:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 77,
+          "class": "A",
+          "reason": "规范规定值：管道坡度符合设计要求、严禁无坡或倒坡＝GB 50242-2002 第10.2.1条；塑料排水横支管标准坡度 0.026＝GB 50015-2019 第4.5.6条第1款（2026-09-24 官方出版物核验）；有防水要求楼地面排水坡度≥1.0%＝GB 55030-2022 第4.6.3条（2026-09-25 官方出版物核验）；本段 verified_on 取两段核验中较新的 2026-09-25，逐值日期见 reason",
+          "source_spans": [
+            [
+              116,
+              225
+            ]
+          ],
+          "verified_on": "2026-09-25"
+        },
+        {
+          "start": 77,
+          "end": 233,
+          "class": "D",
+          "reason": "工程经验控制值：淋浴区≥1.5% 系合集内部工艺控制值，非规范规定值，按 D 类登记",
+          "source_spans": [
+            [
+              116,
+              225
+            ]
+          ]
+        }
+      ]
+    },
+    "prefab-acceptance-checklist-generator/reference.md#716c6efe2a77def484849995f4d10bf4fb2a94efdbef1807e46392211e3d20f4:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 80,
+          "class": "A",
+          "reason": "规范规定值：闭水法的蓄水最浅处高度≥20mm、蓄水时间≥24h ＝ GB 55030-2022 第6.0.12条第1款；本表「数据来源」列同时承载渠道标签与标准出处，故来源绑定该单元格。凭据同上",
+          "source_spans": [
+            [
+              49,
+              77
+            ]
+          ],
+          "verified_on": "2026-09-25"
+        }
+      ]
+    },
+    "prefab-acceptance-checklist-generator/reference.md#77923654bce8c34465e7fcb89558629f4cc86303af822880cef541f195a578ba:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 90,
+          "class": "A",
+          "reason": "规范规定值：厨卫渗漏的合格判据（蓄水最浅处高度≥20mm、蓄水时间≥24h 无渗漏）＝GB 55030-2022 第6.0.12条第1款；原引 GB 50210-2018 系来源误标已改引。凭据同上",
+          "source_spans": [
+            [
+              59,
+              87
+            ]
+          ],
+          "verified_on": "2026-09-25"
+        }
+      ]
+    },
+    "standards-index.md#2cc94b7e6381cbb232c2e4b3e2399fbd9197296c7a24ad57bbbcfb981cd1c740:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 910,
+          "class": "N",
+          "reason": "索引头部「最后更新」快照行（CG-20260925-008 批）：索引维护日志性质的登记文字，所载数字为标准序号、公告号、实施/核验日期与条文号定位，属索引元数据，不主张材料物理量、构造性能或工艺控制值。非数据断言"
+        }
+      ]
+    },
+    "standards-index.md#a21768cb438674e4adf7067fac50bdac96e2858f739dc459493ad0c5a78a092c:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 5414,
+          "class": "N",
+          "reason": "索引头部「此前更新（历史快照）」链首行（CG-20260925-004 及更早批次的降级保留）：登记性叙述，数字仅承担序号／公告号／日期定位。非数据断言"
+        }
+      ]
+    },
+    "standards-index.md#5a3aa87ceb20bd5499e4498fc688b0d70104a0807fa1ef4d6cb6a67a3b207042:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 67,
+          "class": "N",
+          "reason": "索引头部「收录标准总数」行：本索引收录条目的自证计数（74 条及五类分布），非技术数据断言"
+        }
+      ]
+    },
+    "standards-index.md#d63725f25c3739ba35ad9eaf3d827aae40561a6d480b1fd87dbad83aebfb74b4:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 226,
+          "class": "N",
+          "reason": "§二 强制性国标主表 序号 73（GB 55030-2022）行：标准身份元数据（编号／名称／发布年份／实施日期／效力状态／关联技能），不含对物理量的量化断言；状态与公告号系官方出版物核验结论的登记。非数据断言"
+        }
+      ]
+    },
+    "standards-index.md#39c0c4840cbdbb9625ee4c1a409bb27ea98b66085100cce408b6f8d9a5cf4b99:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 280,
+          "class": "N",
+          "reason": "§二 强制性国标主表 序号 74（GB 50209-2010）行：同上，标准身份元数据登记。非数据断言"
+        }
+      ]
+    },
+    "standards-index.md#1b48ccab0a6d55ff2a19c5f763fb42f36871d342f41186b91ada333c36196091:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 1047,
+          "class": "N",
+          "reason": "§二 官方核验记录表 GB 50209-2010 行：核验方法、六要素身份与条文级核对结论的登记文字；其中 10mm／20mm 等数值系对官方出版物原文与技能内容载体的转述，本行不创设工程承载值（承载面在技能侧 A 类登记，见 记录/2026-09-25_CG-20260925-008 执行记录）。非数据断言"
+        }
+      ]
+    },
+    "standards-index.md#45b6a9165f02b8860adaad6f5a095f312e5c2445a216d00191a2c76cf44d9234:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 1156,
+          "class": "N",
+          "reason": "§二 官方核验记录表 GB 55030-2022 行：同上，核验结论登记文字。非数据断言"
+        }
+      ]
+    },
+    "standards-index.md#97faf51505f7ed04abdba66b889b3943987205eb95c380336379e35ee33f4f05:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 246,
+          "class": "N",
+          "reason": "§二 核验状态分层行：技能引用限制声明与两标准蓄水检验不一致时的取用裁定（转述性登记，承载值判据在标准本体与技能侧分类记录）。非数据断言"
+        }
+      ]
+    },
+    "standards-index.md#4276cd87479d5f604f58f60799656ce72e00c4832526b8970b2e64920aa02af4:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 1074,
+          "class": "N",
+          "reason": "§八 变更日志本批行：变更登记性叙述。非数据断言"
+        }
+      ]
+    },
+    "standards-index.md#4a1c49ccf658fb1b041c6e88ebc1c58c53a11743e669d4600f4df72b8f13f24c:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 101,
+          "class": "N",
+          "reason": "§10.1 本文件角色段：「维护 74 条标准」系本索引收录条目的自证计数与路由声明，非技术数据断言"
+        }
+      ]
+    },
+    "shared/standards-index.md#2a4a27cfcd222dc91f0df9ae2c9085dfe7160c509cfda0cb289c6080acc9a054:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 910,
+          "class": "N",
+          "reason": "索引头部「最后更新」快照行（CG-20260925-008 批）：索引维护日志性质的登记文字，所载数字为标准序号、公告号、实施/核验日期与条文号定位，属索引元数据，不主张材料物理量、构造性能或工艺控制值。非数据断言"
+        }
+      ]
+    },
+    "shared/standards-index.md#a4e278d721bc61e7eee6a4da0edcba9075e11873b837dc90ed70e3738d0244a9:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 5414,
+          "class": "N",
+          "reason": "索引头部「此前更新（历史快照）」链首行（CG-20260925-004 及更早批次的降级保留）：登记性叙述，数字仅承担序号／公告号／日期定位。非数据断言"
+        }
+      ]
+    },
+    "shared/standards-index.md#168f4b7297d8d42cbb7552c46a5b14dbebb45950baff19b41b5e577e3601a2ac:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 67,
+          "class": "N",
+          "reason": "索引头部「收录标准总数」行：本索引收录条目的自证计数（74 条及五类分布），非技术数据断言"
+        }
+      ]
+    },
+    "shared/standards-index.md#ba10f2f478149e91f946971267ad461be30be5879ba874d9b0ec979362efe74b:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 226,
+          "class": "N",
+          "reason": "§二 强制性国标主表 序号 73（GB 55030-2022）行：标准身份元数据（编号／名称／发布年份／实施日期／效力状态／关联技能），不含对物理量的量化断言；状态与公告号系官方出版物核验结论的登记。非数据断言"
+        }
+      ]
+    },
+    "shared/standards-index.md#19d2d855d5f58413e5386763f72e77738274d11edb46742e700922a9bc90bb5d:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 280,
+          "class": "N",
+          "reason": "§二 强制性国标主表 序号 74（GB 50209-2010）行：同上，标准身份元数据登记。非数据断言"
+        }
+      ]
+    },
+    "shared/standards-index.md#720a5bd5dfdfb5d39578d56a556020057b79f9f710a4e6a2183024cccde8b8fe:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 1047,
+          "class": "N",
+          "reason": "§二 官方核验记录表 GB 50209-2010 行：核验方法、六要素身份与条文级核对结论的登记文字；其中 10mm／20mm 等数值系对官方出版物原文与技能内容载体的转述，本行不创设工程承载值（承载面在技能侧 A 类登记，见 记录/2026-09-25_CG-20260925-008 执行记录）。非数据断言"
+        }
+      ]
+    },
+    "shared/standards-index.md#00f062ab9fba81c4362dedf470db07b110c6de015253b8c7b06d7863c7a39a9c:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 1156,
+          "class": "N",
+          "reason": "§二 官方核验记录表 GB 55030-2022 行：同上，核验结论登记文字。非数据断言"
+        }
+      ]
+    },
+    "shared/standards-index.md#b7dfc2c5233f2dfa043384db1b3fb246a7788cb732952aa08568b85f3b838bd4:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 246,
+          "class": "N",
+          "reason": "§二 核验状态分层行：技能引用限制声明与两标准蓄水检验不一致时的取用裁定（转述性登记，承载值判据在标准本体与技能侧分类记录）。非数据断言"
+        }
+      ]
+    },
+    "shared/standards-index.md#88d120cde4a429458f8e2911b5e468b33b88be29382d0d1af74c09d8b45d32b6:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 1074,
+          "class": "N",
+          "reason": "§八 变更日志本批行：变更登记性叙述。非数据断言"
+        }
+      ]
+    },
+    "shared/standards-index.md#ac66f6ea7dfb44a30d6de1790a999c08db6127aa39bbd9811bf0e43565b07b2e:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 101,
+          "class": "N",
+          "reason": "§10.1 本文件角色段：「维护 74 条标准」系本索引收录条目的自证计数与路由声明，非技术数据断言"
+        }
+      ]
+    },
+    "shared/change-governance.md#01b8c9e760e9234655b519e6fa69541d7a299fa5710cecdf00b5da7b3cb04bfe:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 614,
+          "class": "N",
+          "reason": "治理流程记录（头部快照链「最后更新」行，CG-20260925-008）：定级结论、写面清单与可复算自证计数，其中标准号与数值均系指向其他载体的转述。非数据断言"
+        }
+      ]
+    },
+    "shared/change-governance.md#da7f50c61b65dd853d4764b128a52686a26ff749fabdba64c3ebeab28428a96d:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 360,
+          "class": "N",
+          "reason": "治理流程记录（头部快照链 CG-20260925-007 降级保留行）：同上。非数据断言"
+        }
+      ]
+    },
+    "shared/change-governance.md#43840096944ddc0b7fcccbb83077ad694e5aad0113951306cc55817c5d0892de:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 4098,
+          "class": "N",
+          "reason": "§九 变更日志 CG-20260925-008 行：本文件成文的治理陈述（定级依据、写面清单、登记面机算读数），不主张材料本征量、规范规定限值或派生计算结果，所引数值与标准号均为指向其他载体的转述。非数据断言"
+        }
+      ]
+    },
+    "shared/change-governance.md#c8dea3ffb95e69324325602da742ece261e843c1f7af9c2e3e1ae1783306043d:35": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 2,
+          "class": "N",
+          "reason": "§十一 引言引用块的续行分隔符（单个 `>` 行），无断言内容；本批在头部快照链插入两行使该行的「同件同指纹出现序」位移，故随批重登记。非数据断言"
+        }
+      ]
+    },
+    "shared/change-governance.md#a1f685dc603639e834d1bdd56a6d2878975f74eea83094d60d214edb09de8e3c:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 562,
+          "class": "N",
+          "reason": "非数据断言：§十一 遗留存活性台账表行（PL-073 本批闭合行），数字仅承担 PL 编号、CG 编号、日期与 TTL 定位（剥离编号/日期/PL-CG 序号与所引标准条文号后无本文件自主张的物理量或限值断言），行内 20mm／0.4mm 等数值系指向官方出版物与技能内容载体的转述（分类口径见 shared/data-classification.md §一 N 类）"
+        }
+      ]
+    },
+    "shared/change-governance.md#4b118b7f8ab9400c72024bd55b2d4303eded55e8541fc1dfa4c01ed8438352b0:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 579,
+          "class": "N",
+          "reason": "非数据断言：§十一 遗留存活性台账表行（PL-074 本批闭合行），同 PL-073 行口径。"
+        }
+      ]
+    },
+    "shared/change-governance.md#6d320bcaef53128f5fb7fc3e7f8135d3d76523c8df8fca59d313ccaa3ed38477:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 372,
+          "class": "N",
+          "reason": "非数据断言：§十一 遗留存活性台账表行（PL-075 新登行），数字仅承担 PL/CG 编号、日期与 TTL 定位，所指技能引用点与数值系转述指针。"
+        }
+      ]
+    },
+    "shared/change-governance.md#e7d75a94a40e8a2874d087b1edb25ed65f81cc1c5a4fbed50c68904e81884faf:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 449,
+          "class": "N",
+          "reason": "非数据断言：§十一 遗留存活性台账表行（PL-076 新登行），同上；1.0%／1.5% 系指向 GB 55030 条文与 BK 技能正文的转述。"
+        }
+      ]
+    },
+    "shared/change-governance.md#f4494d26449f90cbf94b15ef4551d9d71a5f6c919dc018bb3ab117023f4892de:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 322,
+          "class": "N",
+          "reason": "非数据断言：§十一 遗留存活性台账表行（PL-077 新登行），同上。"
+        }
+      ]
+    },
+    "shared/change-governance.md#f39c8ac05f689db8f8d465366cf8a2ad290d6ed63e2001004b284461ae79f0d5:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 373,
+          "class": "N",
+          "reason": "非数据断言：§十一 遗留存活性台账表行（PL-078 新登行），同上。"
+        }
+      ]
+    },
+    "shared/change-governance.md#c76a355ef38324a09cc5b844259f08983216c1910bc6e3d81fa412a68d14ac00:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 592,
+          "class": "N",
+          "reason": "非数据断言：§十一 遗留存活性台账表行（PL-079 新登行），同上；所列行号与条文号系引用点清单指针，非量化断言。"
+        }
+      ]
+    },
+    "shared/standards-reasoning-rules.md#2603c5ae1dedb733d4646229de63689cdda5122d1b46905693b30dd3684629b8:1": {
+      "segments": [
+        {
+          "start": 0,
+          "end": 45,
+          "class": "N",
+          "reason": "规则文件 §2.4 条目：「保留完整 74 条目录」系对索引收录计数的转述与路由声明，非技术数据断言"
         }
       ]
     }
