@@ -18,6 +18,9 @@
      P5 §5.2 标题体系标签「（独立防水层体系）」
      P6 数值本体保留：地面层序块找坡行须含「坡度≥1%，淋浴区≥1.5%」、
         §5.2 闭水行须含「蓄水≥20mm，≥24h」（数值本体属 PL-063 责任，本守卫防静默撤值）
+     P7 饰面层完成后蓄水试验落地：§5.2 须含「饰面层完成后蓄水试验」、SKILL.md 须含
+        「饰面层完成后须二次蓄水」（GB 55030-2022 第6.0.12条第4款系全文强制判据，
+        只挂在验收行而不进工序即属「条文存在而生效路径断链」，本守卫防其静默退挂）
   范围控制例：§5.1 SMC 工序（底盘闭水在第 5 步、无预埋步）与墙面层序块不得被 R1—R3 误伤。
 负向注入以合成文本直调 check_wetzone，不落盘、不改任何技能件；
 端到端以真实件副本注入旧缺陷必红。临时面落点由 gate_scratch.py 单源给出（工作区
@@ -191,6 +194,8 @@ def check_wetzone(texts):
         ('P5', 'reference.md', ref, '### 5.2 干法装配式卫浴典型工序（独立防水层体系）'),
         ('P3', 'examples.md', ex or '', '仅适用 SMC 底盘一体体系'),
         ('P4', 'SKILL.md', skill or '', '保护层与饰面施工前'),
+        ('P7', 'reference.md', ref, '饰面层完成后蓄水试验'),
+        ('P7', 'SKILL.md', skill or '', '饰面层完成后须二次蓄水'),
     )
     for rule, name, hay, needle in anchors:
         if needle not in hay:
@@ -240,12 +245,14 @@ CLEAN_REF = (
     '7. 防水层闭水试验（蓄水≥20mm，≥24h；覆盖防水层与法兰、管根、阴角节点）\n'
     '8. 防水保护层施工\n'
     '9. 饰面板/瓷砖铺贴（表面坡向地漏）\n'
-    '10. 地漏末端篦子安装\n'
+    '10. 饰面层完成后蓄水试验（GB 55030-2022 第6.0.12条第4款，与第 7 步各为一次）\n'
+    '11. 地漏末端篦子安装\n'
     '```\n\n'
     '> **工序与试验覆盖口径**：第 7 步闭水试验覆盖对象为防水层及法兰、管根、阴角节点；'
     '对当时尚未形成的接口（饰面层、地漏末端篦子）不得宣称已验。\n'
 )
-CLEAN_SKILL = '□ 4. 闭水试验验证：蓄水≥20mm，时间≥24h；时点为防水层与节点加强完成后、保护层与饰面施工前\n'
+CLEAN_SKILL = ('□ 4. 闭水试验验证：蓄水≥20mm，时间≥24h；时点为防水层与节点加强完成后、'
+               '保护层与饰面施工前，且饰面层完成后须二次蓄水\n')
 CLEAN_EX = '> 本例闭水时点与地漏接口仅适用 SMC 底盘一体体系；干法体系见 reference.md §5.2。\n'
 
 CLEAN_SET = {'SKILL.md': CLEAN_SKILL, 'reference.md': CLEAN_REF, 'examples.md': CLEAN_EX}
@@ -355,6 +362,15 @@ class TestControlCases(unittest.TestCase):
         texts['reference.md'] = CLEAN_REF.replace('（坡度≥1%，淋浴区≥1.5%，坡向地漏）', '（坡向地漏）')
         got = {f[0] for f in check_wetzone(texts)}
         self.assertIn('P-MISS', got)
+
+    def test_dropped_second_water_retention_fires(self):
+        # P7 有牙：撤掉 §5.2 饰面后蓄水步或 SKILL 的二次蓄水字面须报 P-MISS
+        # （旧缺陷形态＝第4款只挂验收行、不进工序，属生效路径断链）
+        for name, needle in (('reference.md', '10. 饰面层完成后蓄水试验'),
+                             ('SKILL.md', '饰面层完成后须二次蓄水')):
+            texts = dict(CLEAN_SET)
+            texts[name] = texts[name].replace(needle, '')
+            self.assertIn('P-MISS', {f[0] for f in check_wetzone(texts)}, name)
 
     def test_positive_anchor_has_teeth(self):
         texts = dict(CLEAN_SET)
